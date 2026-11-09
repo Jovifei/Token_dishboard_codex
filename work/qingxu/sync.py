@@ -38,6 +38,28 @@ def read_file(path, maximum=2_000_000):
     return data
 
 
+def publish_new(path, content, maximum=2_000_000):
+    """Publish a complete new file without replacing a competing writer."""
+    path = safe_path(path)
+    fd, temporary = tempfile.mkstemp(prefix=".qingxu-new-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        safe_path(path)
+        if os.name == "nt":
+            os.rename(temporary, path)  # Windows rename fails if the target exists.
+        else:
+            os.link(temporary, path)
+            os.unlink(temporary)
+        if read_file(path, maximum) != content:
+            raise ValueError("写后读回不一致，文件保留供检查。")
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def replace_checked(path, expected_hash, content):
     p = safe_path(path)
     if sha(read_file(p)) != expected_hash:

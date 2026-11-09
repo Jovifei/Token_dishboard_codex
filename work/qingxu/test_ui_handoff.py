@@ -12,7 +12,7 @@ from tkinter import ttk
 import unittest
 from unittest import mock
 
-from handoff import HandoffStore, TemplateStore, HandoffError
+from handoff import HandoffStore, TemplateStore, HandoffError, project_key
 from ui_handoff import HandoffPanel
 
 
@@ -40,7 +40,7 @@ class HandoffPanelTests(unittest.TestCase):
                    "knowledge_mode": "none", "knowledge_policy": "ask"},
             handoff_store=HandoffStore(self.base / "handoffs"),
             template_store=TemplateStore(self.base / "templates"),
-            set_status=self.messages.append, show_page=mock.Mock(), open_path=mock.Mock(),
+            set_status=self.messages.append, show_knowledge_settings=mock.Mock(), open_path=mock.Mock(),
         )
         for name, color in (("App.TFrame", "#F5F5F7"), ("Card.TFrame", "white")):
             ttk.Style(self.root).configure(name, background=color)
@@ -84,6 +84,7 @@ class HandoffPanelTests(unittest.TestCase):
         second = self.panel.save_summary()
         self.assertEqual(first["path"], second["path"])
         self.assertFalse(self.panel.has_unsaved())
+        self.panel.mode.set("file")
         self.panel.show_step(3)
         self.panel.copy_new_button.invoke()
         self.assertIn(first["path"], self.clipboard[-1])
@@ -96,6 +97,7 @@ class HandoffPanelTests(unittest.TestCase):
         self.enter_summary()
         self.panel.save_summary()
         self.enter_summary(self.summary + "\n新增未保存内容")
+        self.panel.mode.set("file")
         self.assertEqual(str(self.panel.copy_new_button["state"]), "disabled")
         self.panel.mode.set("inline")
         self.assertEqual(str(self.panel.copy_new_button["state"]), "normal")
@@ -108,12 +110,58 @@ class HandoffPanelTests(unittest.TestCase):
         self.select()
         self.enter_summary()
         saved = self.panel.save_summary()
+        self.panel.mode.set("file")
         self.panel.copy_new()
         count = len(self.clipboard)
         Path(saved["path"]).unlink()
         self.panel.copy_new_button.invoke()
         self.assertEqual(len(self.clipboard), count)
         self.assertTrue(any("No such file" in m or "找不到" in m for m in self.messages))
+
+    def test_pasted_summary_can_continue_without_saving(self):
+        self.select()
+        self.panel.show_step(2)
+        with mock.patch.object(self.root, "clipboard_get", return_value=self.summary):
+            self.panel.paste_button.invoke()
+        self.assertEqual(self.panel.mode.get(), "inline")
+        self.assertIsNone(self.panel.saved)
+        self.assertEqual(str(self.panel.copy_new_button["state"]), "normal")
+        self.panel.show_step(3)
+        self.panel.copy_new_button.invoke()
+        self.assertIn(self.summary, self.clipboard[-1])
+        self.assertIn("未验证本地保存", self.clipboard[-1])
+        self.assertFalse(self.app.handoff_store.root.exists())
+
+    def test_optional_goal_is_collapsed_and_keeps_edits_when_closed(self):
+        self.select()
+        self.enter_summary()
+        self.panel.show_step(3)
+        self.root.update()
+        self.assertFalse(self.panel.goal_options.winfo_ismapped())
+        toggle = next(child for child in self.panel.pages[2].winfo_children()
+                      if isinstance(child, ttk.Checkbutton) and "下一阶段目标" in child.cget("text"))
+        toggle.invoke()
+        self.root.update()
+        self.assertTrue(self.panel.goal_options.winfo_ismapped())
+        self.panel.goal.set("核对下一步")
+        toggle.invoke()
+        self.assertFalse(self.panel.goal_options.winfo_ismapped())
+        self.panel.copy_new_button.invoke()
+        self.assertIn("核对下一步", self.clipboard[-1])
+
+    def test_additional_controls_are_available_when_expanded(self):
+        self.select()
+        for step, label, control in ((1, "知识处理与模板", self.panel.policy_box),
+                                     (2, "更多摘要选项", self.panel.recent_button)):
+            with self.subTest(step=step):
+                self.panel.show_step(step)
+                self.root.update()
+                self.assertFalse(control.winfo_ismapped())
+                toggle = next(child for child in self.panel.pages[step - 1].winfo_children()
+                              if isinstance(child, ttk.Checkbutton) and label in child.cget("text"))
+                toggle.invoke()
+                self.root.update()
+                self.assertTrue(control.winfo_ismapped())
 
     def test_selection_and_restart_never_reuse_wrong_thread_summary(self):
         self.select()
@@ -167,15 +215,26 @@ class HandoffPanelTests(unittest.TestCase):
         self.assertTrue(self.clipboard[-1].endswith("额外要求：先核对验收。"))
         self.assertFalse(self.panel.has_unsaved())
 
-    def test_policy_defaults_and_settings_entry(self):
+    def test_knowledge_scope_follows_bound_project_and_checked_categories(self):
         self.select()
         self.assertEqual(self.panel.policy.get(), "none")
-        self.app.prefs.update(knowledge_mode="folder", knowledge_dir=str(self.base / "notes"))
+        notes = self.base / "notes"
+        notes.mkdir()
+        self.app.prefs.update(knowledge_mode="folder", knowledge_dir=str(notes),
+                              knowledge_categories=["PLAN"])
+        self.panel.refresh_preferences()
+        self.assertEqual(self.panel.policy.get(), "none")
+        self.app.prefs["knowledge_project_key"] = project_key(self.record)
         self.panel.refresh_preferences()
         self.assertEqual(self.panel.policy.get(), "ask")
         prompt = self.panel.generate_old()
         self.assertIn("询问我是否更新", prompt)
-        self.assertFalse((self.base / "notes").exists())
+        self.assertIn("01-总体计划.md", prompt)
+        self.assertNotIn("02-当前进度.md", prompt)
+        self.assertEqual(list(notes.iterdir()), [])
+        self.panel.set_record(dict(self.record, path=str(self.base / "another project")))
+        self.assertEqual(self.panel.policy.get(), "none")
+        self.assertNotIn(str(notes), self.panel.generate_old())
 
     def test_template_editor_saves_guidance_and_preserves_identity(self):
         self.select()

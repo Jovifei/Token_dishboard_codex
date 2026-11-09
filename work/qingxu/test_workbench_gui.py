@@ -13,7 +13,7 @@ import demo
 import core
 from app import PRESETS
 from relay import Relay
-from workbench import Workbench
+from workbench import DEFAULT_CHOICE, Workbench
 
 
 class WorkbenchTests(unittest.TestCase):
@@ -96,6 +96,37 @@ class WorkbenchTests(unittest.TestCase):
             self.assertTrue(ui.config_items[key][0].get())
             self.assertEqual(ui.config_items[key][1].get(), "gpt-6-luna")
 
+    def test_recommended_numbers_are_reference_and_custom_uses_existing_value(self):
+        ui = self.config()
+        path = Path(ui.config_path.get())
+        key = "tool_output_token_limit"
+        original = core.propose(path.read_bytes(), {key: 12000})
+        path.write_bytes(original)
+        ui.load_config()
+        self.assertEqual(ui.config_entries[key].get(), "12000")
+        self.assertFalse(ui.config_items[key][0].get())
+
+        with patch.object(ui, "model_reference", return_value={key: 8000}):
+            ui.show_model_defaults()
+            ui.preset.set(PRESETS[1])
+            ui.select_preset()
+            self.assertEqual(ui.config_entries[key].get(), "8,000")
+            self.assertTrue(ui.config_entries[key].instate(("readonly",)))
+            ui.config_items[core.AGENT_MODEL][1].set("gpt-6-luna")
+            self.assertEqual(ui.preset.get(), PRESETS[1])
+        self.assertIsNone(ui.config_changes()[key])
+        ui.preview_config()
+        self.assertIsNone(ui.config_preview[3][key])
+        self.assertEqual(path.read_bytes(), original)
+
+        ui.preset.set(PRESETS[2])
+        ui.select_preset()
+        self.assertEqual(ui.config_entries[key].get(), "12000")
+        self.assertTrue(ui.config_entries[key].instate(("!readonly", "!disabled")))
+        ui.config_items[key][0].set(True)
+        ui.config_items[key][1].set("12500")
+        self.assertEqual(ui.config_changes()[key], 12500)
+
     def test_config_external_change_blocks_preview(self):
         ui = self.config()
         ui.config_items[core.MODEL][0].set(True)
@@ -147,7 +178,7 @@ class WorkbenchTests(unittest.TestCase):
         ui = self.config()
         with patch.object(ui, "model_reference", return_value={"efforts": (), "version": "fixture"}):
             ui.show_model_defaults()
-        self.assertEqual(tuple(ui.config_entries["model_reasoning_effort"]["values"]), ("继承",))
+        self.assertEqual(tuple(ui.config_entries["model_reasoning_effort"]["values"]), (DEFAULT_CHOICE,))
 
     def test_floating_selected_mode_follows_qingxu_only(self):
         ui = self.app
@@ -171,6 +202,8 @@ class WorkbenchTests(unittest.TestCase):
         future = Future()
         future.set_result(([{"stale_test": True}], None, None))
         ui.metric_job = (ui.metric_generation - 1, "old", future)
+        # Deliver the simulated result instead of the real scheduled callback.
+        ui.root.after_cancel(ui.metric_timer)
         with patch.object(ui, "render_metrics") as render:
             ui.update_metrics()
         render.assert_not_called()
@@ -206,6 +239,27 @@ class WorkbenchTests(unittest.TestCase):
             self.assertLessEqual(combo.winfo_rootx() + combo.winfo_width(),
                                  self.tk.winfo_rootx() + self.tk.winfo_width())
         self.assertIn(self.app.project_choice.get(), self.app.project_choice["values"])
+
+    def test_settings_controls_fit_and_open_knowledge_at_minimum_size(self):
+        ui = self.app
+        self.tk.tk.call("tk", "scaling", 2.0)
+        ui.configure_theme()
+        self.tk.geometry("980x680")
+        self.tk.deiconify()
+        ui.show_page("settings")
+        ui.settings_tabs.select(ui.config_page)
+        self.tk.update()
+        canvas_right = ui.config_canvas.winfo_rootx() + ui.config_canvas.winfo_width()
+        for key, entry in ui.config_entries.items():
+            with self.subTest(key=key):
+                self.assertGreater(entry.winfo_width(), 90)
+                self.assertLessEqual(entry.winfo_rootx() + entry.winfo_width(), canvas_right)
+        ui.show_knowledge_settings()
+        self.tk.update()
+        panel = ui.preferences_panel
+        self.assertEqual(ui.settings_tabs.select(), str(ui.preferences_page))
+        self.assertGreater(panel.canvas.yview()[0], 0)
+        self.assertLess(panel.knowledge_card.winfo_rooty(), panel.canvas.winfo_rooty() + panel.canvas.winfo_height())
 
     def test_handoff_primary_actions_fit_actual_shell_at_minimum_size(self):
         ui = self.app

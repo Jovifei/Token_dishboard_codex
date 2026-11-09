@@ -2,7 +2,7 @@
 
 ## 基线与工程入口
 
-当前维护版本为 **0.10.0-rc2**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动新版 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
+当前维护版本为 **0.10.0-rc3**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动新版 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
 
 0.9.3 冻结包保留在 `docs/ui-handoff-0.9.3/`。外部 0.10.0-rc1 升级 ZIP 的 97 个清单文件已核对，当前代码以 rc1 接入的 `work/qingxu/` 为基础继续修改。`docs/ui-handoff-0.10.0-rc1/` 中的截图、设计和测试证据属于历史交接，应以当前源码与实际运行结果判断现状。
 
@@ -11,7 +11,7 @@
 | `work/qingxu/workbench.py`、`app.py` | 三页面工作台、项目与聊天选择、异步数据读取及沿用的配置逻辑。旧 `App` 保留兼容和复用实现及相关测试。 |
 | `handoff.py`、`ui_handoff.py` | 摘要保存和读回、文件型与内嵌型提示词、模板及三步交接。 |
 | `monitor.py`、`ui_monitor.py` | 当前用量、提醒、概览、详细记录、ccusage 快照及悬浮窗。 |
-| `preferences.py`、`ui_preferences.py` | 数据目录、知识库模式、提醒策略及可恢复的偏好修改。 |
+| `preferences.py`、`ui_preferences.py`、`knowledge.py` | 数据目录、提醒策略、项目知识目录绑定、勾选分类和缺失模板的独占创建。 |
 | `core.py`、`config_store.py` | 白名单配置预览、备份、写入和冲突保护的恢复。 |
 | `chats.py`、`context_usage.py` | Codex 项目和聊天发现、会话日志与用量读取。 |
 | `tools/demo-current.py`、`tools/fixtures/` | 当前源码的合成数据演示。 |
@@ -29,6 +29,10 @@
 
 ## 验收记录
 
+rc3 简化默认内嵌摘要流程，恢复知识分类勾选，并将数值方案放在配置字段之前。[rc3 本机复验](verification/0.10.0-rc3/README.md)
+
+以下为 rc2 完整验收。
+
 - Windows 11、Python 3.14.2 与 Tk 8.6.15 环境的合成回归运行 249 项，246 项通过、3 项因符号链接权限跳过。两处 Tk 测试已调整为处理窗口事件，Windows 目录别名测试使用真实 junction。两个新增用例覆盖真实长标题和高 DPI 选择栏。机器回执见 [最终测试](verification/0.10.0-rc2/windows-tests.json)。
 - 文件引用型和内嵌摘要型各完成一次真实 Codex 新聊天接续，读取范围限定为两份合成文件。默认 shell 的读取尝试被策略阻拦，后续通过允许的只读工具完成验证。该证据覆盖限定的合成接续场景。
 - 隔离项目中，主 agent 的 `gpt-6.1-sol/low` 在 thread/start 和实际主 turn_context 中得到核对，默认子 agent 的 `gpt-6-luna/medium` 在关联的子 turn_context 中得到核对。app-server `config/read` 返回生效的 `model_auto_compact_token_limit=48000`，尚未验证压缩触发。隔离项目配置已恢复，全局 `config.toml` 哈希核对一致。
@@ -36,7 +40,7 @@
 
 ## 交付与后续验收
 
-Windows 便携 ZIP 放在 [install/](../install/)，完整验收包放在 `releases/`。发布时核对 rc2 版本、文件哈希、包内许可、解压启动与安装位置。0.9.3 的冻结产物和哈希作为独立基线保留。
+Windows 便携 ZIP 放在 [install/](../install/)，rc2 完整验收包保留在 `releases/`。发布时核对版本、文件哈希、包内许可、解压启动与安装位置。0.9.3 的冻结产物和哈希作为独立基线保留。
 
 普通入口已在实际安装位置验证两级目录、真实聊天标题及所选工作目录。合成演示有单独的窗口标识。作者本机使用原入口原位升级，原应用和数据保留核对。其他实际验收和边界见 [本机验收](LOCAL-ACCEPTANCE.md)。
 

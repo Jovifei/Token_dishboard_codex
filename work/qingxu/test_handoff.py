@@ -82,7 +82,7 @@ class HandoffTests(unittest.TestCase):
         self.assertFalse(self.root.exists())
 
     def test_write_error_does_not_return_saved_state_or_leave_temp(self):
-        with mock.patch("handoff.os.fsync", side_effect=OSError("磁盘故障")):
+        with mock.patch("sync.os.fsync", side_effect=OSError("磁盘故障")):
             with self.assertRaises(OSError):
                 self.store.save(self.record, self.summary)
         self.assertEqual(list(self.root.rglob("*.md")), [])
@@ -224,14 +224,20 @@ class HandoffTests(unittest.TestCase):
     def test_all_knowledge_policies_are_distinct_and_do_not_write_library(self):
         directory = self.base / "knowledge"
         none = build_save_prompt(self.record, knowledge_policy="none",
-                                 knowledge_dir=str(directory))
+                                 knowledge_dir=str(directory), knowledge_kinds=["PLAN"])
         ask = build_save_prompt(self.record, knowledge_policy="ask",
-                                knowledge_dir=str(directory))
+                                knowledge_dir=str(directory), knowledge_kinds=["PLAN"])
         authorized = build_save_prompt(self.record, knowledge_policy="authorized",
-                                       knowledge_dir=str(directory))
+                                       knowledge_dir=str(directory), knowledge_kinds=["PLAN"])
         self.assertIn("不更新长期", none)
         self.assertIn("询问我是否更新", ask)
         self.assertIn("已有明确授权", authorized)
+        self.assertIn("01-总体计划.md", ask)
+        self.assertNotIn("02-当前进度.md", authorized)
+        empty = build_save_prompt(self.record, knowledge_policy="authorized",
+                                  knowledge_dir=str(directory), knowledge_kinds=[])
+        self.assertIn("不更新长期知识库", empty)
+        self.assertNotIn("01-总体计划.md", empty)
         self.assertFalse(directory.exists())
         with self.assertRaises(HandoffError):
             build_save_prompt(self.record, knowledge_policy="always")

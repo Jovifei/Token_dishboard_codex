@@ -13,7 +13,7 @@ import tkinter as tk
 from tkinter import filedialog, font, messagebox, simpledialog, ttk
 
 import core
-from app import App, TITLE, VERSION, INHERIT, PRESETS, FILE_MODEL, MODEL_CHOICES, CONFIG_FIELDS, flash_taskbar
+from app import App, TITLE, VERSION, PRESETS, FILE_MODEL, MODEL_CHOICES, CONFIG_FIELDS, flash_taskbar
 from chats import path_key
 from config_store import ConfigStore
 from context_usage import chat_metrics, file_limit
@@ -22,7 +22,7 @@ from monitor import MonitorService
 from preferences import PreferenceStore, relay_settings
 from privacy import ensure_private
 from relay import Relay
-from sync import read_file, sha
+from sync import read_file, safe_path, sha
 from ui_handoff import HandoffPanel
 from ui_monitor import UsagePanel, FloatingMonitor
 from ui_preferences import PreferencesPanel
@@ -37,6 +37,9 @@ def final_models(parsed, selection):
     child = selection.get(core.AGENT_MODEL, core.config_value(parsed, core.AGENT_MODEL)) or main
     child_effort = selection.get(core.AGENT_EFFORT, core.config_value(parsed, core.AGENT_EFFORT))
     return main, effort, child, child_effort
+
+
+DEFAULT_CHOICE = "使用默认"
 
 
 class Workbench(App):
@@ -249,6 +252,11 @@ class Workbench(App):
     def set_status(self, text):
         self.status.set(text)
 
+    def show_knowledge_settings(self):
+        self.show_page("settings")
+        self.settings_tabs.select(self.preferences_page)
+        self.root.after_idle(self.preferences_panel.show_knowledge)
+
     def chat_catalog(self, result):
         self.catalog = result
         self.usage_panel.render_catalog(result)
@@ -256,6 +264,7 @@ class Workbench(App):
     def clear_project(self):
         self.snapshot = {}
         self.handoff_panel.set_record(self.chat)
+        self.preferences_panel.refresh_project()
         self.usage_panel.set_record(self.chat)
         self.watch_chat()
 
@@ -508,8 +517,11 @@ class Workbench(App):
         self.config_apply.pack(side="left", padx=8)
         self.config_apply.configure(state="disabled")
         self.button(actions, "恢复配置备份…", self.restore_config, feedback=self.config_status).pack(side="right")
-        ttk.Label(footer, textvariable=self.config_status, style="CardMuted.TLabel", wraplength=900).pack(anchor="w", pady=(6, 0))
+        feedback = ttk.Label(footer, textvariable=self.config_status, style="CardMuted.TLabel", wraplength=900)
+        feedback.pack(anchor="w", pady=(6, 0))
+        footer.bind("<Configure>", lambda event: feedback.configure(wraplength=max(140, event.width - 24)))
         self.config_canvas, body = self.scroll_page(frame)
+        notes = []
         source = ttk.Frame(body, style="Card.TFrame", padding=14)
         source.pack(fill="x", pady=(5, 9))
         ttk.Label(source, text="目标配置文件", style="Heading.TLabel").pack(anchor="w")
@@ -518,8 +530,22 @@ class Workbench(App):
         ttk.Entry(row, textvariable=self.config_path).pack(side="left", fill="x", expand=True)
         self.button(row, "选择…", self.choose_config, feedback=self.config_status).pack(side="left", padx=7)
         self.button(row, "读取", self.load_config, feedback=self.config_status).pack(side="left")
-        ttk.Label(source, textvariable=self.config_scope, style="CardMuted.TLabel", wraplength=880).pack(anchor="w")
+        scope = ttk.Label(source, textvariable=self.config_scope, style="CardMuted.TLabel", wraplength=880)
+        scope.pack(anchor="w")
+        notes.append(scope)
         self.config_items, self.config_entries, self.config_cells = {}, {}, {}
+
+        schemes = ttk.Frame(body, style="Card.TFrame", padding=(14, 9))
+        schemes.pack(fill="x", pady=(0, 9))
+        ttk.Label(schemes, text="数值方案", style="Heading.TLabel").pack(anchor="w")
+        row = ttk.Frame(schemes, style="Card.TFrame")
+        row.pack(fill="x", pady=(5, 0))
+        for mode, label in ((PRESETS[1], "推荐 · 模型默认"), (PRESETS[2], "自定义")):
+            ttk.Radiobutton(row, text=label, value=mode, variable=self.preset, style="Toolbutton",
+                            command=lambda: self.guarded(self.select_preset, self.config_status)).pack(side="left", padx=(0, 7))
+        self.save_custom_button = self.button(row, "记住数值", lambda: self.save_custom(core.TOKEN_KEYS),
+                                              feedback=self.config_status)
+        self.save_custom_button.pack(side="left")
 
         def section(title, keys, hint):
             card = ttk.Frame(body, style="Card.TFrame", padding=14)
@@ -528,7 +554,8 @@ class Workbench(App):
             for col, text in enumerate(("勾选要修改的项", "本机目录参考", "文件当前值", "准备写入")):
                 ttk.Label(card, text=text, style="CardMuted.TLabel").grid(row=1, column=col, sticky="w", padx=(0, 12), pady=(0, 5))
             for i, key in enumerate(keys, 2):
-                enabled, value = tk.BooleanVar(value=False), tk.StringVar(value=INHERIT)
+                initial = "" if key in core.TOKEN_KEYS or key == "compact_prompt" else DEFAULT_CHOICE
+                enabled, value = tk.BooleanVar(value=False), tk.StringVar(value=initial)
                 self.config_items[key] = enabled, value
                 ttk.Checkbutton(card, text=CONFIG_FIELDS[key][0], variable=enabled, style="Clean.TCheckbutton").grid(row=i, column=0, sticky="w", padx=(0, 10), pady=4)
                 official, current = tk.StringVar(value="待读取"), tk.StringVar(value="待读取")
@@ -536,35 +563,41 @@ class Workbench(App):
                 ttk.Label(card, textvariable=official, style="CardMuted.TLabel").grid(row=i, column=1, sticky="w", padx=(0, 12))
                 ttk.Label(card, textvariable=current, style="Card.TLabel").grid(row=i, column=2, sticky="w", padx=(0, 12))
                 if key in (core.MODEL, core.AGENT_MODEL):
-                    entry = ttk.Combobox(card, textvariable=value, values=(INHERIT, *MODEL_CHOICES.values(), "gpt-6-luna"), width=24)
+                    entry = ttk.Combobox(card, textvariable=value, values=(DEFAULT_CHOICE, *MODEL_CHOICES.values(), "gpt-6-luna"), width=24)
                 elif key in ("model_reasoning_effort", core.AGENT_EFFORT):
-                    entry = ttk.Combobox(card, textvariable=value, values=(INHERIT, *core.EFFORTS), state="readonly", width=24)
+                    entry = ttk.Combobox(card, textvariable=value, values=(DEFAULT_CHOICE, *core.EFFORTS), state="readonly", width=24)
                 else:
-                    entry = ttk.Entry(card, textvariable=value, width=24)
+                    entry = ttk.Entry(card, textvariable=value, width=13 if key in core.TOKEN_KEYS else 26)
                 self.config_entries[key] = entry
-                entry.grid(row=i, column=3, sticky="ew", pady=4)
+                entry.grid(row=i, column=3, sticky="w", pady=4)
                 value.trace_add("write", self.config_value_edited)
                 enabled.trace_add("write", self.config_selection_edited)
             card.columnconfigure(3, weight=1)
-            ttk.Label(card, text=hint, style="CardMuted.TLabel", wraplength=850).grid(row=len(tuple(keys))+2, column=0, columnspan=4, sticky="w", pady=(8, 0))
+            note = ttk.Label(card, text=hint, style="CardMuted.TLabel", wraplength=850)
+            note.grid(row=len(keys) + 2, column=0, columnspan=4, sticky="w", pady=(8, 0))
+            notes.append(note)
             return card
 
-        self.config_advanced = section("主 Agent 与子 Agent", (core.MODEL, "model_reasoning_effort", core.AGENT_MODEL, core.AGENT_EFFORT), "可输入本机支持的模型 ID；列表是快捷项。勾选才会写入，选择「继承」会移除当前文件覆盖。运行时采用仍需验证。")
+        section("Codex 压缩与输出",
+                ("model_context_window", "model_auto_compact_token_limit", "tool_output_token_limit", "compact_prompt"),
+                "推荐显示模型参考值。应用后，勾选项采用模型默认。自定义可输入数字，勾选且留空时使用默认。轻续提醒另设。")
+        self.config_advanced = section("主 Agent 与子 Agent",
+                                       (core.MODEL, "model_reasoning_effort", core.AGENT_MODEL, core.AGENT_EFFORT),
+                                       "选择模型和推理档位，勾选后预览。使用默认会清除所选文件的覆盖。")
         self.agent_panel = self.config_advanced
-        ttk.Label(self.config_advanced, textvariable=self.agent_effort_note, style="CardMuted.TLabel", wraplength=850).grid(row=7, column=0, columnspan=4, sticky="w", pady=(4, 0))
+        agent_note = ttk.Label(self.config_advanced, textvariable=self.agent_effort_note, style="CardMuted.TLabel", wraplength=850)
+        agent_note.grid(row=7, column=0, columnspan=4, sticky="w", pady=(4, 0))
+        notes.append(agent_note)
         for key in (core.MODEL, core.AGENT_MODEL):
             for variable in self.config_items[key]:
                 variable.trace_add("write", lambda *_: self.show_model_defaults() if not self.setting_preset else None)
-        numeric = section("Codex 压缩与输出", ("model_context_window", "model_auto_compact_token_limit", "tool_output_token_limit", "compact_prompt"), "这些项修改 Codex 文件。轻续的提前提醒在「目录与提醒」中设置，二者分别生效。这里的默认值来自本机目录，未知保持未知。")
-        row = ttk.Frame(numeric, style="Card.TFrame")
-        row.grid(row=7, column=0, columnspan=4, sticky="w", pady=(9, 0))
-        ttk.Label(row, text="数值方案", style="Card.TLabel").pack(side="left")
-        selector = ttk.Combobox(row, textvariable=self.preset, values=PRESETS, state="readonly", width=25)
-        selector.pack(side="left", padx=8)
-        selector.bind("<<ComboboxSelected>>", lambda _: self.guarded(self.select_preset, self.config_status))
-        self.save_custom_button = self.button(row, "保存自定义方案", self.save_custom, feedback=self.config_status)
-        self.save_custom_button.pack(side="left")
-        ttk.Label(body, textvariable=self.config_source, style="Muted.TLabel", wraplength=870).pack(anchor="w", pady=(0, 8))
+        reference = ttk.Label(body, textvariable=self.config_source, style="Muted.TLabel", wraplength=870)
+        reference.pack(anchor="w", pady=(0, 8))
+        notes.append(reference)
+        def resize_notes(event):
+            for note in notes:
+                note.configure(wraplength=max(140, event.width - 36))
+        body.bind("<Configure>", resize_notes, add="+")
         self.config_preview_area = ttk.Frame(body, style="Card.TFrame", padding=14)
         self.config_result_title = tk.StringVar(value="应用预览")
         ttk.Label(self.config_preview_area, textvariable=self.config_result_title, style="Heading.TLabel").pack(anchor="w")
@@ -574,11 +607,32 @@ class Workbench(App):
         self.show_config_scope()
         self.show_model_defaults()
 
+    def config_value_edited(self, *_):
+        if not self.setting_preset:
+            self.invalidate_config("已修改准备写入的值。请预览勾选项。")
+
+    @staticmethod
+    def config_edit_value(key, value):
+        if value is not None:
+            return str(value)
+        return "" if key in core.TOKEN_KEYS or key == "compact_prompt" else DEFAULT_CHOICE
+
+    def config_input_value(self, key, entered):
+        if key in core.TOKEN_KEYS or key == "compact_prompt":
+            return entered if entered.strip() else None
+        return None if entered == DEFAULT_CHOICE else entered
+
+    @staticmethod
+    def config_display_value(key, value):
+        return DEFAULT_CHOICE if value is None else App.config_display_value(key, value)
+
     def prospective(self, key, old=None):
         if key not in self.config_items:
             return old
         enabled, value = self.config_items[key]
-        return (None if value.get() == INHERIT else value.get()) if enabled.get() else old
+        if not enabled.get():
+            return old
+        return self.config_input_value(key, value.get())
 
     def show_model_defaults(self):
         if not self.config_items or core.AGENT_EFFORT not in self.config_entries:
@@ -591,7 +645,7 @@ class Workbench(App):
             official.set(self.config_display_value(key, val) if val is not None else "待核实")
         self.config_cells[core.MODEL][0].set("客户端默认")
         efforts = defaults.get("efforts")
-        self.config_entries["model_reasoning_effort"].configure(values=(INHERIT, *(core.EFFORTS if efforts is None else efforts)))
+        self.config_entries["model_reasoning_effort"].configure(values=(DEFAULT_CHOICE, *(core.EFFORTS if efforts is None else efforts)))
         self.show_agent_efforts()
 
     def show_agent_efforts(self, *_):
@@ -602,36 +656,56 @@ class Workbench(App):
         child = child_explicit or main
         reference = self.model_reference(child) if self.use_file_catalog else {}
         efforts = reference.get("efforts")
-        self.config_entries[core.AGENT_EFFORT].configure(values=(INHERIT, *(core.EFFORTS if efforts is None else efforts)))
-        self.config_cells[core.AGENT_MODEL][0].set("继承主模型")
+        self.config_entries[core.AGENT_EFFORT].configure(values=(DEFAULT_CHOICE, *(core.EFFORTS if efforts is None else efforts)))
+        self.config_cells[core.AGENT_MODEL][0].set("随主 Agent")
         self.config_cells[core.AGENT_EFFORT][0].set(reference.get("model_reasoning_effort") or "待核实")
         self.agent_effort_note.set(f"子 Agent 预计模型：{child or '客户端默认'}。" + ("推理档位按本机模型目录列出。" if reference.get("efforts") else "本机支持档位未核实；显示通用选项。"))
 
     def config_entry_states(self):
+        custom = self.preset.get() == PRESETS[2]
         for key, entry in self.config_entries.items():
-            entry.configure(state="readonly" if key in ("model_reasoning_effort", core.AGENT_EFFORT) else "normal")
-        self.save_custom_button.configure(state="normal" if self.preset.get() == PRESETS[2] else "disabled")
+            if key in core.TOKEN_KEYS:
+                visible = self.config_items[key][1] if custom else self.config_cells[key][0]
+                entry.configure(textvariable=visible, state="normal" if custom else "readonly")
+            else:
+                entry.configure(state="readonly" if key in ("model_reasoning_effort", core.AGENT_EFFORT) else "normal")
+        self.save_custom_button.configure(state="normal" if custom else "disabled")
 
     def select_preset(self):
-        mode = self.preset.get()
+        custom = self.preset.get() == PRESETS[2]
         values = dict.fromkeys(core.TOKEN_KEYS)
-        if mode == PRESETS[2]:
-            path = self.custom_path()
-            values = json.loads(read_file(path, 65536).decode("utf-8")) if path.exists() else {}
-            if values:
-                core.validate(values)
+        original = core.parse(self.original_config) if self.original_config is not None else {}
+        hint = "已显示模型参考。应用后，勾选的数值会采用模型默认。改数字请选自定义。"
+        self.invalidate_config(hint)
+        if custom:
+            values = {}
+            hint = "可编辑数字。勾选要写入的项后预览。"
+            try:
+                path = self.custom_path()
+                if not path.exists():
+                    path = safe_path(self.data_root / "custom-preset.json")
+                if path.exists():
+                    saved = json.loads(read_file(path, 65536).decode("utf-8"))
+                    if not isinstance(saved, dict):
+                        raise ValueError("数值方案需要对象格式。")
+                    values = {key: saved[key] for key in core.TOKEN_KEYS if key in saved}
+                    if values:
+                        core.validate(values)
+                        hint = "已载入记住的数值。勾选要写入的项后预览。"
+            except (OSError, ValueError):
+                values = {}
+                hint = "保存的数值方案暂不可读，已显示文件当前值。"
         self.setting_preset = True
         try:
             for key in core.TOKEN_KEYS:
                 enabled, value = self.config_items[key]
+                target = values.get(key, core.config_value(original, key))
                 enabled.set(key in values)
-                if key in values:
-                    value.set(INHERIT if values[key] is None else str(values[key]))
-            # A numeric preset must never delete or alter either Agent model.
+                value.set(self.config_edit_value(key, target))
             self.config_entry_states()
         finally:
             self.setting_preset = False
-        self.invalidate_config("已选择数值方案；主/子 Agent 选择保持原样。请核对勾选并预览。")
+        self.config_status.set(hint)
 
     def preview_config(self):
         self.invalidate_config("请核对文件和勾选项。")

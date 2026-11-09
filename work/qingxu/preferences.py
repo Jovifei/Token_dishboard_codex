@@ -7,9 +7,11 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path, PureWindowsPath
+import re
 import stat
 import tempfile
 
+from knowledge import validate_categories
 from privacy import ensure_private
 from monitor import validate_policy
 from sync import locks, read_file, replace_checked, safe_path, sha
@@ -95,6 +97,14 @@ def _validate_structure(values):
         raise PreferencesError("知识库模式需为关闭、普通文件夹或 Obsidian。")
     if values.get("knowledge_policy") not in KNOWLEDGE_POLICIES:
         raise PreferencesError("知识库更新策略无效。")
+    try:
+        values["knowledge_categories"] = validate_categories(values.get("knowledge_categories", []))
+    except ValueError as exc:
+        raise PreferencesError(str(exc)) from exc
+    project = values.get("knowledge_project_key", "")
+    if not isinstance(project, str) or (project and not re.fullmatch(r"[0-9a-f]{24}", project)):
+        raise PreferencesError("知识目录的项目绑定无效。")
+    values["knowledge_project_key"] = project
     for key in PATH_ACCESS:
         optional = key in OPTIONAL_PATHS
         if key == "knowledge_dir" and values["knowledge_mode"] != "none":
@@ -171,6 +181,7 @@ def default_preferences(data_root, legacy_settings=None):
         "codex_home": home,
         "handoff_dir": str(root / "handoffs"),
         "knowledge_dir": "", "knowledge_mode": "none", "knowledge_policy": "ask",
+        "knowledge_categories": [], "knowledge_project_key": "",
         "snapshot_dir": snapshot,
         "snapshot_filename": usage.name if usage else "usage-latest.json",
         "export_dir": str(root / "exports"),
@@ -289,6 +300,7 @@ class PreferenceStore:
     def save(self, updates, expected=None, create_dirs=False):
         if not isinstance(updates, dict):
             raise PreferencesError("偏好修改必须是对象。")
+        updates = dict(updates)
         original, raw_data = self._read()
         token = sha(original) if original is not None else None
         current = _validate_structure(_merge(self.defaults, _migrate(raw_data)))
@@ -298,6 +310,9 @@ class PreferenceStore:
                 raise PreferencesError("偏好已由其他窗口修改，请重新读取后保存。")
         elif self._last_hash is not _UNLOADED and self._last_hash != token:
             raise PreferencesError("偏好已由其他窗口修改，请重新读取后保存。")
+        if ("knowledge_dir" in updates and updates["knowledge_dir"] != current["knowledge_dir"]
+                and "knowledge_project_key" not in updates):
+            updates["knowledge_project_key"] = ""
         # Enforce the same threshold rules for UI, imports, and future callers.
         # This runs before directory creation or an atomic preference write.
         values = _validate_structure(_merge(current, updates))

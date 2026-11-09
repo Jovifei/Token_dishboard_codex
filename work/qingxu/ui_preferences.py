@@ -5,8 +5,11 @@ The panel edits application preferences, never Codex TOML or library contents.
 from copy import deepcopy
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
+from app import KB_CATEGORIES
+from handoff import project_key
+from knowledge import create_templates, project_folder, validate_categories
 from monitor import DEFAULT_POLICY, validate_policy
 from preferences import PATH_ACCESS, validate_directory
 
@@ -64,6 +67,8 @@ def parse_form(form):
         values[key] = value.strip()
     values["knowledge_mode"] = _code(form.get("knowledge_mode"), KNOWLEDGE_LABELS, "知识库类型")
     values["knowledge_policy"] = _code(form.get("knowledge_policy"), POLICY_LABELS, "知识更新方式")
+    values["knowledge_categories"] = validate_categories(form.get("knowledge_categories", []))
+    values["knowledge_project_key"] = form.get("knowledge_project_key", "")
     kind = _code(form.get("custom_kind"), KIND_LABELS, "提醒单位")
     value = form.get("custom_value")
     try:
@@ -103,11 +108,13 @@ class PreferencesPanel(ttk.Frame):
         self.vars.update({
             "knowledge_mode": tk.StringVar(self),
             "knowledge_policy": tk.StringVar(self),
+            "knowledge_project_key": tk.StringVar(self),
             "monitor_mode": tk.StringVar(self),
             "custom_kind": tk.StringVar(self),
             "custom_value": tk.StringVar(self),
             "enabled": tk.BooleanVar(self),
         })
+        self.knowledge_checks = {kind: tk.BooleanVar(self) for kind in KB_CATEGORIES}
         self.path_feedback = {}
         self.path_controls = {}
         self.status_var = tk.StringVar(self)
@@ -154,7 +161,8 @@ class PreferencesPanel(ttk.Frame):
         self._path_row(locations, "handoff_dir", "保存简短交接文件；新会话按需读取。")
         self._path_row(locations, "export_dir", "用于交接导出和诊断材料。")
 
-        knowledge = self._card("可选知识资料", "没有知识库也能完整交接。选择普通文件夹即可使用 Markdown 资料。")
+        knowledge = self._card("项目知识库（可选）", "没有知识库也能完整交接。选择普通文件夹即可使用 Markdown 资料。")
+        self.knowledge_card = knowledge
         kinds = ttk.Frame(knowledge, style="Card.TFrame")
         kinds.pack(fill="x", pady=(0, 10))
         ttk.Label(kinds, text="知识库类型", style="Card.TLabel").pack(side="left", padx=(0, 12))
@@ -162,7 +170,7 @@ class PreferencesPanel(ttk.Frame):
             kinds, state="readonly", textvariable=self.vars["knowledge_mode"],
             values=tuple(KNOWLEDGE_LABELS), width=26)
         self.knowledge_combo.pack(side="left")
-        self._path_row(knowledge, "knowledge_dir", "用于目录索引与按需正文；选择位置不会自动读取或写入整个知识库。")
+        self._path_row(knowledge, "knowledge_dir", "选择当前项目的知识文件夹；确认后保存项目绑定。")
         policy = ttk.Frame(knowledge, style="Card.TFrame")
         policy.pack(fill="x", pady=(4, 0))
         ttk.Label(policy, text="知识更新方式", style="Card.TLabel").pack(side="left", padx=(0, 12))
@@ -172,6 +180,18 @@ class PreferencesPanel(ttk.Frame):
         self.policy_combo.pack(side="left")
         self._description(
             knowledge, "这里控制交接提示词的知识更新要求。实际更新仍由旧会话按目标范围执行，轻续不会在保存设置时写知识库。")
+        self._description(knowledge, "勾选本项目需要的分类。同一范围用于创建缺失模板和旧会话知识更新。")
+        categories = ttk.Frame(knowledge, style="Card.TFrame")
+        categories.pack(fill="x", pady=(5, 0))
+        self.knowledge_category_controls = []
+        for index, (kind, (label, _description)) in enumerate(KB_CATEGORIES.items()):
+            control = ttk.Checkbutton(categories, text=label, variable=self.knowledge_checks[kind],
+                                      style="Preferences.TCheckbutton")
+            control.grid(row=index // 2, column=index % 2, sticky="w", padx=(0, 18), pady=3)
+            self.knowledge_category_controls.append(control)
+        self.knowledge_init_button = ttk.Button(knowledge, text="创建缺失的分类模板",
+                                                command=self.initialize_knowledge)
+        self.knowledge_init_button.pack(anchor="w", pady=(10, 0))
 
         snapshots = self._card(
             "可选 ccusage 快照",
@@ -180,6 +200,8 @@ class PreferencesPanel(ttk.Frame):
 
         for key, variable in self.vars.items():
             variable.trace_add("write", lambda *_args, name=key: self._changed(name))
+        for variable in self.knowledge_checks.values():
+            variable.trace_add("write", lambda *_args: self._changed("knowledge_categories"))
         self._bind_wheel(self)
         self.refresh()
 
@@ -286,7 +308,9 @@ class PreferencesPanel(ttk.Frame):
         return "break"
 
     def _raw_form(self):
-        return {key: variable.get() for key, variable in self.vars.items()}
+        values = {key: variable.get() for key, variable in self.vars.items()}
+        values["knowledge_categories"] = [kind for kind, variable in self.knowledge_checks.items() if variable.get()]
+        return values
 
     def has_unsaved(self):
         return self._raw_form() != self._baseline
@@ -309,10 +333,32 @@ class PreferencesPanel(ttk.Frame):
         for control in self.path_controls.get("knowledge_dir", ()):
             control.configure(state="normal" if enabled else "disabled")
         self.policy_combo.configure(state="readonly" if enabled else "disabled")
+        for control in self.knowledge_category_controls:
+            control.configure(state="normal" if enabled else "disabled")
+        try:
+            current_project = project_key(self.app.chat) if self.app.chat else ""
+        except (AttributeError, ValueError, TypeError):
+            current_project = ""
+        saved = self.app.prefs
+        bound = self.vars["knowledge_project_key"].get()
+        can_create = (enabled and current_project and current_project == bound
+                      and bound == saved.get("knowledge_project_key", "")
+                      and self.vars["knowledge_dir"].get() == saved.get("knowledge_dir", "")
+                      and bool(saved.get("knowledge_categories")) and not self.has_unsaved())
+        self.knowledge_init_button.configure(state="normal" if can_create else "disabled")
+
+    def refresh_project(self):
+        """Refresh project-bound actions without replacing unsaved form changes."""
+        self._update_controls()
+
+    def show_knowledge(self):
+        self.canvas.yview_moveto(self.knowledge_card.winfo_y() / max(1, self.content.winfo_height()))
 
     def _changed(self, key):
         if self._loading:
             return
+        if key == "knowledge_dir" and self.vars["knowledge_project_key"].get():
+            self.vars["knowledge_project_key"].set("")
         self._update_controls()
         if key in self.path_feedback:
             self.path_feedback[key].set("位置已更改，尚未验证。原有文件不会迁移。")
@@ -331,6 +377,10 @@ class PreferencesPanel(ttk.Frame):
                 self.vars[key].set(prefs.get(key, ""))
             self.vars["knowledge_mode"].set(_label(prefs.get("knowledge_mode", "none"), KNOWLEDGE_LABELS))
             self.vars["knowledge_policy"].set(_label(prefs.get("knowledge_policy", "ask"), POLICY_LABELS))
+            self.vars["knowledge_project_key"].set(prefs.get("knowledge_project_key", ""))
+            selected = prefs.get("knowledge_categories", [])
+            for kind, variable in self.knowledge_checks.items():
+                variable.set(kind in selected)
             monitor = DEFAULT_POLICY | (prefs.get("monitor") or {})
             self.vars["monitor_mode"].set(monitor["mode"])
             self.vars["custom_kind"].set(_label(monitor["custom_kind"], KIND_LABELS))
@@ -338,6 +388,7 @@ class PreferencesPanel(ttk.Frame):
             self.vars["enabled"].set(monitor["enabled"])
             self._update_controls()
             self._baseline = self._raw_form()
+            self._update_controls()
         finally:
             self._loading = False
         for key, text in self.path_feedback.items():
@@ -355,6 +406,10 @@ class PreferencesPanel(ttk.Frame):
                          "saved" if exists else "pending")
 
     def browse_path(self, key):
+        record = getattr(self.app, "chat", None)
+        if key == "knowledge_dir" and not record:
+            self._set_status("请先选择需要绑定知识目录的项目聊天。", "error")
+            return
         current = Path(self.vars[key].get()).expanduser() if self.vars[key].get().strip() else None
         initial = current if current and current.is_dir() else current.parent if current and current.parent.is_dir() else self.app.data_root
         value = filedialog.askdirectory(
@@ -362,7 +417,26 @@ class PreferencesPanel(ttk.Frame):
             initialdir=str(initial),
             mustexist=PATH_ACCESS[key] == "read")
         if value:
+            if key == "knowledge_dir":
+                try:
+                    selected_project = project_key(record)
+                    folder = project_folder(value)
+                    confirmed = messagebox.askyesno(
+                        "确认项目知识文件夹",
+                        "当前项目：" + str(record.get("path") or record.get("cwd")) +
+                        "\n知识文件夹：" + str(folder) +
+                        "\n\n确认这是该项目的文件夹？保存设置后绑定。",
+                        parent=self.app.root)
+                    if not confirmed:
+                        return
+                    if project_key(self.app.chat) != selected_project:
+                        raise ValueError("项目已切换，请重新选择知识文件夹。")
+                except (OSError, ValueError, TypeError) as exc:
+                    self._set_status(str(exc), "error")
+                    return
             self.vars[key].set(value)
+            if key == "knowledge_dir":
+                self.vars["knowledge_project_key"].set(selected_project)
             self.validate_path(key)
 
     def validate_path(self, key):
@@ -374,11 +448,46 @@ class PreferencesPanel(ttk.Frame):
             check = validate_directory(
                 self.vars[key].get(), access=PATH_ACCESS[key],
                 optional=key in ("codex_home", "snapshot_dir"))
+            if key == "knowledge_dir" and check["ok"]:
+                try:
+                    project_folder(check["path"])
+                except (OSError, ValueError) as exc:
+                    check.update(ok=False, code="INVALID", message=str(exc))
         text = check["message"]
         if check.get("can_create") and key in ("handoff_dir", "export_dir"):
             text = "目录尚不存在；点击“保存设置”时创建此目录，原有文件不会移动。"
         self.path_feedback[key].set(text)
         return check
+
+    def initialize_knowledge(self):
+        try:
+            if self.has_unsaved():
+                raise ValueError("请先保存项目知识目录和分类，再创建模板。")
+            prefs = self.app.prefs
+            record = self.app.chat
+            selected_project = project_key(record)
+            if (prefs.get("knowledge_mode") == "none" or not prefs.get("knowledge_categories")
+                    or prefs.get("knowledge_project_key") != selected_project):
+                raise ValueError("请选择当前项目并确认绑定知识文件夹和分类。")
+            if self.app.pref_store.load() != prefs:
+                raise ValueError("设置已在其他位置更改，请重新读取后再创建模板。")
+            folder = project_folder(prefs["knowledge_dir"])
+            names = [KB_CATEGORIES[kind][0] for kind in prefs["knowledge_categories"]]
+            confirmed = messagebox.askyesno(
+                "创建项目知识模板",
+                "当前项目：" + str(record.get("path") or record.get("cwd")) +
+                "\n目标文件夹：" + str(folder) + "\n分类：" + "、".join(names) +
+                "\n\n只创建缺失文件，已有文件保留。继续？",
+                parent=self.app.root)
+            if not confirmed:
+                return
+            if project_key(self.app.chat) != selected_project or self.app.pref_store.load() != prefs:
+                raise ValueError("项目或设置已更改，请重新检查后再创建模板。")
+            result = create_templates(folder, prefs["knowledge_categories"])
+            self._set_status("已创建 " + str(len(result["created"])) + " 个模板，保留 " +
+                             str(len(result["existing"])) + " 个已有文件。", "saved")
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            self._set_status(str(exc), "error")
 
     def open_path(self, key):
         check = self.validate_path(key)

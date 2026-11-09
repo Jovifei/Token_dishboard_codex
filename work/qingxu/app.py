@@ -20,7 +20,7 @@ from sync import locks, read_file, replace_checked, safe_path, sha
 from dashboard import ChatDashboard, Dashboard, ACCENT, BG, LABEL, SECONDARY, SEPARATOR, SURFACE
 
 TITLE = "轻续 · Token 工作台"
-VERSION = "0.10.0-rc2"
+VERSION = "0.10.0-rc3"
 INHERIT = "继承"
 PRESETS = ("官方默认（继承）", "轻续推荐（继承数值）", "用户自定义")
 FILE_MODEL = "所选文件的模型"
@@ -955,10 +955,10 @@ class App:
                             "readonly" if key in ("model_reasoning_effort", core.AGENT_EFFORT) else "normal")
         self.save_custom_button.configure(state="normal" if editable else "disabled")
 
-    def save_custom(self):
+    def save_custom(self, keys=None):
         if self.preset.get() != PRESETS[2]:
             raise ValueError("请切换到自定义方案后再保存数值。")
-        values = self.config_changes()
+        values = self.config_changes(keys)
         path = self.custom_path()
         text = json.dumps(values, ensure_ascii=False)
         with locks([path]):
@@ -998,14 +998,14 @@ class App:
             for key, (enabled, value) in self.config_items.items():
                 enabled.set(False)
                 actual = core.config_value(config, key)
-                value.set(INHERIT if actual is None else str(actual))
+                value.set(self.config_edit_value(key, actual))
             self.config_entry_states()
         finally:
             self.setting_preset = False
         self.show_model_defaults()
         for key, (_, current) in self.config_cells.items():
             value = core.config_value(config, key)
-            current.set("继承" if value is None else "已自定义" if key == "compact_prompt" else
+            current.set(self.config_display_value(key, None) if value is None else "已自定义" if key == "compact_prompt" else
                         f"{value:,}" if type(value) is int else str(value)[:25])
         self.invalidate_config("读取成功。表中显示所选文件，当前聊天的实际设置需另行核对。")
 
@@ -1066,20 +1066,27 @@ class App:
     def check_model_effort(self, model, effort):
         supported = self.model_reference(model).get("efforts")
         if effort is not None and supported is not None and effort not in supported:
-            raise ValueError(f"本机目录未给 {model} 列出 {effort}。请从该模型的下拉框选档，或选择「继承」。")
+            raise ValueError(f"本机目录未给 {model} 列出 {effort}。请从该模型的下拉框选档，或使用默认档位。")
 
-    def config_changes(self):
+    @staticmethod
+    def config_edit_value(key, value):
+        return INHERIT if value is None else str(value)
+
+    def config_input_value(self, key, entered):
+        return None if entered.strip() == INHERIT else entered
+
+    def config_changes(self, keys=None):
         changes = {}
         for key, (enabled, value) in self.config_items.items():
-            if enabled.get():
-                entered = value.get()
-                if entered.strip() == INHERIT:
+            if enabled.get() and (keys is None or key in keys):
+                entered = self.config_input_value(key, value.get())
+                if entered is None:
                     changes[key] = None
                 elif key in core.TOKEN_KEYS:
                     try:
                         changes[key] = int(entered)
                     except ValueError as exc:
-                        raise ValueError(CONFIG_FIELDS[key][0] + "请填写整数，例如 200000，或填「继承」。") from exc
+                        raise ValueError(CONFIG_FIELDS[key][0] + "请填写整数，例如 200000。") from exc
                 else:
                     changes[key] = entered
         if not changes:

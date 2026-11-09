@@ -1,1 +1,2 @@
 1bbe4a258315694c2c729ed2bee5eb59883e0b5e98e1a9255f471eff3e768a73  Qingxu-0.10.0-rc2-Windows-x64.zip
+4f336ea91b9ae82cd77a61ff52f5677ef666f937377a2af610add72b655c48e7  Qingxu-0.10.0-rc3-Windows-x64.zip

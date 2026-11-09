@@ -8,8 +8,10 @@ from unittest.mock import patch
 import core
 from config_store import ConfigStore, model_defaults
 from test_path_support import directory_alias
-from handoff import HandoffStore
+from handoff import HandoffError, HandoffStore, build_save_prompt, project_key
+from knowledge import create_templates, project_folder
 from preferences import PreferenceStore, PreferencesError, relay_settings, validate_directory
+from relay import KB_FILES
 
 
 class PreferenceTests(unittest.TestCase):
@@ -32,8 +34,96 @@ class PreferenceTests(unittest.TestCase):
         self.assertEqual(result["codex_home"], str(self.codex))
         self.assertEqual(result["knowledge_mode"], "none")
         self.assertEqual(result["knowledge_dir"], "")
+        self.assertEqual(result["knowledge_categories"], [])
+        self.assertEqual(result["knowledge_project_key"], "")
         self.assertEqual(result["snapshot_dir"], "")
         self.assertEqual(result["monitor"]["mode"], "recommended")
+
+    def test_categories_and_project_binding_are_validated_and_migrate_old_preferences(self):
+        self.data.mkdir()
+        self.store.path.write_text(json.dumps({"knowledge_mode": "none", "plugin": "keep"}), encoding="utf-8")
+        old = self.store.load()
+        self.assertEqual(old["knowledge_categories"], [])
+        self.assertEqual(old["knowledge_project_key"], "")
+        folder = self.root / "project-notes"
+        folder.mkdir()
+        saved = self.store.save({"knowledge_mode": "folder", "knowledge_dir": str(folder),
+                                 "knowledge_categories": ["BUGS", "PLAN"],
+                                 "knowledge_project_key": "a" * 24}, expected=old)
+        self.assertEqual(saved["knowledge_categories"], ["PLAN", "BUGS"])
+        self.assertEqual(saved["plugin"], "keep")
+        other = self.root / "other-notes"
+        other.mkdir()
+        changed = self.store.save({"knowledge_dir": str(other)}, expected=saved)
+        self.assertEqual(changed["knowledge_project_key"], "")
+        for invalid in (["PLAN", "PLAN"], ["not-a-category"], "PLAN", [None]):
+            with self.subTest(categories=invalid), self.assertRaises(PreferencesError):
+                self.store.save({"knowledge_categories": invalid}, expected=changed)
+        with self.assertRaises(PreferencesError):
+            self.store.save({"knowledge_project_key": "not-a-project-key"}, expected=changed)
+
+    def test_template_creation_is_explicit_bounded_and_never_overwrites(self):
+        folder = self.root / "project-notes"
+        folder.mkdir()
+        existing = folder / KB_FILES["PLAN"]
+        existing.write_text("existing user page", encoding="utf-8")
+        result = create_templates(folder, ["PLAN", "REQUIREMENTS"])
+        self.assertEqual(existing.read_text(encoding="utf-8"), "existing user page")
+        self.assertEqual(result["existing"], [str(existing)])
+        self.assertEqual(result["created"], [str(folder / KB_FILES["REQUIREMENTS"])])
+        self.assertIn("## 验收条件", (folder / KB_FILES["REQUIREMENTS"]).read_text(encoding="utf-8"))
+        self.assertEqual(len(create_templates(folder, ["PLAN", "REQUIREMENTS"])["created"]), 0)
+        self.assertFalse((folder / KB_FILES["BUGS"]).exists())
+        with self.assertRaises(ValueError):
+            create_templates(folder, [])
+
+    def test_vault_root_and_linked_target_are_rejected_before_any_write(self):
+        folder = self.root / "vault"
+        folder.mkdir()
+        (folder / ".obsidian").mkdir()
+        with self.assertRaises(ValueError):
+            project_folder(folder)
+        project = folder / "project"
+        project.mkdir()
+        other = self.root / "other"
+        other.mkdir()
+        directory_alias(project / KB_FILES["PLAN"], other)
+        with self.assertRaises(ValueError):
+            create_templates(project, ["REQUIREMENTS", "PLAN"])
+        self.assertFalse((project / KB_FILES["REQUIREMENTS"]).exists())
+        self.assertEqual(list(other.iterdir()), [])
+
+    def test_template_concurrent_creation_preserves_other_writer(self):
+        from sync import publish_new
+        folder = self.root / "project-notes"
+        folder.mkdir()
+        target = folder / KB_FILES["PLAN"]
+
+        def competing_write(path, content):
+            path.write_bytes(b"another writer")
+            publish_new(path, content)
+
+        with patch("knowledge.publish_new", side_effect=competing_write):
+            with self.assertRaises(ValueError):
+                create_templates(folder, ["PLAN"])
+        self.assertEqual(target.read_bytes(), b"another writer")
+
+    def test_knowledge_prompt_uses_only_selected_project_pages(self):
+        record = {"path": str(self.root), "chat_id": "one", "label": "chat"}
+        self.assertEqual(project_key(record), project_key(record | {"chat_id": "another"}))
+        self.assertNotEqual(project_key(record), project_key(record | {"path": str(self.data)}))
+        target = str(self.root / "notes")
+        prompt = build_save_prompt(record, knowledge_policy="authorized", knowledge_dir=target,
+                                   knowledge_kinds=["PLAN", "BUGS"])
+        self.assertIn(str(Path(target) / KB_FILES["PLAN"]), prompt)
+        self.assertIn(str(Path(target) / KB_FILES["BUGS"]), prompt)
+        self.assertNotIn(KB_FILES["NOW"], prompt)
+        self.assertIn("不得更新其他知识页", prompt)
+        empty = build_save_prompt(record, knowledge_policy="authorized", knowledge_dir=target)
+        self.assertIn("不更新长期知识库", empty)
+        self.assertNotIn(KB_FILES["PLAN"], empty)
+        with self.assertRaises(HandoffError):
+            build_save_prompt(record, knowledge_kinds=["UNKNOWN"])
 
     def test_validation_distinguishes_disabled_missing_and_file(self):
         self.assertEqual(validate_directory("", optional=True)["code"], "DISABLED")

@@ -3,10 +3,13 @@ from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
+import tkinter as tk
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
+from handoff import project_key
 from preferences import PreferenceStore
+from relay import KB_FILES
 from ui_preferences import PreferencesPanel, parse_form
 
 
@@ -57,6 +60,14 @@ class FormTests(unittest.TestCase):
         parsed = parse_form(form() | {"knowledge_policy": "不更新，只保存交接", "enabled": False})
         self.assertEqual(parsed["knowledge_policy"], "none")
         self.assertFalse(parsed["monitor"]["enabled"])
+
+    def test_knowledge_categories_default_empty_and_reject_invalid_selection(self):
+        self.assertEqual(parse_form(form())["knowledge_categories"], [])
+        self.assertEqual(parse_form(form())["knowledge_project_key"], "")
+        parsed = parse_form(form() | {"knowledge_categories": ["BUGS", "PLAN"]})
+        self.assertEqual(parsed["knowledge_categories"], ["PLAN", "BUGS"])
+        with self.assertRaises(ValueError):
+            parse_form(form() | {"knowledge_categories": ["other"]})
 
 
 class SaveStateTests(unittest.TestCase):
@@ -116,6 +127,97 @@ class SaveStateTests(unittest.TestCase):
         self.assertFalse(self.panel.save())
         self.app.apply_preferences.assert_not_called()
         self.assertIn("Codex 数据目录", self.panel._set_status.call_args.args[0])
+
+
+class KnowledgeSettingsTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="qingxu-knowledge-settings-")
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.notes = self.base / "project-notes"
+        self.notes.mkdir()
+        self.record = {"path": str(self.base / "project-a"), "chat_id": "one", "label": "chat"}
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.addCleanup(self.root.destroy)
+        (self.base / "appdata").mkdir()
+        self.store = PreferenceStore(self.base / "appdata", {"chat_db": str(self.base / "codex" / "state.sqlite")})
+        self.app = SimpleNamespace(root=self.root, chat=self.record, pref_store=self.store,
+                                   data_root=self.base, prefs=self.store.load(), set_status=Mock())
+        self.app.apply_preferences = lambda updates, create_dirs=False: self.store.save(
+            updates, expected=self.app.prefs, create_dirs=create_dirs)
+        self.panel = PreferencesPanel(self.root, self.app)
+        self.panel.pack(fill="both", expand=True)
+
+    def test_binding_requires_confirmation_and_limits_template_creation_to_current_project(self):
+        self.panel.vars["knowledge_mode"].set("普通 Markdown 文件夹")
+        with patch("ui_preferences.filedialog.askdirectory", return_value=str(self.notes)), \
+             patch("ui_preferences.messagebox.askyesno", return_value=False):
+            self.panel.browse_path("knowledge_dir")
+        self.assertEqual(self.panel.vars["knowledge_dir"].get(), "")
+        self.assertEqual(self.panel.vars["knowledge_project_key"].get(), "")
+        self.assertEqual(list(self.notes.iterdir()), [])
+
+        with patch("ui_preferences.filedialog.askdirectory", return_value=str(self.notes)), \
+             patch("ui_preferences.messagebox.askyesno", return_value=True):
+            self.panel.browse_path("knowledge_dir")
+        self.assertEqual(self.panel.vars["knowledge_project_key"].get(), project_key(self.record))
+        self.panel.knowledge_checks["PLAN"].set(True)
+        self.assertTrue(self.panel.save(), self.panel.status_var.get())
+        self.assertFalse(self.panel.knowledge_init_button.instate(["disabled"]))
+
+        with patch("ui_preferences.messagebox.askyesno", return_value=False):
+            self.panel.initialize_knowledge()
+        self.assertEqual(list(self.notes.iterdir()), [])
+        with patch("ui_preferences.messagebox.askyesno", return_value=True):
+            self.panel.initialize_knowledge()
+        self.assertTrue((self.notes / KB_FILES["PLAN"]).is_file())
+        self.assertFalse((self.notes / KB_FILES["NOW"]).exists())
+
+        self.app.chat = self.record | {"path": str(self.base / "project-b")}
+        self.panel.refresh_project()
+        self.assertTrue(self.panel.knowledge_init_button.instate(["disabled"]))
+        self.panel.initialize_knowledge()
+        self.assertEqual(len(list(self.notes.iterdir())), 1)
+
+    def test_typing_another_folder_clears_previous_binding(self):
+        self.panel.vars["knowledge_mode"].set("普通 Markdown 文件夹")
+        with patch("ui_preferences.filedialog.askdirectory", return_value=str(self.notes)), \
+             patch("ui_preferences.messagebox.askyesno", return_value=True):
+            self.panel.browse_path("knowledge_dir")
+        self.panel.vars["knowledge_dir"].set(str(self.base / "different"))
+        self.assertEqual(self.panel.vars["knowledge_project_key"].get(), "")
+
+    def test_project_change_during_confirmation_does_not_bind(self):
+        self.panel.vars["knowledge_mode"].set("普通 Markdown 文件夹")
+
+        def switch_project(*_args, **_kwargs):
+            self.app.chat = self.record | {"path": str(self.base / "project-b")}
+            return True
+
+        with patch("ui_preferences.filedialog.askdirectory", return_value=str(self.notes)), \
+             patch("ui_preferences.messagebox.askyesno", side_effect=switch_project):
+            self.panel.browse_path("knowledge_dir")
+        self.assertEqual(self.panel.vars["knowledge_dir"].get(), "")
+        self.assertEqual(self.panel.vars["knowledge_project_key"].get(), "")
+        self.assertEqual(list(self.notes.iterdir()), [])
+
+    def test_settings_change_during_template_confirmation_blocks_creation(self):
+        self.panel.vars["knowledge_mode"].set("普通 Markdown 文件夹")
+        with patch("ui_preferences.filedialog.askdirectory", return_value=str(self.notes)), \
+             patch("ui_preferences.messagebox.askyesno", return_value=True):
+            self.panel.browse_path("knowledge_dir")
+        self.panel.knowledge_checks["PLAN"].set(True)
+        self.assertTrue(self.panel.save(), self.panel.status_var.get())
+
+        def change_settings(*_args, **_kwargs):
+            self.store.save({"knowledge_categories": []}, expected=self.app.prefs)
+            return True
+
+        with patch("ui_preferences.messagebox.askyesno", side_effect=change_settings):
+            self.panel.initialize_knowledge()
+        self.assertEqual(list(self.notes.iterdir()), [])
+        self.assertIn("设置已更改", self.panel.status_var.get())
 
 
 if __name__ == "__main__":

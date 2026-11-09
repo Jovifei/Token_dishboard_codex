@@ -21,17 +21,18 @@ import ntpath
 import os
 from pathlib import Path
 import re
-import tempfile
 import uuid
 
-from sync import read_file, safe_path
+from sync import publish_new, read_file, safe_path
+from knowledge import validate_categories
+from relay import KB_FILES
 
 SCHEMA_VERSION = 1
 MAX_SUMMARY_BYTES = 16 * 1024
 MAX_TEMPLATE_BYTES = 8 * 1024
 MAX_FILE_BYTES = 48 * 1024
 POLICIES = ("none", "ask", "authorized")
-POLICY_LABELS = {"none": "仅保存交接", "ask": "询问是否更新知识库",
+POLICY_LABELS = {"none": "不更新知识库", "ask": "询问是否更新知识库",
                  "authorized": "按既有授权更新"}
 HEADER = "<!-- qingxu-handoff:v1 "
 SOURCE_HEADER = "<!-- qingxu-source:v1 "
@@ -148,6 +149,11 @@ def _identity(record):
     return {"project_key": _hash(key_input)[:24], "cwd": cwd, "thread_id": thread,
             "native_project_id": app_id, "registry_project_id": relay_id,
             "project_name": project_name, "title": title}
+
+
+def project_key(record):
+    """Return the same project and worktree identity used by handoff files."""
+    return _identity(record)["project_key"]
 
 
 def _metadata_record(metadata):
@@ -276,25 +282,33 @@ def default_templates():
     return dict(DEFAULT_TEMPLATES)
 
 
-def _knowledge_instruction(policy, directory):
+def _knowledge_instruction(policy, directory, kinds):
     _policy(policy)
     target = _path_value(directory, "知识资料目录") if directory else ""
-    if policy == "none":
-        return "本次仅保存任务交接，不更新长期知识库；没有 Obsidian 也照常交接。"
+    if policy == "none" or not kinds:
+        return "本次仅保存任务交接，不更新长期知识库。"
+    if not target:
+        return "尚未确认本项目的知识文件夹。本次不更新知识库；先核实目标目录和授权。"
+    join = ntpath.join if ntpath.splitdrive(target)[0] else os.path.join
+    pages = "\n".join("- " + join(target, KB_FILES[kind]) for kind in kinds)
+    scope = ("\n仅以下勾选分类的目标页属于本次范围：\n" + pages +
+             "\n不得更新其他知识页。目标页缺失或项目、版本、授权不明确时先询问；写后读回核对。")
     if policy == "ask":
         return ("先完成交接，再列出值得长期保存的知识和目标文件，询问我是否更新；"
                 "没有回答不代表同意，不因等待答复而丢失交接。"
-                + (f"\n可选资料目录：{target}。先读小索引，按需读正文。" if target else
-                   "\n尚未配置知识库，可使用普通文件夹；不要猜测目标目录。"))
+                + scope)
     return ("仅在本会话已有明确授权范围内更新指定知识文件，写前核对目标与版本，写后读回；"
             "没有对应授权时只列候选，不能把这个选项视为新的无限写入许可。"
-            + (f"\n资料目录：{target}。先读小索引，按需读正文。"
-               if target else "\n没有已配置目录；先列待更新项，不猜测或新建知识库。"))
+            + scope)
 
 
 def build_save_prompt(record, destination=None, *, knowledge_policy="none",
-                      knowledge_dir="", template=None):
+                      knowledge_dir="", knowledge_kinds=None, template=None):
     identity = _identity(record)
+    try:
+        kinds = validate_categories(knowledge_kinds if knowledge_kinds is not None else [])
+    except ValueError as exc:
+        raise HandoffError(str(exc)) from exc
     marker = _comment(SOURCE_HEADER, identity)
     target = _path_value(destination, "交接输出路径") if destination else ""
     output = (f"将下面格式的 Markdown 新建保存到：{target}\n"
@@ -310,7 +324,7 @@ def build_save_prompt(record, destination=None, *, knowledge_policy="none",
         + marker + "\n" + summary_skeleton()
         + f"\n\n正文最多 {MAX_SUMMARY_BYTES} UTF-8 字节；字符/字节不是 Token 计量。"
         + "\n\n【长期知识处理】\n"
-        + _knowledge_instruction(knowledge_policy, knowledge_dir)
+        + _knowledge_instruction(knowledge_policy, knowledge_dir, kinds)
         + "\n\n【完成反馈】\n返回保存/未保存结果、文件路径（如有）、当前状态与下一步。"
           "复制提示词不代表已保存；生成摘要不代表上下文已经压缩。"
           "不删除或归档旧会话。之后由我在同项目真正的新会话续接。"
@@ -322,31 +336,14 @@ def _canonical(metadata, body):
 
 
 def _publish_new(path, content):
-    """Atomic complete-file publication with OS-level no-overwrite semantics."""
     path = safe_path(path)
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    safe_path(path.parent)
-    fd, temporary = tempfile.mkstemp(prefix=".qingxu-handoff-", dir=path.parent)
     try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        safe_path(path)
-        # On Windows os.rename refuses an existing destination. POSIX rename
-        # would replace it, so use an atomic exclusive hard-link publication.
-        if os.name == "nt":
-            os.rename(temporary, path)
-        else:
-            os.link(temporary, path)
-            os.unlink(temporary)
-        if read_file(path, MAX_FILE_BYTES) != content:
-            raise HandoffError("写后读回不一致；文件保留供检查，未标记交接成功。")
+        publish_new(path, content, MAX_FILE_BYTES)
     except FileExistsError as exc:
         raise HandoffError("目标交接已存在，未覆盖。请重新保存为新版本。") from exc
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+    except ValueError as exc:
+        raise HandoffError(str(exc)) from exc
 
 
 def _loaded(path, record=None):
