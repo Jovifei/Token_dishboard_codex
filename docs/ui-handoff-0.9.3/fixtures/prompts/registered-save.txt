@@ -1,0 +1,12 @@
+来源聊天：蓝图 · 正常测量。请核对工作目录。
+项目：D:\Qingxu-Demo-20261109b\工作数据\示例工程 蓝图
+project_id：demo-blueprint
+私有短断点：D:\Qingxu-Demo-20261109b\工作数据\AgentState\6d1c5d699b8006e252c423fad338b28eccbf51dad146fbba4a5c190772f8bba5.json
+当前 revision：1
+请生成并保存不超过 8192 UTF-8 字节的语义断点：目标、已完成、未完成、验收条件、分支/SHA、工作区改动、关键证据、决策、失败尝试和下一步。不能用采集元数据代替任务摘要。
+只读当前项目规则、短断点和相关现场证据。摘要与最新代码冲突时先核实，不跨项目混读，不默认读全局记忆、整个 Obsidian 或全部旧聊天。不覆盖他人改动，不写凭据；业务 STOP 和人工门槛继续有效。
+保存前运行下列只读命令获取 revision；发生冲突即停，不强行重试覆盖。
+& 'python.exe' 'D:\Qingxu-Demo-20261109b\工作数据\可选接力引擎\checkpoint.py' --registry 'D:\Qingxu-Demo-20261109b\工作数据\registry.json' --state-root 'D:\Qingxu-Demo-20261109b\工作数据\AgentState' semantic-read --project-id 'demo-blueprint'
+将摘要作为 UTF-8 文本从 stdin 传入（非 JSON），用刚读到的 revision 替换参数值：
+& 'python.exe' 'D:\Qingxu-Demo-20261109b\工作数据\可选接力引擎\checkpoint.py' --registry 'D:\Qingxu-Demo-20261109b\工作数据\registry.json' --state-root 'D:\Qingxu-Demo-20261109b\工作数据\AgentState' semantic-save --project-id 'demo-blueprint' --expected-revision 1
+写后重跑同一条只读命令核对 revision 和正文；若不能安全保存，返回可粘贴的摘要。这条交接指令仅授权保存本机任务摘要。

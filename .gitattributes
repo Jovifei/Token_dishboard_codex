@@ -1,0 +1,4 @@
+# The handoff manifest and release verification use the original file bytes.
+docs/ui-handoff-0.9.3/** -text
+work/qingxu/** -text
+releases/** -text

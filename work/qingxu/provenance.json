@@ -1,0 +1,10 @@
+{
+  "zip": "Codex-Pocket-0.1.0-preview.zip",
+  "sha256": "5fa5475eec0abe97612367c327d9dced3ac99f11198ea3df802877632539e211",
+  "reuse": [
+    "core.py",
+    "prompts.py",
+    "test_core.py",
+    "LICENSE"
+  ]
+}

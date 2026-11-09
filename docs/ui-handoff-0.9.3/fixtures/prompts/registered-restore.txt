@@ -1,0 +1,8 @@
+项目：D:\Qingxu-Demo-20261109b\工作数据\示例工程 蓝图
+project_id：demo-blueprint
+私有短断点：D:\Qingxu-Demo-20261109b\工作数据\AgentState\6d1c5d699b8006e252c423fad338b28eccbf51dad146fbba4a5c190772f8bba5.json
+当前 revision：2
+请继续这个项目未完成的任务，先核项目身份、Git/工作区及断点是否过期。不要把恢复检查当业务执行授权。
+只读当前项目规则、短断点和相关现场证据。摘要与最新代码冲突时先核实，不跨项目混读，不默认读全局记忆、整个 Obsidian 或全部旧聊天。不覆盖他人改动，不写凭据；业务 STOP 和人工门槛继续有效。
+只读断点命令：
+& 'python.exe' 'D:\Qingxu-Demo-20261109b\工作数据\可选接力引擎\checkpoint.py' --registry 'D:\Qingxu-Demo-20261109b\工作数据\registry.json' --state-root 'D:\Qingxu-Demo-20261109b\工作数据\AgentState' semantic-read --project-id 'demo-blueprint'

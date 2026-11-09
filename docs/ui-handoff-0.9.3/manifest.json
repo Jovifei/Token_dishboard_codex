@@ -1,0 +1,570 @@
+{
+  "product": "轻续 Qingxu",
+  "version": "0.9.3",
+  "handoff_date": "2026-11-09",
+  "generated_local": "2026-11-09T22:19:46+08:00",
+  "timezone": "Asia/Shanghai",
+  "workspace": {
+    "git": false,
+    "rev_parse_exit_code": 128,
+    "branch": null,
+    "head": null,
+    "worktree": null,
+    "uncommitted_status": null,
+    "source_relative_path": "work/qingxu"
+  },
+  "baseline": {
+    "installed": {
+      "version": "0.9.3",
+      "installed_manifest_sha256": "6b8b42fa541c707c0aba107d2eaf2eb446b3ef760826bdb8a19e2265961a0a72",
+      "manifest_entries_verified": 17,
+      "entry_process": "pythonw.exe + installed launch.pyw",
+      "window_title": "轻续 · Token 工作台 0.9.3"
+    },
+    "export": {
+      "type": "当前分享版源码",
+      "root": "source/work/qingxu",
+      "file_hash_comparison": {
+        "app.py": {
+          "installed_sha256": "ae8528762901e846b165cb4c2c5a18dcb54f85713bfc4a405f0329734e662504",
+          "export_sha256": "e98d17b38a516438083dc5a0403c60eb8d5d6a3249ee47214d0bb7e7989f47a5"
+        },
+        "chats.py": {
+          "installed_sha256": "5a9674ea8b4bdc8c8c1054289a85ed89860e6a61e54a3c617e54003beb87bb25",
+          "export_sha256": "5a9674ea8b4bdc8c8c1054289a85ed89860e6a61e54a3c617e54003beb87bb25"
+        },
+        "config_store.py": {
+          "installed_sha256": "a279f8cbf2d4808c23cbff30ed29cd0a5efdbc818003e1a5b2d08a4c45de93db",
+          "export_sha256": "a279f8cbf2d4808c23cbff30ed29cd0a5efdbc818003e1a5b2d08a4c45de93db"
+        },
+        "core.py": {
+          "installed_sha256": "1ce2457641b90a6898d227cbec268c6db7b1498aa89d737055e6ce0324381bb7",
+          "export_sha256": "1ce2457641b90a6898d227cbec268c6db7b1498aa89d737055e6ce0324381bb7"
+        },
+        "dashboard.py": {
+          "installed_sha256": "1220df50a0a3f92947fc7e5777ad03e058b12f8d1e4436bd22c5e04f4e28a3b4",
+          "export_sha256": "1220df50a0a3f92947fc7e5777ad03e058b12f8d1e4436bd22c5e04f4e28a3b4"
+        },
+        "privacy.py": {
+          "installed_sha256": "20777841a907adcb84261cca2ff3382e454662b72358485ac5bc3f31062fdca8",
+          "export_sha256": "20777841a907adcb84261cca2ff3382e454662b72358485ac5bc3f31062fdca8"
+        },
+        "prompts.py": {
+          "installed_sha256": "9558d1286ef83806edc53d59cbac5ed3c3bc5ca2b96314bb93ebfe8586fef5f2",
+          "export_sha256": "9558d1286ef83806edc53d59cbac5ed3c3bc5ca2b96314bb93ebfe8586fef5f2"
+        },
+        "relay.py": {
+          "installed_sha256": "b79ad88305ffa032a4c6552e7df1829383acf2ef875878fccd7bd3402af78fb1",
+          "export_sha256": "930ba3d4fb801553183e58af36803f937193d9a25f47a1ce5b378f7288ce3226"
+        },
+        "sync.py": {
+          "installed_sha256": "ad7668c36ddb07b8ce2ea87092ff7bab3dabbd0bc1907cae5075b4c1c7ac0529",
+          "export_sha256": "ad7668c36ddb07b8ce2ea87092ff7bab3dabbd0bc1907cae5075b4c1c7ac0529"
+        },
+        "usage.py": {
+          "installed_sha256": "a6dc4a0f281b26eeaf5f1ba497eb40f3a0429e7e30fa3ea97ebae174fb58655c",
+          "export_sha256": "a6dc4a0f281b26eeaf5f1ba497eb40f3a0429e7e30fa3ea97ebae174fb58655c"
+        },
+        "launch.pyw": {
+          "installed_sha256": "4e8a05dbcd5dcab3907501dfdd932558e904ae2340fbd46946015202475282c2",
+          "export_sha256": "be1ab457560e213cfc165c703670102ddf7ec75737c625999403177de2e42066"
+        },
+        "start-windows.cmd": {
+          "installed_sha256": "e537ca76e827c15cbb6ae35832f3236474e104f058c5d627ed92f6aa02c78fa9",
+          "export_sha256": "e537ca76e827c15cbb6ae35832f3236474e104f058c5d627ed92f6aa02c78fa9"
+        },
+        "LICENSE": {
+          "installed_sha256": "17772b345f80d4c4c6195b19108c1e6b69dd434209c7f9a4dfe9c547600dff76",
+          "export_sha256": "17772b345f80d4c4c6195b19108c1e6b69dd434209c7f9a4dfe9c547600dff76"
+        },
+        "context_usage.py": {
+          "installed_sha256": "832784aa8a70c68698ef216174acf19091032a770df06de8cfb2419590320cac",
+          "export_sha256": "832784aa8a70c68698ef216174acf19091032a770df06de8cfb2419590320cac"
+        },
+        "qingxu.ico": {
+          "installed_sha256": "69ed883d21668cad55b6b15091ca046ca7f7a30dff7f7146617a060d7300e8b4",
+          "export_sha256": "69ed883d21668cad55b6b15091ca046ca7f7a30dff7f7146617a060d7300e8b4"
+        }
+      },
+      "differs_from_installed": [
+        "app.py",
+        "relay.py",
+        "launch.pyw"
+      ],
+      "reason": "便携启动、默认路径和配置范围显示"
+    },
+    "previous_share_zip": {
+      "name": "Qingxu-0.9.3-Windows-x64.zip",
+      "sha256": "62d93e482315716e70ee73fc2cfa2fa19b0dd4f6ff98e7a4c3e4155811e0a0ee",
+      "bytes": 14188908,
+      "comparison": "10 个实际应用模块及入口编译对象、图标字节一致",
+      "legacy_prompt_module_not_loaded": true,
+      "binary_in_handoff": false
+    },
+    "build": {
+      "platform": "Windows 11 x64",
+      "python": "3.14.2",
+      "tk": "8.6.15",
+      "pyinstaller": "6.22.3"
+    },
+    "optional_original_sources": [
+      "checkpoint.py",
+      "attribution.py",
+      "observer.py"
+    ],
+    "existing_tests": {
+      "source_relative_root": "work/qingxu",
+      "fixture_literal_anonymized": [
+        "tests/work/qingxu/test_dashboard.py"
+      ]
+    }
+  },
+  "author_config_observation": {
+    "read_local": "2026-11-09T22:13:19+08:00",
+    "mode": "只读文件快照",
+    "model": "gpt-6.1-sol",
+    "model_reasoning_effort": "max",
+    "model_context_window": null,
+    "model_auto_compact_token_limit": null,
+    "tool_output_token_limit": null,
+    "compact_prompt_defined": false,
+    "agents": {
+      "default_subagent_model": "gpt-6.1-terra",
+      "default_subagent_reasoning_effort": "xhigh"
+    },
+    "earlier_file_sample_effort": "ultra",
+    "file_changed_between_read_samples": true,
+    "during_unpack_validation_unchanged": true,
+    "runtime_adoption": "UNVERIFIED"
+  },
+  "verification": {
+    "capture_count": 27,
+    "screens": "assets/screens/metadata.json",
+    "screen_data": "合成或空白隔离",
+    "ui": "tests/ui-evidence.json",
+    "fresh_unpacked": "tests/extracted-evidence.json",
+    "relevant_tests_passed": 49,
+    "html": "新解压目录内 Edge 无远程解析并解码全部 27 张图，文件引用和 SHA-256 核对"
+  },
+  "missing_or_unverified": [
+    "未发现可核验的 Figma 链接",
+    "真实 Codex 新聊天接续与运行时配置采用未验证",
+    "真实 Obsidian 写回与真实采集器启停未执行",
+    "原生文件选择器、任务栏外观和真实新聊窗口未采集",
+    "无 GUI Codex/知识/断点目录选择器、打开目录或摘要文件导入/导出",
+    "跨线程 fork 继承 token 对账、移动盘和其他系统/缩放未实测"
+  ],
+  "inventory_note": "文件清单包含包内除 manifest.json 自身以外的全部文件。哈希为文件原字节 SHA-256。",
+  "files": [
+    {
+      "path": "assets/screens/01-empty.jpg",
+      "bytes": 101769,
+      "sha256": "5338e7115192b103fbfd4223564eeccbd08bed5c467a4f0078239a1b2ca08631"
+    },
+    {
+      "path": "assets/screens/02-project.jpg",
+      "bytes": 109833,
+      "sha256": "df66b633b63a122d230b6990887b50a40d305a299aad90209244446feeaadb74"
+    },
+    {
+      "path": "assets/screens/03-usage-normal.jpg",
+      "bytes": 139443,
+      "sha256": "562e69a8fb2be9b233c444fad77be0d3c88e66c4b909a49f91c4c3fb7a02da27"
+    },
+    {
+      "path": "assets/screens/04-diagnosis.jpg",
+      "bytes": 143911,
+      "sha256": "8db01a55d356298a09303369152a87aef0f7055544de81cc611a151ef0f26832"
+    },
+    {
+      "path": "assets/screens/05-usage-history.jpg",
+      "bytes": 140363,
+      "sha256": "41a021711e11d4c3056b5165e9e7b5341da210dd458e9599b1a1ada02a866888"
+    },
+    {
+      "path": "assets/screens/06-usage-unknown.jpg",
+      "bytes": 135461,
+      "sha256": "dad86fcc5ead9a695ab8f23271cdf27c621c98d30cd9b9823abbb8253ff9c757"
+    },
+    {
+      "path": "assets/screens/07-alert.jpg",
+      "bytes": 141479,
+      "sha256": "900247f1a0bea07e07d9a25f7f2d503e03057bf0515e8645c5f010db38e5b596"
+    },
+    {
+      "path": "assets/screens/08-reminder.jpg",
+      "bytes": 28286,
+      "sha256": "239ca39cea5e8cd9b791205369631d2ab1847fb4cf61e42e831401a490400cf0"
+    },
+    {
+      "path": "assets/screens/09-compaction.jpg",
+      "bytes": 131364,
+      "sha256": "1eda7cb8a6d21f4674d13cf52dc5c5704d530afd40e206985fb908031636b4e2"
+    },
+    {
+      "path": "assets/screens/10-snapshot.jpg",
+      "bytes": 146135,
+      "sha256": "beadea47458a7e5ec5e4eabc49cd184ef6de98e09b2c81702a741b704537f234"
+    },
+    {
+      "path": "assets/screens/11-snapshot-project.jpg",
+      "bytes": 163101,
+      "sha256": "d8c8a0235179f2fabe365d2e8483de4c832a3274a1948d622173afdae328cdd2"
+    },
+    {
+      "path": "assets/screens/11b-snapshot-roles.jpg",
+      "bytes": 150583,
+      "sha256": "c67af6a4f22226a3566d632611272fa7038a90a11ffc4ef664f640919caf84a5"
+    },
+    {
+      "path": "assets/screens/12-relay-save.jpg",
+      "bytes": 230095,
+      "sha256": "61c83226cfc259c0f2b810567b7dfcae25200087b4fc8ded76ccd2abe491b0d5"
+    },
+    {
+      "path": "assets/screens/13-relay-readback.jpg",
+      "bytes": 123401,
+      "sha256": "53bc39827f26b66a9c5a4393e7383811c3ed36bd01b33ed595b10b97f2d61ff9"
+    },
+    {
+      "path": "assets/screens/14-relay-restore.jpg",
+      "bytes": 184982,
+      "sha256": "6042f5706f83e566a24189f3b56f8aa094773a4871aad5549275879543307a51"
+    },
+    {
+      "path": "assets/screens/15-relay-manual.jpg",
+      "bytes": 132347,
+      "sha256": "8e52db36fbd21edd058cbe767fe11c2f6f6db3358c20578c4958d0e1521b1843"
+    },
+    {
+      "path": "assets/screens/16-knowledge-unmapped.jpg",
+      "bytes": 148633,
+      "sha256": "e8a6e46575c555e2d0c06fc141ef0c2bf1082782b7436f7af030577e699ab130"
+    },
+    {
+      "path": "assets/screens/17-knowledge-mapped.jpg",
+      "bytes": 155774,
+      "sha256": "4017624226315c14e32cd36a3e49f92fa0450d71ec8e95b6ff801a4c8eb83978"
+    },
+    {
+      "path": "assets/screens/18-config-read.jpg",
+      "bytes": 122682,
+      "sha256": "2eb223134f221e26afa674e0149f36b98dabec09e8f1220af39a5971210e7a54"
+    },
+    {
+      "path": "assets/screens/18b-config-advanced.jpg",
+      "bytes": 125994,
+      "sha256": "b3028e1496de3cb7dc7a2825d55d65b09e30cc1f0176299cffcf498479cc9839"
+    },
+    {
+      "path": "assets/screens/19-config-preview.jpg",
+      "bytes": 121386,
+      "sha256": "2f98789f4e8371ddf6b1acc1efc9086e9386ad2274089ddfc84361850bdf9cb6"
+    },
+    {
+      "path": "assets/screens/20-config-conflict.jpg",
+      "bytes": 121544,
+      "sha256": "81085c2097d90612a930afa9756b992c4408874690ce09f1fad1df6d7a2d7c0a"
+    },
+    {
+      "path": "assets/screens/21-config-cancel.jpg",
+      "bytes": 36839,
+      "sha256": "00c2ad7deae1ab42112b2c7971e6fcbfd65e210412c952b7d649530bd1d82919"
+    },
+    {
+      "path": "assets/screens/22-config-confirm.jpg",
+      "bytes": 36839,
+      "sha256": "00c2ad7deae1ab42112b2c7971e6fcbfd65e210412c952b7d649530bd1d82919"
+    },
+    {
+      "path": "assets/screens/23-config-applied.jpg",
+      "bytes": 133670,
+      "sha256": "39a946a290bb9c60b938a3defae9a293d11e29a567f6969d3a81142d1dae5851"
+    },
+    {
+      "path": "assets/screens/24-config-restore-confirm.jpg",
+      "bytes": 26232,
+      "sha256": "963235aa2b7b668cf3e5e8b15226baae95ce668865cd026d9d0c4ca240306112"
+    },
+    {
+      "path": "assets/screens/25-config-restored.jpg",
+      "bytes": 132057,
+      "sha256": "37ccab812d090ae3606a5662ad5ea8324a3b3709aa1bdd5758d50190240eaeee"
+    },
+    {
+      "path": "assets/screens/metadata.json",
+      "bytes": 11428,
+      "sha256": "f3ec142ff01fb89ee1b6a669da3fd7cc5c8acbffc9bf120ce0b814c0708653f7"
+    },
+    {
+      "path": "fixtures/demo.py",
+      "bytes": 9770,
+      "sha256": "508d76848c068fce093226f654c7427a57f6777e40ba26a344c50de7eed989ca"
+    },
+    {
+      "path": "fixtures/prompts/knowledge-attached.txt",
+      "bytes": 2419,
+      "sha256": "188799cf29bc236c28e95f5f828b4bb94eb7c21a9ad28f49ef8a241903596ee0"
+    },
+    {
+      "path": "fixtures/prompts/knowledge-mapped.txt",
+      "bytes": 638,
+      "sha256": "9cde0fb2272e304f6bd3a457d8b3dd31689175c46b513a84c66b0e82c4338d58"
+    },
+    {
+      "path": "fixtures/prompts/knowledge-unmapped.txt",
+      "bytes": 555,
+      "sha256": "d2a18b73abb1b3e9f168405431e45085a77d8e00ece0d4c97ac3546a80e9916f"
+    },
+    {
+      "path": "fixtures/prompts/manual-restore.txt",
+      "bytes": 563,
+      "sha256": "665b48e5bf5b1f6c6291e9e3cf892e828836b9d72ea59027c068d59512e7d1a9"
+    },
+    {
+      "path": "fixtures/prompts/manual-save.txt",
+      "bytes": 367,
+      "sha256": "e6cfe5c0a924c8d86946a0ecaacec1899d79212235d3279efd5abd28ba8e512f"
+    },
+    {
+      "path": "fixtures/prompts/registered-restore.txt",
+      "bytes": 958,
+      "sha256": "fbe83e290354664610c27e3d2600eb8dcf7f68775a32e7da9e97e606c71d1d93"
+    },
+    {
+      "path": "fixtures/prompts/registered-save.txt",
+      "bytes": 1750,
+      "sha256": "27721d22b7877e8311f6fda6b1269c30b6f1208a0a0fd81f0c16e963fb01ec32"
+    },
+    {
+      "path": "fixtures/README.md",
+      "bytes": 605,
+      "sha256": "dd22bb99c39a941fc438bf7ed8356b9e1df7ad0a3f67fc11723f6ffa0a685ca2"
+    },
+    {
+      "path": "index.html",
+      "bytes": 58781,
+      "sha256": "79e97596c6db4c0d9d4b080128435db4eec34b65f49e5d41ae7447ec00c73c88"
+    },
+    {
+      "path": "RUN.md",
+      "bytes": 3651,
+      "sha256": "4a1fa421468121ab451048222f7f69553a5f01c7ffc370a5cff6640ad2ab6984"
+    },
+    {
+      "path": "source/build-windows.py",
+      "bytes": 1456,
+      "sha256": "f8dc6e195e1f4ddf8747da21d0361a08344422ab6e07a9bbcb481185d138b5f8"
+    },
+    {
+      "path": "source/licenses/bzip2.txt",
+      "bytes": 1896,
+      "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3"
+    },
+    {
+      "path": "source/licenses/Expat.txt",
+      "bytes": 1144,
+      "sha256": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87"
+    },
+    {
+      "path": "source/licenses/mpdecimal.txt",
+      "bytes": 1285,
+      "sha256": "2713324211652ce4a60e6e21e54f9dc3004299e591b0933a352f1a89c5fb53c2"
+    },
+    {
+      "path": "source/licenses/OpenSSL.txt",
+      "bytes": 10175,
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "path": "source/licenses/PyInstaller.txt",
+      "bytes": 32604,
+      "sha256": "0598064c7d2718e38d7914a7d08343b2fa008e3bea9ebba2aa7a6ffa5900dd64"
+    },
+    {
+      "path": "source/licenses/Python.txt",
+      "bytes": 35407,
+      "sha256": "935cf13e19f8c31b497d20b05d73623431a226b230c3599bc30fa3348979bc68"
+    },
+    {
+      "path": "source/licenses/Tcl.txt",
+      "bytes": 2255,
+      "sha256": "c0a69a2bfd757361ec7e6143973b103c90409316b49e9c88db26ad6388e79f16"
+    },
+    {
+      "path": "source/licenses/Tk.txt",
+      "bytes": 2307,
+      "sha256": "0d1e4405f6273f091732764ed89b57066be63ce64869be6c71ea337dc4f2f9b5"
+    },
+    {
+      "path": "source/licenses/xz.txt",
+      "bytes": 2775,
+      "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c"
+    },
+    {
+      "path": "source/licenses/zlib-ng.txt",
+      "bytes": 867,
+      "sha256": "6c9f0d975b41afaa34d22f55bb8986ce69e5cb7ad327cb2b28820cd425edf5ee"
+    },
+    {
+      "path": "source/licenses/zstd.txt",
+      "bytes": 1549,
+      "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8"
+    },
+    {
+      "path": "source/licenses/轻续-MIT.txt",
+      "bytes": 1082,
+      "sha256": "17772b345f80d4c4c6195b19108c1e6b69dd434209c7f9a4dfe9c547600dff76"
+    },
+    {
+      "path": "source/local-integrations/project-relay-p0/attribution.py",
+      "bytes": 7328,
+      "sha256": "bca1f26ca82a0c9e6dd4688178dd62ef332c68faa4489bbde6de2ba2b3afb10f"
+    },
+    {
+      "path": "source/local-integrations/project-relay-p0/checkpoint.py",
+      "bytes": 31782,
+      "sha256": "cb75f021f68957e895f5ef248779e824c3cb2521e843192d341bed3305446421"
+    },
+    {
+      "path": "source/local-integrations/project-relay-p0/observer.py",
+      "bytes": 8526,
+      "sha256": "60a38d73f7b1e7cb6ff1b76792e05bfd23e0e578a5f9a31a1a1c95facd2167e2"
+    },
+    {
+      "path": "source/requirements-build.txt",
+      "bytes": 20,
+      "sha256": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5"
+    },
+    {
+      "path": "source/work/qingxu/app.py",
+      "bytes": 73446,
+      "sha256": "e98d17b38a516438083dc5a0403c60eb8d5d6a3249ee47214d0bb7e7989f47a5"
+    },
+    {
+      "path": "source/work/qingxu/chats.py",
+      "bytes": 13378,
+      "sha256": "5a9674ea8b4bdc8c8c1054289a85ed89860e6a61e54a3c617e54003beb87bb25"
+    },
+    {
+      "path": "source/work/qingxu/config_store.py",
+      "bytes": 5113,
+      "sha256": "a279f8cbf2d4808c23cbff30ed29cd0a5efdbc818003e1a5b2d08a4c45de93db"
+    },
+    {
+      "path": "source/work/qingxu/context_usage.py",
+      "bytes": 15845,
+      "sha256": "832784aa8a70c68698ef216174acf19091032a770df06de8cfb2419590320cac"
+    },
+    {
+      "path": "source/work/qingxu/core.py",
+      "bytes": 7413,
+      "sha256": "1ce2457641b90a6898d227cbec268c6db7b1498aa89d737055e6ce0324381bb7"
+    },
+    {
+      "path": "source/work/qingxu/dashboard.py",
+      "bytes": 32115,
+      "sha256": "1220df50a0a3f92947fc7e5777ad03e058b12f8d1e4436bd22c5e04f4e28a3b4"
+    },
+    {
+      "path": "source/work/qingxu/launch.pyw",
+      "bytes": 1170,
+      "sha256": "be1ab457560e213cfc165c703670102ddf7ec75737c625999403177de2e42066"
+    },
+    {
+      "path": "source/work/qingxu/LICENSE",
+      "bytes": 1082,
+      "sha256": "17772b345f80d4c4c6195b19108c1e6b69dd434209c7f9a4dfe9c547600dff76"
+    },
+    {
+      "path": "source/work/qingxu/privacy.py",
+      "bytes": 2058,
+      "sha256": "20777841a907adcb84261cca2ff3382e454662b72358485ac5bc3f31062fdca8"
+    },
+    {
+      "path": "source/work/qingxu/prompts.py",
+      "bytes": 3088,
+      "sha256": "9558d1286ef83806edc53d59cbac5ed3c3bc5ca2b96314bb93ebfe8586fef5f2"
+    },
+    {
+      "path": "source/work/qingxu/qingxu.ico",
+      "bytes": 50531,
+      "sha256": "69ed883d21668cad55b6b15091ca046ca7f7a30dff7f7146617a060d7300e8b4"
+    },
+    {
+      "path": "source/work/qingxu/relay.py",
+      "bytes": 10188,
+      "sha256": "930ba3d4fb801553183e58af36803f937193d9a25f47a1ce5b378f7288ce3226"
+    },
+    {
+      "path": "source/work/qingxu/SHARE-README.txt",
+      "bytes": 1476,
+      "sha256": "aafd003836ddf8c2e75e8dd263f516b35501490241b9324d3e2c0e7189923b2a"
+    },
+    {
+      "path": "source/work/qingxu/start-windows.cmd",
+      "bytes": 282,
+      "sha256": "e537ca76e827c15cbb6ae35832f3236474e104f058c5d627ed92f6aa02c78fa9"
+    },
+    {
+      "path": "source/work/qingxu/sync.py",
+      "bytes": 9842,
+      "sha256": "ad7668c36ddb07b8ce2ea87092ff7bab3dabbd0bc1907cae5075b4c1c7ac0529"
+    },
+    {
+      "path": "source/work/qingxu/usage.py",
+      "bytes": 4040,
+      "sha256": "a6dc4a0f281b26eeaf5f1ba497eb40f3a0429e7e30fa3ea97ebae174fb58655c"
+    },
+    {
+      "path": "tests/capture-ui.py",
+      "bytes": 17846,
+      "sha256": "ff335fa72631a3f6b2e3c7560695fd721721502eab7a958489893a961c4f7d24"
+    },
+    {
+      "path": "tests/extracted-evidence.json",
+      "bytes": 5727,
+      "sha256": "2a4f9449a1e7119e1a4359b0bc8f236a0da88fc7b295648b739bd72b86616129"
+    },
+    {
+      "path": "tests/run-relevant.py",
+      "bytes": 1565,
+      "sha256": "c22ab46bbebf583a303388a1420299ebbb53dad5cca1bd69b14b8f734e25279f"
+    },
+    {
+      "path": "tests/ui-evidence.json",
+      "bytes": 438,
+      "sha256": "98bdd0ea5d17852a128770834943fc6fd94d1650f3d86d7ccaa879e030fd0769"
+    },
+    {
+      "path": "tests/work/qingxu/test_app.py",
+      "bytes": 30583,
+      "sha256": "2d69615242139f327090457376a48c48207290abf723044cfd967f6d4ef3cf54"
+    },
+    {
+      "path": "tests/work/qingxu/test_context_usage.py",
+      "bytes": 9710,
+      "sha256": "4c8f157468240d185b1a1d34c3fd295e9e000effd5bd8a1d9a58f7e85b22b1f8"
+    },
+    {
+      "path": "tests/work/qingxu/test_core.py",
+      "bytes": 5037,
+      "sha256": "8b19fb279c9cc5e5b5f95a574d640c886d769090a2a27c8bc3656c0ab2e6e941"
+    },
+    {
+      "path": "tests/work/qingxu/test_dashboard.py",
+      "bytes": 15227,
+      "sha256": "d6cf4aa371f7be771da3e78fe12895226c45e14c4c068c6a768db99b893fe5dd"
+    },
+    {
+      "path": "tests/work/qingxu/test_relay.py",
+      "bytes": 5540,
+      "sha256": "559f9303b9c9ad68b005c8f49b451dac895745b4ce46b954d1cb74a3fd05bb31"
+    },
+    {
+      "path": "tests/work/qingxu/test_sync.py",
+      "bytes": 4454,
+      "sha256": "edd5b11ab63189491dac27bd50e21be3f4a40422f2dacb6d5cb13b4a1f486925"
+    }
+  ]
+}

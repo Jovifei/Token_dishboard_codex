@@ -1,0 +1,24 @@
+# Local receipts, task notes, and application state
+/evidence/
+/tasks/
+/data/
+/work/qingxu/data/
+/demo-data/
+.codex/
+.obsidian/
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+*.jsonl
+*.log
+
+# Python and local builds
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.venv-*/
+build/
+dist/
+release-build/

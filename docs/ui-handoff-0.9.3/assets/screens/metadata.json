@@ -1,0 +1,542 @@
+[
+  {
+    "id": "01-empty",
+    "title": "首次启动与无本机聊天数据",
+    "file": "assets/screens/01-empty.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "空白隔离目录 · 导出源码运行"
+  },
+  {
+    "id": "02-project",
+    "title": "选择项目后定位该项目最新聊天",
+    "file": "assets/screens/02-project.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "03-usage-normal",
+    "title": "选择聊天、最近请求与累计明细",
+    "file": "assets/screens/03-usage-normal.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "04-diagnosis",
+    "title": "内容来源及本次诊断",
+    "file": "assets/screens/04-diagnosis.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "05-usage-history",
+    "title": "历史测量仍可查看，等待新请求",
+    "file": "assets/screens/05-usage-history.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "06-usage-unknown",
+    "title": "窗口和运行时压缩线未知",
+    "file": "assets/screens/06-usage-unknown.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "07-alert",
+    "title": "最近请求达到所设比例",
+    "file": "assets/screens/07-alert.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "08-reminder",
+    "title": "提醒设置与百分比",
+    "file": "assets/screens/08-reminder.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      342,
+      202
+    ],
+    "capture_px": [
+      491,
+      292
+    ],
+    "asset_px": [
+      491,
+      292
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · Tk 提醒弹窗"
+  },
+  {
+    "id": "09-compaction",
+    "title": "压缩事件提示，当前样本等待刷新",
+    "file": "assets/screens/09-compaction.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "10-snapshot",
+    "title": "日期快照、项目与聊天树及过期标记",
+    "file": "assets/screens/10-snapshot.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "11-snapshot-project",
+    "title": "项目范围钻取与返回全局快照",
+    "file": "assets/screens/11-snapshot-project.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "11b-snapshot-roles",
+    "title": "日期快照按主、子 agent 和其他角色分组",
+    "file": "assets/screens/11b-snapshot-roles.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "12-relay-save",
+    "title": "已登记项目的旧聊保存指令",
+    "file": "assets/screens/12-relay-save.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "13-relay-readback",
+    "title": "私有断点写后读回与版本 2",
+    "file": "assets/screens/13-relay-readback.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "14-relay-restore",
+    "title": "已保存断点的新聊恢复指令",
+    "file": "assets/screens/14-relay-restore.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "15-relay-manual",
+    "title": "未登记项目粘贴短摘要",
+    "file": "assets/screens/15-relay-manual.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "16-knowledge-unmapped",
+    "title": "缺少映射时生成待核实目标的指令",
+    "file": "assets/screens/16-knowledge-unmapped.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "17-knowledge-mapped",
+    "title": "普通 Markdown 文件夹映射到已知目标页",
+    "file": "assets/screens/17-knowledge-mapped.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "18-config-read",
+    "title": "配置读取、范围、参考值与文件值",
+    "file": "assets/screens/18-config-read.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "18b-config-advanced",
+    "title": "主模型高级参数和子 agent 默认设置",
+    "file": "assets/screens/18b-config-advanced.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "19-config-preview",
+    "title": "配置副本的预览，文件尚未写入",
+    "file": "assets/screens/19-config-preview.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "20-config-conflict",
+    "title": "预览后外部修改，拒绝应用并保留文件",
+    "file": "assets/screens/20-config-conflict.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "21-config-cancel",
+    "title": "应用确认弹窗，选择取消",
+    "file": "assets/screens/21-config-cancel.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      496,
+      227
+    ],
+    "capture_px": [
+      722,
+      330
+    ],
+    "asset_px": [
+      722,
+      330
+    ],
+    "scale_percent": 150,
+    "data_type": "合成配置副本 · 原生确认弹窗"
+  },
+  {
+    "id": "22-config-confirm",
+    "title": "备份并应用原生确认弹窗",
+    "file": "assets/screens/22-config-confirm.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      496,
+      227
+    ],
+    "capture_px": [
+      722,
+      330
+    ],
+    "asset_px": [
+      722,
+      330
+    ],
+    "scale_percent": 150,
+    "data_type": "合成配置副本 · 原生确认弹窗"
+  },
+  {
+    "id": "23-config-applied",
+    "title": "备份、应用、写后读回与恢复回执",
+    "file": "assets/screens/23-config-applied.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  },
+  {
+    "id": "24-config-restore-confirm",
+    "title": "恢复配置原生确认弹窗",
+    "file": "assets/screens/24-config-restore-confirm.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      469,
+      195
+    ],
+    "capture_px": [
+      682,
+      282
+    ],
+    "asset_px": [
+      682,
+      282
+    ],
+    "scale_percent": 150,
+    "data_type": "合成配置副本 · 原生确认弹窗"
+  },
+  {
+    "id": "25-config-restored",
+    "title": "恢复到备份，按字节读回一致",
+    "file": "assets/screens/25-config-restored.jpg",
+    "version": "0.9.3",
+    "window_logical_px": [
+      1136,
+      884
+    ],
+    "capture_px": [
+      1682,
+      1315
+    ],
+    "asset_px": [
+      1280,
+      1001
+    ],
+    "scale_percent": 150,
+    "data_type": "合成数据 · 导出源码运行"
+  }
+]

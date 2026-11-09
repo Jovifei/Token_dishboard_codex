@@ -1,0 +1,14 @@
+{
+  "duplicate_response_dedup": true,
+  "taskbar_call_simulated": true,
+  "reminder_preference_88": true,
+  "checkpoint_revision": 2,
+  "stale_revision_rejected": true,
+  "config_conflict_preserved": true,
+  "config_cancel_preserved": true,
+  "config_restored_exact": true,
+  "knowledge_pages_unchanged": true,
+  "clipboard_calls_intercepted": true,
+  "new_codex_chat_executed": false,
+  "reopen_preferences_and_chat": true
+}

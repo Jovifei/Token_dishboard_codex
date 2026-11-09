@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>轻续 Qingxu 0.9.3 · 产品与源码交接</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6fa;--paper:#fff;--ink:#152941;--muted:#52677d;--line:#d8e3ee;--blue:#1465bc;--warn:#874800}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Microsoft YaHei UI",system-ui,sans-serif}main{max-width:1180px;margin:auto;padding:24px}header,section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:18px}header{border-top:5px solid var(--blue)}h1,h2,h3{line-height:1.3;margin:0 0 .65em}h2{font-size:1.45rem}h3{font-size:1.08rem;margin-top:1.45em}p,ul,ol{margin:.65em 0}a{color:#095fa9;text-underline-offset:.17em}a:focus-visible,summary:focus-visible{outline:3px solid #58a9ff;outline-offset:3px}nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}nav a,.tag{background:#e9f2fb;border-radius:7px;padding:4px 9px}.tag{font-size:.9em;font-weight:700}code{background:#edf2f7;color:#142842;border-radius:4px;padding:.06em .3em;font-family:Consolas,monospace;overflow-wrap:anywhere}.muted,figcaption{color:var(--muted)}.callout{padding:10px 14px;border-left:4px solid #e5a446;background:#fff7e8;margin:12px 0} .table{overflow-x:auto}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:9px 10px;vertical-align:top;text-align:left;border-bottom:1px solid var(--line);min-width:85px}th{background:#edf4fb}td:first-child{font-weight:650}tbody tr:nth-child(even){background:#fafcfe}.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:12px}figure{margin:0;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fafcfe}figure img{width:100%;height:220px;object-fit:contain;background:#e9eef5;border-radius:4px}figcaption{margin-top:6px}figcaption strong{color:var(--ink)}details{margin:.75em 0}summary{cursor:pointer;color:var(--blue);font-weight:650}.hash{font-family:Consolas,monospace;overflow-wrap:anywhere}footer{padding:0 4px 20px;color:var(--muted)}@media(max-width:650px){main{padding:10px}header,section{padding:13px}figure img{height:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<span class="tag">0.9.3 · Windows x64 · 2026-11-09</span>
+<h1>轻续 Qingxu 产品、界面与源码交接</h1>
+<p>轻续是一个本地 Tk 桌面工具。它按 Codex 项目和聊天呈现可获得的上下文、累计 Token、压缩事件和更新时间，在需要时提示用户收尾并接续任务。交接目标还包括配置与目录可选择、普通 Markdown 可独立使用，以及范围明确的按需资料读取。</p>
+<p class="muted">此 HTML 是离线交接报告。图片来自 0.9.3 的真实 Tk 界面，数据为合成或空白隔离样本。</p>
+<p><a href="RUN.md">启动、验证和重打包</a> · <a href="manifest.json">版本、文件清单与 SHA-256</a> · <a href="fixtures/README.md">合成样本说明</a></p>
+</header>
+<nav aria-label="报告目录">
+<a href="#baseline">1 版本与入口</a><a href="#features">2 功能现状</a><a href="#ui">3 界面与交互</a><a href="#metrics">4 数据口径</a><a href="#settings">5 配置与目录</a><a href="#handoff">6 续聊与知识</a><a href="#figma">7 源码与 Figma</a><a href="#priorities">8 缺口与优先级</a><a href="#evidence">验收记录</a>
+</nav>
+
+<section id="baseline">
+<h2>1. 版本与运行入口</h2>
+<div class="table"><table><thead><tr><th>对象</th><th>当前状态与入口</th><th>核对方法</th></tr></thead><tbody>
+<tr><td>工作区</td><td>Windows 本地目录。<code>git rev-parse --show-toplevel</code> 退出 128。分支、HEAD、Git 工作树和未提交状态均不适用。</td><td>用文件 SHA-256 和实际入口区分基线。不能把文件差异称为 Git 未提交修改。</td></tr>
+<tr><td>作者安装版 0.9.3</td><td>原桌面快捷方式启动 Pythonw + <code>launch.pyw</code>，运行窗口标题为「轻续 · Token 工作台 0.9.3」。安装位置为作者的 <code>E:\AI_Tools\Codex\Qingxu</code>。</td><td>本轮核对进程命令指向安装入口，磁盘安装清单 17 项一致。清单校验约束磁盘，未读取进程内存。</td></tr>
+<tr><td>导出与分享基线</td><td><code>source/work/qingxu/</code> 是当前可编辑源码。相对安装版，<code>app.py</code>、<code>relay.py</code>、<code>launch.pyw</code> 含分享版的启动、默认路径与范围显示改动。核心导航、计量和诊断功能同为 0.9.3。</td><td>逐一比较先前分享 ZIP 内 EXE 的 10 个实际应用模块与当前源码编译结果，入口和图标也一致。另保留历史模板 <code>prompts.py</code>，它未被运行版载入。详见 <a href="manifest.json">基线哈希与差异</a>。</td></tr>
+<tr><td>运行与构建</td><td>Python 标准库、Tk/ttk、SQLite、TOML/JSON/JSONL，Windows 私有目录 ACL 及任务栏 API。开发需 Python ≥3.11 且带 Tk。实测 Windows 11 x64、Python 3.14.2、Tk 8.6.15。原 <code>start-windows.cmd</code> 指向作者 Python 路径。</td><td>开发用 <code>launch.pyw</code> 或合成启动器。分享 EXE 为 PyInstaller 6.22.3 单文件、GUI、x64，内置 Python/Tk 和图标。旧分享 ZIP 未签名。其他 OS/架构未验。<a href="RUN.md">运行命令</a></td></tr>
+<tr><td>可选依赖</td><td>Codex 本机记录提供项目和指标。登记式接力用 <code>checkpoint.py</code>，Git 工作区指纹需要 Git。日期快照另需 Node 与固定版本的 ccusage。Pillow 只用于截图验收。普通 Markdown 目录不需要 Obsidian 安装。</td><td>包内含接力/采集源码和合成快照。真实登记、配置、权限、账号资料及依赖缓存由使用者单独管理。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="features">
+<h2>2. 功能现状</h2>
+<div class="table"><table><thead><tr><th>能力</th><th>状态与入口</th><th>作者版与分享版</th><th>证据</th></tr></thead><tbody>
+<tr><td>项目 → 聊天及最近聊天</td><td>已实现。交接顶部选择器及用量左树，按本机侧栏元数据和最近时间排列。</td><td>两版可用，依赖兼容的本地库。</td><td><a href="#fig-02-project">项目选择</a>、<a href="#fig-03-usage-normal">聊天树</a>、<code>chats.discover</code>。</td></tr>
+<tr><td>最近请求、累计、来源、诊断</td><td>已实现。聊天用量 → 当前聊天。可用的请求用量和日志字节单独展示。</td><td>两版可用。缺字段时显示未知、无样本或无明细。完整活动上下文归因部分实现。</td><td><a href="#fig-04-diagnosis">本次诊断</a>、<a href="#metrics">指标口径</a>。</td></tr>
+<tr><td>提醒、压缩事件</td><td>已实现。顶栏提醒设置与黄色提示，默认 80%，可改或暂停。</td><td>两版可用，开着时只监测选中的聊天。Windows 任务栏每段告警触发一次调用。</td><td><a href="#fig-07-alert">提醒</a>、<a href="#fig-08-reminder">设置</a>、<a href="#fig-09-compaction">压缩事件</a>。</td></tr>
+<tr><td>日期快照、项目/角色汇总</td><td>部分实现。日期快照读取既有增量 JSON，并支持项目/聊天和主/子角色钻取。</td><td>作者有独立采集；分享版提供消费界面，需另行接入快照。应用无日期范围查询或启动采集按钮。</td><td><a href="#fig-10-snapshot">合成快照</a>、<a href="#fig-11b-snapshot-roles">角色</a>、<code>Relay.status</code>。</td></tr>
+<tr><td>配置预览、应用、恢复</td><td>已实现。选择配置文件，预览勾选项，确认备份写入或按回执恢复。运行时采用无法由轻续验证。</td><td>两版可用。文件内容和模型目录依各自机器。</td><td><a href="#fig-18-config-read">读取</a>到<a href="#fig-25-config-restored">回滚</a>，隔离文件字节比较。</td></tr>
+<tr><td>手动交接</td><td>已实现。旧聊指令 → 粘贴旧聊摘要 → 新聊指令。</td><td>两版可用，不依赖知识库。摘要输入是文本框；原导入文件/导出文件入口在当前 UI 未实现。</td><td><a href="#fig-15-relay-manual">粘贴摘要</a>、<a href="fixtures/prompts/manual-restore.txt">生成文本</a>。</td></tr>
+<tr><td>私有断点、真实新聊恢复</td><td>部分实现。登记模式可保存和读回版本；真正新聊天中的理解与接续由用户和 Codex 执行。</td><td>作者集成或显式注入引擎路径的开发态可读写私有断点。分享 EXE 默认无引擎配置。</td><td><a href="#fig-13-relay-readback">隔离断点版本 2</a>。真实新聊天恢复本轮未执行。</td></tr>
+<tr><td>普通 Markdown 与知识库</td><td>部分实现。勾分类生成指令，可通过授权映射解析普通目录。程序不自动读取正文，也不直接写页。</td><td>无映射也能生成待核实指令和手动交接。准确路径需自己的登记与映射。</td><td><a href="#fig-16-knowledge-unmapped">无映射</a>、<a href="#fig-17-knowledge-mapped">映射普通文件夹</a>。</td></tr>
+<tr><td>任意目录选择、索引、费用</td><td>未实现。现有 GUI 可选配置文件，其他数据目录及自动化策略仍没有设置页。知识索引需手动维护。没有费用、订阅额度或节省比例读数。</td><td>两版边界相同。目录可以在启动环境或本机集成中指定的部分见第 5 节。</td><td><code>App.choose_config</code>、<code>Relay.default_settings</code>、<a href="#priorities">缺口</a>。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="ui">
+<h2>3. 真实界面与点击逻辑</h2>
+<p>一级保留三页。交接页显示顶部项目/聊天选择器，页内分「指令详情」「交接摘要」。用量页分「当前聊天」「日期快照」，后者再分项目聊天与角色。配置页分文件、预设与字段、可折叠高级项、预览和回执。顶部提醒与「去保存交接」跨页可见。</p>
+<div class="callout">以下图像均为实际窗口或弹窗。每张有版本、测得窗口尺寸、系统缩放和数据类型。截图中的项目、路径、用量与配置都是演示样本。原生文件选择器的展开状态、Windows 任务栏本身和真实新聊窗口未采集。</div>
+<div class="gallery" id="screens">
+<figure id="fig-01-empty"><a href="assets/screens/01-empty.jpg"><img src="assets/screens/01-empty.jpg" alt="首次启动与无本机聊天数据" loading="lazy"></a><figcaption><strong>01-empty · 首次启动与无本机聊天数据</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 空白隔离目录 · 导出源码运行</figcaption></figure>
+<figure id="fig-02-project"><a href="assets/screens/02-project.jpg"><img src="assets/screens/02-project.jpg" alt="选择项目后定位该项目最新聊天" loading="lazy"></a><figcaption><strong>02-project · 选择项目后定位该项目最新聊天</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-03-usage-normal"><a href="assets/screens/03-usage-normal.jpg"><img src="assets/screens/03-usage-normal.jpg" alt="选择聊天、最近请求与累计明细" loading="lazy"></a><figcaption><strong>03-usage-normal · 选择聊天、最近请求与累计明细</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-04-diagnosis"><a href="assets/screens/04-diagnosis.jpg"><img src="assets/screens/04-diagnosis.jpg" alt="内容来源及本次诊断" loading="lazy"></a><figcaption><strong>04-diagnosis · 内容来源及本次诊断</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-05-usage-history"><a href="assets/screens/05-usage-history.jpg"><img src="assets/screens/05-usage-history.jpg" alt="历史测量仍可查看，等待新请求" loading="lazy"></a><figcaption><strong>05-usage-history · 历史测量仍可查看，等待新请求</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-06-usage-unknown"><a href="assets/screens/06-usage-unknown.jpg"><img src="assets/screens/06-usage-unknown.jpg" alt="窗口和运行时压缩线未知" loading="lazy"></a><figcaption><strong>06-usage-unknown · 窗口和运行时压缩线未知</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-07-alert"><a href="assets/screens/07-alert.jpg"><img src="assets/screens/07-alert.jpg" alt="最近请求达到所设比例" loading="lazy"></a><figcaption><strong>07-alert · 最近请求达到所设比例</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-08-reminder"><a href="assets/screens/08-reminder.jpg"><img src="assets/screens/08-reminder.jpg" alt="提醒设置与百分比" loading="lazy"></a><figcaption><strong>08-reminder · 提醒设置与百分比</strong><br>0.9.3 · 窗口 342×202 逻辑 px · Windows 150%<br>物理捕获 491×292 px · 发布 491×292 px · 合成数据 · Tk 提醒弹窗</figcaption></figure>
+<figure id="fig-09-compaction"><a href="assets/screens/09-compaction.jpg"><img src="assets/screens/09-compaction.jpg" alt="压缩事件提示，当前样本等待刷新" loading="lazy"></a><figcaption><strong>09-compaction · 压缩事件提示，当前样本等待刷新</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-10-snapshot"><a href="assets/screens/10-snapshot.jpg"><img src="assets/screens/10-snapshot.jpg" alt="日期快照、项目与聊天树及过期标记" loading="lazy"></a><figcaption><strong>10-snapshot · 日期快照、项目与聊天树及过期标记</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-11-snapshot-project"><a href="assets/screens/11-snapshot-project.jpg"><img src="assets/screens/11-snapshot-project.jpg" alt="项目范围钻取与返回全局快照" loading="lazy"></a><figcaption><strong>11-snapshot-project · 项目范围钻取与返回全局快照</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-11b-snapshot-roles"><a href="assets/screens/11b-snapshot-roles.jpg"><img src="assets/screens/11b-snapshot-roles.jpg" alt="日期快照按主、子 agent 和其他角色分组" loading="lazy"></a><figcaption><strong>11b-snapshot-roles · 日期快照按主、子 agent 和其他角色分组</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-12-relay-save"><a href="assets/screens/12-relay-save.jpg"><img src="assets/screens/12-relay-save.jpg" alt="已登记项目的旧聊保存指令" loading="lazy"></a><figcaption><strong>12-relay-save · 已登记项目的旧聊保存指令</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-13-relay-readback"><a href="assets/screens/13-relay-readback.jpg"><img src="assets/screens/13-relay-readback.jpg" alt="私有断点写后读回与版本 2" loading="lazy"></a><figcaption><strong>13-relay-readback · 私有断点写后读回与版本 2</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-14-relay-restore"><a href="assets/screens/14-relay-restore.jpg"><img src="assets/screens/14-relay-restore.jpg" alt="已保存断点的新聊恢复指令" loading="lazy"></a><figcaption><strong>14-relay-restore · 已保存断点的新聊恢复指令</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-15-relay-manual"><a href="assets/screens/15-relay-manual.jpg"><img src="assets/screens/15-relay-manual.jpg" alt="未登记项目粘贴短摘要" loading="lazy"></a><figcaption><strong>15-relay-manual · 未登记项目粘贴短摘要</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-16-knowledge-unmapped"><a href="assets/screens/16-knowledge-unmapped.jpg"><img src="assets/screens/16-knowledge-unmapped.jpg" alt="缺少映射时生成待核实目标的指令" loading="lazy"></a><figcaption><strong>16-knowledge-unmapped · 缺少映射时生成待核实目标的指令</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-17-knowledge-mapped"><a href="assets/screens/17-knowledge-mapped.jpg"><img src="assets/screens/17-knowledge-mapped.jpg" alt="普通 Markdown 文件夹映射到已知目标页" loading="lazy"></a><figcaption><strong>17-knowledge-mapped · 普通 Markdown 文件夹映射到已知目标页</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-18-config-read"><a href="assets/screens/18-config-read.jpg"><img src="assets/screens/18-config-read.jpg" alt="配置读取、范围、参考值与文件值" loading="lazy"></a><figcaption><strong>18-config-read · 配置读取、范围、参考值与文件值</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-18b-config-advanced"><a href="assets/screens/18b-config-advanced.jpg"><img src="assets/screens/18b-config-advanced.jpg" alt="主模型高级参数和子 agent 默认设置" loading="lazy"></a><figcaption><strong>18b-config-advanced · 主模型高级参数和子 agent 默认设置</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-19-config-preview"><a href="assets/screens/19-config-preview.jpg"><img src="assets/screens/19-config-preview.jpg" alt="配置副本的预览，文件尚未写入" loading="lazy"></a><figcaption><strong>19-config-preview · 配置副本的预览，文件尚未写入</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-20-config-conflict"><a href="assets/screens/20-config-conflict.jpg"><img src="assets/screens/20-config-conflict.jpg" alt="预览后外部修改，拒绝应用并保留文件" loading="lazy"></a><figcaption><strong>20-config-conflict · 预览后外部修改，拒绝应用并保留文件</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-21-config-cancel"><a href="assets/screens/21-config-cancel.jpg"><img src="assets/screens/21-config-cancel.jpg" alt="应用确认弹窗，选择取消" loading="lazy"></a><figcaption><strong>21-config-cancel · 应用确认弹窗，选择取消</strong><br>0.9.3 · 窗口 496×227 逻辑 px · Windows 150%<br>物理捕获 722×330 px · 发布 722×330 px · 合成配置副本 · 原生确认弹窗</figcaption></figure>
+<figure id="fig-22-config-confirm"><a href="assets/screens/22-config-confirm.jpg"><img src="assets/screens/22-config-confirm.jpg" alt="备份并应用原生确认弹窗" loading="lazy"></a><figcaption><strong>22-config-confirm · 备份并应用原生确认弹窗</strong><br>0.9.3 · 窗口 496×227 逻辑 px · Windows 150%<br>物理捕获 722×330 px · 发布 722×330 px · 合成配置副本 · 原生确认弹窗</figcaption></figure>
+<figure id="fig-23-config-applied"><a href="assets/screens/23-config-applied.jpg"><img src="assets/screens/23-config-applied.jpg" alt="备份、应用、写后读回与恢复回执" loading="lazy"></a><figcaption><strong>23-config-applied · 备份、应用、写后读回与恢复回执</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+<figure id="fig-24-config-restore-confirm"><a href="assets/screens/24-config-restore-confirm.jpg"><img src="assets/screens/24-config-restore-confirm.jpg" alt="恢复配置原生确认弹窗" loading="lazy"></a><figcaption><strong>24-config-restore-confirm · 恢复配置原生确认弹窗</strong><br>0.9.3 · 窗口 469×195 逻辑 px · Windows 150%<br>物理捕获 682×282 px · 发布 682×282 px · 合成配置副本 · 原生确认弹窗</figcaption></figure>
+<figure id="fig-25-config-restored"><a href="assets/screens/25-config-restored.jpg"><img src="assets/screens/25-config-restored.jpg" alt="恢复到备份，按字节读回一致" loading="lazy"></a><figcaption><strong>25-config-restored · 恢复到备份，按字节读回一致</strong><br>0.9.3 · 窗口 1136×884 逻辑 px · Windows 150%<br>物理捕获 1682×1315 px · 发布 1280×1001 px · 合成数据 · 导出源码运行</figcaption></figure>
+</div>
+<h3 id="controls">控件编号、回调与反馈</h3>
+<p>未注明写入的交互只改变当前 UI。<code>App.guarded</code> 把常见操作错误写到所属页面的反馈区。涉及配置应用或丢弃未复制草稿时有原生确认框。</p>
+<div class="table"><table><thead><tr><th>编号 / 控件</th><th>前置条件与回调</th><th>结果与读写位置</th><th>成功、失败、取消及返回</th></tr></thead><tbody>
+<tr><td>N01 一级标签</td><td><a href="source/work/qingxu/app.py">app.py</a> · <code>App.workspace_changed</code></td><td>切换三页。首次打开配置页会尝试读取默认文件；进入用量页会在目录为空时尝试刷新。</td><td>切换保留选中聊天。配置读取失败在配置页显示，回到相应页继续操作。</td></tr>
+<tr><td>N02 按项目 / 最近聊天</td><td><code>App.reload_choices</code></td><td>只读 Codex 元数据与登记映射。项目模式两级筛选，最近模式隐藏项目列，直接按最近时间列聊天。</td><td>旧选择仍有效则保留。失败恢复选择方式并显示原因。草稿未复制时切换受丢弃确认保护。</td></tr>
+<tr><td>N03 项目、聊天、刷新列表</td><td><code>filter_chats</code> / <code>show_choices</code> / <code>select_project</code></td><td>项目默认选该项目的最近聊天，聊天按 ID 精确绑定。选定后写轻续 <code>last-chat.json</code>。</td><td>空项目清空当前聊天。拒绝丢弃时保留原选择。偏好写入失败只影响下次恢复选择。</td></tr>
+<tr><td>N04 提醒设置 / 保存 / 取消</td><td><code>edit_reminder</code> → <code>ReminderDialog.validate/apply</code> → <code>save_reminder</code></td><td>1–100 整数百分比及启停。写轻续 <code>chat-reminder.json</code>，重排选中聊天的刷新。</td><td>无效输入就地提示。取消或 Esc 关闭弹窗。保存后顶栏显示新值，关闭重开可读回。</td></tr>
+<tr><td>N05 去保存交接</td><td><code>self.tabs.select(self.frames[0])</code></td><td>跳到交接页。保留当前选中聊天。</td><td>返回用量页继续查看。用户从交接页发起保存流程。</td></tr>
+<tr><td>N06 关闭窗口</td><td><code>unsaved</code> / <code>discard_ok</code> / <code>close</code> / <code>stop_metrics</code></td><td>未复制的手改指令或摘要弹确认。关闭时取消定时器，停止排队任务。重开从 <code>recall_chat</code> 读偏好。</td><td>取消保留编辑。配置草稿/预览和未执行的提示词没有会话级持久化。</td></tr>
+<tr><td>H01 复制保存指令</td><td>先选聊天。<code>copy_generated("save")</code> → <code>make_prompt</code></td><td>有可读登记版本时取断点版本和位置，无登记/版本时生成可粘贴摘要指令。通过剪贴板交给用户。</td><td>「已复制」只确认剪贴板调用。重复点击重生成；未复制编辑先确认。到旧聊天粘贴执行。</td></tr>
+<tr><td>H02 核对交接摘要</td><td><code>review_summary</code> / <code>load_snapshot</code></td><td>打开「交接摘要」。登记路径只读私有 JSON；未登记则聚焦文本框，让用户粘贴摘要。</td><td>有摘要显示版本，无摘要显示等待；标记过期则提示核现场。可返回指令详情。当前没有导入文件或直接保存文本的按钮。</td></tr>
+<tr><td>H03 复制恢复指令</td><td><code>copy_generated("restore")</code> / <code>make_prompt</code></td><td>手动文本需 1–8192 UTF-8 字节；登记模式读回最新断点。生成后写剪贴板。</td><td>缺摘要跳到摘要页；成功提示到同项目新聊粘贴。恢复完成需另在 Codex 核验。</td></tr>
+<tr><td>H04 复制当前指令</td><td>有非空指令，且知识库选择仍匹配。<code>copy_prompt</code></td><td>复制编辑框当前文字，记录已复制内容和目的地提示。</td><td>勾选或模式改变会提示重生成。重复复制不写断点或知识文件。返回编辑框可核对。</td></tr>
+<tr><td>H05 知识分类、生成方式</td><td><code>knowledge_selection_edited</code> / <code>generate_knowledge_prompt</code></td><td>至少一类。映射可用时解析目标页；缺映射时要求核实。单独生成或附到旧聊保存指令。</td><td>附加前须先生成旧聊保存指令。再次附加替换既有知识块。成功后由 H04 复制。未批准的页保留待核实。</td></tr>
+<tr><td>U01 用量左树 / Enter</td><td><a href="source/work/qingxu/dashboard.py">dashboard.py</a> · <code>ChatDashboard.pick</code> → <code>App.choose_usage_chat</code></td><td>项目展开后选聊天，清除旧图和诊断，异步读所选聊天本机日志。选定后更新轻续偏好。</td><td>未完成读取先显示待读取，错误显示无可用数据。拒绝丢弃草稿则回原聊天。</td></tr>
+<tr><td>U02 刷新项目和聊天用量</td><td><code>App.refresh_catalog</code> / <code>watch_chat</code> / <code>update_metrics</code></td><td>重读目录和选中聊天。重置请求缓存，用一个后台 worker 防止并发读混。</td><td>刷新保留仍存在的聊天。切换后丢弃旧任务结果。读取结束后约 15 秒自动检查。</td></tr>
+<tr><td>U03 刷新用量快照</td><td><code>App.refresh_usage</code> / <code>Relay.status</code> / <code>Dashboard.render</code></td><td>只读现有 <code>usage-latest.json</code> 和观察器回执。</td><td>校验不通过清空旧结果，显示缺失或不守恒。返回「当前聊天」可继续看本机日志。</td></tr>
+<tr><td>U04 项目环 / 树 / 表头 / 回到总览</td><td><code>Dashboard.hover/open_sector/select_row/sort/overview</code></td><td>悬停显示占比，点扇区展开项目，项目/聊天或角色行缩小范围；表头排序。全部是快照内浏览。</td><td>选空清除范围，回到总览恢复全局。不改变当前聊天选择。</td></tr>
+<tr><td>C01 选择文件… / 读取配置</td><td><code>choose_config</code> / <code>config_path_edited</code> / <code>load_config</code></td><td>选现有 TOML。路径变更清掉读取值和预览，读取后填文件值与目录参考。</td><td>取消保留原路径。路径不可读或格式异常给错误。再选文件、重新读取。</td></tr>
+<tr><td>C02 型号、方案、勾选、编辑</td><td><code>config_model_edited</code> / <code>select_preset</code> / <code>config_changes</code></td><td>型号切换只选参考。官方/推荐/自定义决定勾选与候选字段；编辑和勾选使旧预览失效。</td><td>不同型号参考下限制应用。有效编辑后回 C04。高级参数和子 agent 可展开/折叠。</td></tr>
+<tr><td>C03 保存自定义方案</td><td><code>save_custom</code> / <code>custom_path</code></td><td>自定义模式保存已勾选值到 <code>custom-preset*.json</code>。不改选中的 TOML。</td><td>保存后可重选方案。无有效选择、冲突或无法写入时保留错误反馈。</td></tr>
+<tr><td>C04 预览勾选的修改</td><td><code>preview_config</code> / <code>core.propose</code></td><td>核对路径、原内容、组合和差异，计算候选摘要。只读文件。</td><td>无变化时提示无需写入，应用仍禁用。有效时展示前后值；路径/字段变动要重新预览。</td></tr>
+<tr><td>C05 备份并应用</td><td><code>apply_config</code> / <code>ConfigStore.apply</code></td><td>确认目标后复核预览，备份原文件，写回执，原子替换并读回。记录改动键和前后哈希。</td><td>拒绝保留预览。并发变化终止且保留外部内容。成功显示「写后读回一致」，运行时采用待验证。</td></tr>
+<tr><td>C06 从配置备份恢复…</td><td><code>restore_config</code> / <code>ConfigStore.load/restore</code></td><td>在轻续备份目录内选择回执，验证原始备份和当前目标，确认后恢复并读回。</td><td>选文件或确认取消时不写。发现目标已另改则拒绝覆盖。成功显示恢复结果，可重新读取。</td></tr>
+<tr><td>缺少的入口</td><td>项目/知识库目录选择、打开目录、文件摘要导入、独立用量导出、直接创建新聊</td><td>当前未实现。现有项目选择器展示元数据，打开目录需用户通过系统文件管理器操作。</td><td>设计稿需标明拟新增控件和现有控件的不同状态。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="metrics">
+<h2>4. 指标、分母、时间范围和去重</h2>
+<p>聊天来源是 <code>state_5.sqlite</code> 及同目录 <code>.codex-global-state.json</code>。SQLite 以 <code>mode=ro</code> 和 <code>PRAGMA query_only</code> 打开。只有活跃、未归档且符合人类聊天筛选条件的记录进入选择器。工作台只读取当前选中聊天的日志，核对该线程的 UUID、元数据路径、会话根与 <code>session_meta.id</code>。<a href="source/work/qingxu/chats.py">chats.py</a> · <a href="source/work/qingxu/context_usage.py">context_usage.py</a></p>
+<div class="table"><table><thead><tr><th>界面指标</th><th>字段与计算</th><th>范围、刷新和缺失处理</th></tr></thead><tbody>
+<tr><td>当前上下文占用估算</td><td>最近可用 <code>event_msg/token_count.info.last_token_usage</code> 的 <code>total_tokens</code>。窗口优先用同条 <code>info.model_context_window</code>，否则取当前轮 <code>task_started.model_context_window</code>。圆环以「最近请求总数 ÷ 日志窗口」估算，含本次请求输出。可比较时剩余为 <code>window − total</code>。</td><td>当前聊天的主日志尾部最多 8 MiB，跳过截断行。无窗口或用量超过窗口时只画输入/输出构成，分母为请求总数。新轮开始或后来发生压缩会使旧样本失效，暂显示无样本。</td></tr>
+<tr><td>最近请求输入与输出</td><td>输入含缓存为 <code>total_tokens − output_tokens</code>。<code>normalize</code> 校验它等于原始 <code>input_tokens</code> 或 <code>input_tokens + cache_write_input_tokens</code>。非缓存输入再扣除缓存读取和创建。最近请求的输出已含推理。</td><td>显示记录的本机时间。无合法字段、对账失败或最近样本被淘汰时不填 0。<code>total_token_usage.total_tokens</code> 只用于识别相邻重复计量，避免把重复记录刷新成新样本。</td></tr>
+<tr><td>聊天累计用量</td><td><code>token_usage_record.usage</code> 经过同一归一化。只接受 <code>thread_id</code> 为所选聊天且 <code>response_id</code> 非空的记录；同一 ID、相同计量只计一次，不把累计字段相加。非缓存输入、缓存读取、缓存创建、输出的总和为分母。推理是输出子集。</td><td>主日志与同 UUID 的本机可读日志段。总扫描预算 512 MiB，单行计量读取上限 256 KiB。增量缓存根据 inode/大小/mtime 和边界哈希校验。重复 ID 异值拒绝显示累计，同页最近请求仍可显示。详情显示请求数、段数、跳过和刷新时间。</td></tr>
+<tr><td>日期快照</td><td>独立采集器用 <code>ccusage codex session --since &lt;day&gt; --until &lt;day&gt; --timezone Asia/Shanghai --json --offline</code>，产出 <code>usage-latest.json</code>。<code>usage.summarize</code> 只接受 schema 1 和 <code>ccusage_incremental_tokens_not_billing</code>，核对项目、会话、总量和各分项守恒。</td><td>源为一个已有日期快照，点击刷新读取。显示日期、时区、<code>finished_utc</code> 与年龄。大于 90 分钟提示可能过期。时间未知、异常和采集器心跳分别显示，回执 PID 无法证明进程身份。缺失或不守恒时清空旧显示。</td></tr>
+<tr><td>项目汇总与角色</td><td>日期快照会话行通过 <code>chats.usage_metadata</code> 重新对照本地项目归属，再由 <code>usage.group_sessions</code> 累加。项目环的分母为全局快照 <code>totalTokens</code>。下钻后的组成图使用选中项目/聊天/角色的总量作分母。</td><td>未匹配、远程、明确未归类或歧义归属仍入总量。角色展示采集器给出的角色与记录数。项目的当前聊天图是该聊天请求范围；项目总览的分母是日期快照范围。</td></tr>
+<tr><td>压缩与提醒</td><td>读日志中的 <code>compacted</code> 或 <code>context_compacted</code>。提醒分母依序取运行时记录的 <code>model_auto_compact_token_limit</code>、合理的配置文件显式值、日志窗口。最近请求总数 × 100 ≥ 分母 × 提醒百分比时进入提示。</td><td>过去 15 分钟内的有效样本或压缩事件可触发，历史样本可查看。无阈值和窗口时显示未知。轻续阈值独立于 Codex 实际压缩配置。只监控选中的聊天，异步读完后约 15 秒再查，切换丢弃上一聊天结果。</td></tr>
+<tr><td>来源字节和工具诊断</td><td><code>response_item</code> 中识别消息角色、工具调用、MCP 命名和结果。来源百分比为分类行的 JSON 字节 ÷ 已分类总字节，含封装和图片编码。调用统计看最近活动前 10 分钟，ID 可用时去重，同一工具 ≥10 次提示。单次最大结果在同一尾部样本内按完整结果行字节比较，≥65,536 字节提示。</td><td>显示工具名、计次、结果时刻、可用时的调用尾号。MCP 只识别暴露的独立日志事件，聚合调用内部、延迟加载、技能、系统定义和各自精确 token 仍未知。</td></tr>
+<tr><td>费用、订阅额度与节省</td><td>UI 与快照 schema 只使用计量字段。没有价格表、会员额度或真实计费来源，也没有已验证的同任务节省比例。</td><td>历史账务和可比任务结果需要独立证据，界面不推算金额。</td></tr>
+</tbody></table></div>
+<h3>身份优先级与跨线程边界</h3>
+<ul>
+<li>侧栏文件存在时，以其项目顺序、显式未归类、host 与线程分配为先，结合已知别名；其后用 SQLite 的显式项目 ID、工作树根提示或精确根匹配。多候选保持未归类。独立接力登记只按标准化的绝对 <code>cwd</code> 精确匹配，和 Codex 项目分类是两条关系。</li>
+<li>日志累计以当前线程内的独立请求去重。子线程或 fork 的独立记录不并入当前聊天。共享父历史没有跨线程全局请求对账。</li>
+<li>采集端 <code>attribution.py</code> 读取 <code>thread_spawn_edges</code> 和 <code>thread_source</code> 分类。对父子关系可回溯父归属，也使用已核实工作树别名。角色可区分 child、fork、guardian、primary 或 unknown。界面日期快照在唯一人类父聊、归属条件满足时把子行归到父聊天。这个分组依赖 ccusage 已产出的会话增量行。重复会话行、fork 继承和跨会话成本仍需独立对照。</li>
+</ul>
+<p><a href="source/work/qingxu/dashboard.py">dashboard.py</a> · <a href="source/work/qingxu/usage.py">usage.py</a> · <a href="source/local-integrations/project-relay-p0/attribution.py">attribution.py</a> · <a href="source/local-integrations/project-relay-p0/observer.py">observer.py</a></p>
+</section>
+
+<section id="settings">
+<h2>5. 配置、目录和写入边界</h2>
+<p><strong>作者文件的只读核对。</strong>本轮 22:13 读取的非秘密字段显示主模型为 GPT‑6.1 Sol / Max，子 agent 默认 Terra / Extra High。三个 token 数值和压缩规则未设顶层覆盖。轻续提醒偏好缺省为开启、80%。较早只读样本的主推理为 Ultra，文件在两次采样之间变化。下表采用 22:13 文件值，当前聊天采用值另行验收。</p>
+<div class="table"><table><thead><tr><th>设置</th><th>当前文件值与默认/继承</th><th>作用域、单位、修改与校验</th></tr></thead><tbody>
+<tr><td>轻续提醒</td><td>开启、80% 默认。合成截图调到 88%。</td><td>应用本地偏好，整数 1–100%，保存到 <code>chat-reminder.json</code>，下次刷新重算，无需重开 Codex。</td></tr>
+<tr><td>模型与目录参考</td><td><code>model=gpt-6.1-sol</code>。本机目录 0.167.0，Sol/Terra 窗口 500,000，Astra/Luna 272,000。</td><td>参考选择器只换参考和自定义方案，不能写主模型 ID。自定义 provider/catalog 不套用本机 OpenAI 默认。0.167.0 的代码参考值用默认窗口的 90% 或更小的目录显式阈值；其他未知版本显示待核实。</td></tr>
+<tr><td><code>model_context_window</code></td><td>继承。Sol 目录参考 500,000 tokens，实际窗口以运行日志为证。</td><td>选择 TOML 顶层覆盖，1–10,000,000 整数或「继承」。容量和压缩阈值分别处理。</td></tr>
+<tr><td><code>model_auto_compact_token_limit</code></td><td>继承。Sol/Terra 参考 450,000，Astra/Luna 244,800。</td><td>单位 tokens。实际压缩的参数由 Codex 采用。GUI 数值保护同上，目录参考不能当运行证据。</td></tr>
+<tr><td><code>tool_output_token_limit</code></td><td>继承。上述目录的 token 模式为 10,000。</td><td>单次工具输出的上下文保留限制，单位 tokens，和诊断的日志字节阈值分开。合成副本写入 8,000 后恢复。</td></tr>
+<tr><td><code>model_reasoning_effort</code></td><td><code>max</code>。Sol 目录默认 <code>low</code>。</td><td>顶层可选继承与本机型号支持档。核心允许 low、medium、high、xhigh、max、ultra。Luna 目录到 max。</td></tr>
+<tr><td><code>compact_prompt</code></td><td>继承。无顶层自定义。</td><td>接受 1–12,000 字符的非空候选或继承。原有多行 TOML 等复杂语法无法安全重写时停止。</td></tr>
+<tr><td><code>agents.default_subagent_model</code> 与 <code>agents.default_subagent_reasoning_effort</code></td><td><code>gpt-6.1-terra</code> / <code>xhigh</code>。无覆盖时由 Codex、父级及派发配置决定。</td><td>编辑选中文件的 <code>[agents]</code>，模型 ID 校验，已知型号时验证组合。显式派发及角色设置可有更高优先级。并发上限不在当前 UI 的可编辑范围。</td></tr>
+<tr><td>官方、推荐与自定义方案</td><td>官方选中可继承的主设置；推荐只把三个数值选为继承。用户自定义保存勾选项。</td><td>仅在显式应用时写所选文件。自定义方案按已识别型号保存为 <code>custom-preset-*.json</code>，其他使用通用方案。推荐是对照基线，节省幅度未验证。</td></tr>
+</tbody></table></div>
+<div class="table"><table><thead><tr><th>目录/文件</th><th>入口、默认位置、可选性</th><th>缺失、只读或离线</th></tr></thead><tbody>
+<tr><td>Codex 数据目录</td><td>分享/源码默认 <code>%USERPROFILE%\.codex</code> 或现有 <code>CODEX_HOME</code>，可用 <code>QINGXU_CODEX_HOME</code> 指向另一套本地数据。作者安装版按旧默认取当前用户 <code>.codex</code>。目录选择器未实现。</td><td>缺库或 schema 不兼容提示刷新，程序不会创建数据库或遍历全历史。读权限足够。日志不可达时显示无样本/错误。</td></tr>
+<tr><td>项目/工作树</td><td>从原生元数据选择已有项目/聊天。登记式断点另以唯一绝对 <code>cwd</code> 绑定。暂无路径选择、打开目录和工作树重绑 UI。</td><td>路径断开时已缓存元数据仍可列出，语义保存时校验实际项目身份。歧义、根变化或越界阻断。普通未登记项目可粘贴摘要。</td></tr>
+<tr><td>Codex 配置</td><td>默认数据主目录的 <code>config.toml</code>。GUI 可选已有 <code>config.toml</code> 或 <code>*.config.toml</code>。有用户级、项目及副本提示。</td><td>文件应是可读本地普通 UTF-8 TOML，≤2 MB。缺失、非普通、重解析、坏语法或只读写入失败均提示。文件移动后须重新选择/读取。</td></tr>
+<tr><td>轻续私有数据</td><td>作者安装或开发态使用应用旁 <code>data</code>。分享 EXE 用 <code>%LOCALAPPDATA%\Qingxu</code>，可设 <code>QINGXU_DATA_DIR</code>。含最后选择、提醒、预设、配置回执/备份和错误日志。</td><td>启动时创建私有目录并设置当前用户、SYSTEM 和 Administrators 的 DACL。无法建立私有目录时报告启动错误。偏好缺失回默认，写权限不足会反馈。</td></tr>
+<tr><td>私有交接保存目录</td><td>作者独立的 <code>AgentState/project-relay-v1</code>，与应用偏好分开，位于项目外。安装版的引擎路径依赖作者目录。导出源码用同级布局或显式 <code>Relay(settings)</code>。无 GUI 选择器。</td><td>没有登记/文件时可走手动。无权限、错项目、旧版本、工作区变化或失联时不覆盖。磁盘故障、网络盘与移动盘恢复本轮未实测。</td></tr>
+<tr><td>知识目录</td><td>作者映射从 <code>%USERPROFILE%\.codex-memory\config.yaml</code> 读 JSON 结构。通过活动配置和项目路径找到获准根，再解析固定类别路径。演示用普通 Markdown 文件夹。无映射编辑或目录选择 UI。</td><td>映射缺失、越界或歧义时指令要求核实目标。目录与目标文件是否存在由收到指令的 Codex 核对。新建与写入由使用者授权。</td></tr>
+<tr><td>日期快照与导出</td><td>日期页读已存在的 <code>usage-latest.json</code>。没有用量导出或摘要文件导出 UI。分享重打包只通过脚本选输出目录。</td><td>无快照显示未采集/读取失败。快照和回执不作为业务断点。原作者采集位置不随分享包复制。</td></tr>
+</tbody></table></div>
+<p>应用通过 <code>core.propose</code> 生成候选文本并重新解析，核对非选中配置未改变。预览绑定目标、原字节、选项及候选哈希。确认前后复核，锁定后写私有备份和 <code>PREPARED</code> 回执，原子替换、读回、更新 <code>APPLIED</code>。恢复校验原备份哈希和当前文件是否仍等于应用后内容，外部改动阻断。保存文件后提示在旧聊交接，再重启 Codex、开同项目新聊核对实际采用。运行时 profile、项目、启动参数与受管策略有自己的优先级。</p>
+<p><a href="source/work/qingxu/config_store.py">config_store.py</a> · <a href="source/work/qingxu/core.py">core.py</a> · <a href="source/work/qingxu/privacy.py">privacy.py</a> · <a href="source/work/qingxu/sync.py">sync.py</a></p>
+</section>
+
+<section id="handoff">
+<h2>6. 续聊与普通 Markdown 知识目录</h2>
+<ol>
+<li><strong>已复制 → 待旧聊执行。</strong>选项目聊天、点「复制保存指令」，在旧聊粘贴发送。已登记且有版本时，提示词包含绝对项目路径、ID、断点文件和 revision。先执行 <code>semantic-read</code>，以刚读出的版本作为 <code>--expected-revision</code>，将短摘要经 UTF-8 stdin 交给 <code>semantic-save</code>。</li>
+<li><strong>摘要已保存。</strong>旧聊执行后再次 <code>semantic-read</code> 核对版本及内容，回轻续点「核对交接摘要」。没有接力时旧聊给出 ≤8192 UTF-8 字节短文本，用户粘贴到「交接摘要」，此文本留在当前窗口，尚未成为文件。</li>
+<li><strong>新聊指令就绪。</strong>点「复制恢复指令」。私有模式读取最新有效版本，手动模式把短文本放进指令。新聊天从同项目开始，先核对工作目录、Git/工作区和摘要时间/身份，冲突时核实现场证据。默认按需读相关文件。</li>
+<li><strong>已恢复。</strong>需要在真正新 Codex 聊天看到读取、核对及接续下一步的证据。程序没有新聊执行、确认或完成状态存储。当前包仅验证断点读回、指令生成与拦截到的复制调用。</li>
+</ol>
+<p>文件名为 <code>sha256(project_id).json</code>，格式 <code>project-relay-private-checkpoint-v1</code>。字段包括 <code>project_id</code>、<code>revision</code>、<code>metadata</code> 与哈希、<code>semantic_summary</code> 与哈希、摘要来源元数据哈希及版本、<code>updated_at</code>。摘要是调用者提供，业务完成状态未知。版本锁及读前读后身份核对防止覆盖。摘要来源哈希与当前元数据哈希不同时标过期；非 Git 项目的覆盖限于根元数据，正文变化未必触发。一个登记项目当前共用一个断点，不绑定到每一条聊天。</p>
+<p>本轮实际生成的示例文本。路径为合成绝对路径，换机器后重新生成。<a href="fixtures/prompts/registered-save.txt">登记旧聊</a> · <a href="fixtures/prompts/registered-restore.txt">登记新聊</a> · <a href="fixtures/prompts/manual-save.txt">手动旧聊</a> · <a href="fixtures/prompts/manual-restore.txt">手动新聊</a> · <a href="fixtures/prompts/knowledge-mapped.txt">已映射知识库</a> · <a href="fixtures/prompts/knowledge-unmapped.txt">未映射知识库</a> · <a href="fixtures/prompts/knowledge-attached.txt">附到旧聊</a></p>
+<p>没有 Obsidian 时，日常交接直接用手动流程。长期资料可用普通目录维护一个小 <code>INDEX.md</code>，按项目链接概览、总体计划、当前进度、关键决策、工作流知识、参考文件与 Bug/版本索引。恢复时先提供准确目录与索引，只按需读相关页。合成演示用普通文件夹满足既有映射结构 <code>03-项目记忆/&lt;memory_id&gt;/</code>。<code>obsidian_vault_root</code> 是映射字段名，路径可指向普通文件夹。轻续只解析映射和目标路径，索引与正文由用户或获准的 Codex 按需读取。</p>
+<p>知识分类勾选是本次指令范围，选择「单独生成」或「附到旧聊交接」。无映射时指令要求核实路径，缺页新建、版本与证据有疑问先询问。当前进度需阶段验收，决策限重要决定或长期阻塞，写后读回。当前没有持久化的「关闭 / 每次询问 / 按既有授权」策略控件；可通过不生成或不发送保持关闭。指令会交由用户发送，已有授权及确认由目标聊天判断。</p>
+<p><a href="source/work/qingxu/relay.py">实际映射和登记指令生成</a> · <a href="source/work/qingxu/app.py">手动及知识指令回调</a> · <a href="source/local-integrations/project-relay-p0/checkpoint.py">断点版本与锁</a></p>
+</section>
+
+<section id="figma">
+<h2>7. 源码与 Figma 设计对照</h2>
+<p>本工作区未发现可核验的现有 Figma 文件、页面或链接。界面编号沿用 <a href="#controls">控件回调表</a>，设计文件可按 H、U、C 三个页面分组，共用 N 类顶栏。优先评估现有三页，以二级详情或就地展开承载差异。</p>
+<div class="table"><table><thead><tr><th>编号 / 画板</th><th>代码锚点</th><th>交互与组件要点</th></tr></thead><tbody>
+<tr><td>N 导航、提醒与选中状态</td><td><a href="source/work/qingxu/app.py">app.py</a> · <code>App.__init__/workspace_changed/show_choices/set_context_notice</code></td><td>选中项目/聊天贯穿页面。明确任务栏提醒、上下文来源、暂停和可达的下一步。</td></tr>
+<tr><td>H 交接与知识库</td><td><code>App.build_relay/make_prompt/generate_knowledge_prompt</code>、<a href="source/work/qingxu/relay.py">relay.py</a> · <code>build_prompt/knowledge_mapping</code></td><td>把复制、实际保存、读回、待执行分成可见状态。原文本可编辑，分类勾选变更后提示重生成。</td></tr>
+<tr><td>U 用量 / 当前聊天 / 日期快照</td><td><a href="source/work/qingxu/dashboard.py">dashboard.py</a> · <code>ChatDashboard/Composition/Dashboard</code>、<a href="source/work/qingxu/context_usage.py">context_usage.py</a>、<a href="source/work/qingxu/chats.py">chats.py</a></td><td>用同一套范围标签区分最新、累计、日期与字节。环图和数据表互补，切换时清掉旧范围。快照下钻保留回到总览。</td></tr>
+<tr><td>C 配置 / 预览 / 回执</td><td><code>App.build_config/preview_config/apply_config/restore_config</code>、<a href="source/work/qingxu/config_store.py">config_store.py</a></td><td>读取源、候选值、预览有效性、是否已写入和是否已采用分别呈现。失败提供返回重读或查看回执的入口。</td></tr>
+<tr><td>资源、运行、数据安全</td><td><a href="source/work/qingxu/qingxu.ico">图标</a>、<a href="source/work/qingxu/launch.pyw">启动</a>、<a href="source/build-windows.py">打包脚本</a>、<a href="source/requirements-build.txt">构建依赖</a>、<a href="source/work/qingxu/privacy.py">ACL</a>、<a href="tests/run-relevant.py">回归入口</a></td><td>依赖为本地标准库；使用 <a href="fixtures/demo.py">合成样本</a> 和 <a href="tests/capture-ui.py">真实 UI 截图脚本</a>，避免设计需要真实资料。</td></tr>
+</tbody></table></div>
+<h3>实现约束及需要设计的状态</h3>
+<ul>
+<li>现有窗口默认 1150×875，最小 850×640，基于 Tk/ttk 的 clam 主题、系统字体、Notebook、Treeview、Canvas 与原生确认框。截图使用 150% Windows 缩放。报告中的 px 区分窗口逻辑尺寸、物理捕获和发布图像。应在默认窗口、最小窗口及 100%/125%/150% 对照验证布局。</li>
+<li>Treeview 长文本默认一行，图形与列宽受窗口约束。需要滚动、折叠、键盘焦点和长标题策略；Tk 可做简单 hover、颜色变化和过渡，复杂矢量动效需先验证实现成本。</li>
+<li>为按钮、树行、输入、标签和弹窗覆盖正常、悬停、按下、键盘焦点和禁用。页面覆盖加载、空态、历史/过期、未知、成功、失败、取消和外部冲突。用文字说明状态、分母与下一步，颜色辅助，避免只有颜色可识别。</li>
+<li>保留现有清晰的任务分组。先验证高频路径「选中聊天看诊断」「旧聊保存与新聊接续」「配置预览应用及恢复」，新增目录管理只在已确认的缺口上引入。</li>
+</ul>
+</section>
+
+<section id="priorities">
+<h2>8. 已知问题与优先级</h2>
+<p>复现优先用合成样本。下表把已见边界与后续验收分开。P0 保证数据和续聊，P1 提升目录和操作可用性，P2 再处理视觉。</p>
+<div class="table"><table><thead><tr><th>优先级 / 问题</th><th>复现与影响</th><th>现有证据 / 代码</th><th>后续验收</th></tr></thead><tbody>
+<tr><td>P0 · 最近请求易被误读为完整活动上下文</td><td>打开「容量未知」，或对照提醒分母与圆环分母。未知时不能判断真正压缩边界。</td><td><a href="#fig-06-usage-unknown">未知状态</a>，<code>show_sample</code> / <code>reminder</code>。</td><td>在标题、卡片和提醒中显式显示时间、分母来源与估算状态。未知不得伪装成零。</td></tr>
+<tr><td>P0 · 归属与父子/fork 计量</td><td>制造共享根、缺失侧栏映射、父子或 fork 快照。不同范围的总量不同，父历史继承可能难以解释。</td><td><code>ProjectCatalog.membership</code>、<code>_requests</code>、<code>attribution.aggregate</code>。跨会话去重未验证。</td><td>以精确 ID 显示归属依据，保留未归类，建立真实父/子/fork 对照，分别报告选中与聚合范围。</td></tr>
+<tr><td>P0 · 每项目共用断点与真实恢复缺证</td><td>同项目两个聊天编辑不同任务，第二个写入需要新版本。另一聊天恢复可能读到最新项目摘要。</td><td><a href="#fig-13-relay-readback">隔离写入读回</a>、<code>checkpoint.names/semantic_save</code>。真实新聊未执行。</td><td>显示摘要来源聊天及版本，支持冲突的可见处理，完成真实新聊天恢复验收。</td></tr>
+<tr><td>P1 · 数据、资料目录无法在 GUI 配置</td><td>指定另一个 Codex 主目录或普通 Markdown 目录。界面目前只有配置文件选择。</td><td><code>default_settings</code>、<code>choose_config</code>，<a href="#fig-16-knowledge-unmapped">无映射</a>。</td><td>新增最小目录选择与身份核对，可打开本地目标。验证缺失、只读、移动盘离线、回退和撤销。</td></tr>
+<tr><td>P1 · 手动摘要只在编辑框</td><td>在未登记聊天粘贴摘要后关闭。确认丢弃后，重开无文本文件可读。</td><td><a href="#fig-15-relay-manual">手动摘要</a>、<code>unsaved</code>、<code>make_prompt</code>。</td><td>独立本地 Markdown 保存/导入与按需索引，明确范围并保护覆盖。Obsidian 作为可选目标。</td></tr>
+<tr><td>P1 · 文档策略和状态缺口</td><td>映射缺失或已有文档授权，勾选类别只得到待核对指令。程序没有持久策略、执行回执或冲突状态。</td><td><code>generate_knowledge_prompt</code>，<a href="#fig-17-knowledge-mapped">映射后生成</a>。</td><td>如果扩展写入，区分停用、需询问、按已授权范围。允许查看目标、拒绝、读回和部分失败。</td></tr>
+<tr><td>P1 · 配置采用、失败与重新预览</td><td>预览后另改文件，应用会拒绝。文件成功后，当前 Codex 仍可能用自己的运行设置。</td><td><a href="#fig-20-config-conflict">冲突</a>、<a href="#fig-23-config-applied">写后读回</a>、<code>ConfigStore.apply/restore</code>。</td><td>把失败详情、重读、取消保留和恢复路径放同一上下文。运行时证据独立标记。</td></tr>
+<tr><td>P2 · 窄窗、缩放、长标题、图表</td><td>缩到 850×640，项目名/路径过长或字体缩放后需要滚动。部分表和诊断移到视口下方。</td><td><a href="#fig-04-diagnosis">当前布局</a>、<code>scroll_page</code>、<code>Treeview</code>、<code>draw_ring</code>。</td><td>三页不膨胀，补明确的层级、滚动反馈、状态、键盘导航和可读图表，实测多尺度。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="evidence">
+<h2>验收记录、未采集与未验证</h2>
+<div class="table"><table><thead><tr><th>证据类别</th><th>本包记录</th></tr></thead><tbody>
+<tr><td>本轮实测</td><td>真实 Tk 界面 27 张，合成/空白数据。验证了同聊计量去重、未知与过期、提醒设置及重开读回、可选断点 revision 2 保存/读回与旧版本冲突、手动指令、映射普通目录、配置冲突/拒绝/应用/恢复。剪贴板与闪动调用为拦截断言，原生确认弹窗实拍。<a href="tests/ui-evidence.json">截图验收记录</a></td></tr>
+<tr><td>新解压验证</td><td>新解压目录的 49 项相关现有测试通过，启动导出 Tk、选择 5 条合成聊天并核对重复请求去重。从解压源码重建分享 EXE 和 ZIP。最终归档重新解压后，核对全部相对引用、文件哈希，并用 Edge 离线解码 27 张图片。<a href="tests/extracted-evidence.json">源码和重建证据</a>。</td></tr>
+<tr><td>历史证据</td><td>0.9.3 发布时在合成日志追加后约 15.4 秒刷新、调用一次 Windows 闪动。旧分享 EXE 曾从中文和空格路径启动，验证空白及隔离聊天读取。本轮重做范围以本包交接验收为准。</td></tr>
+<tr><td>静态判断</td><td>各路径与状态约束从导出源码核对。无 Git 工作树，安装与分享基线按文件及编译模块比较。目录不可用与冲突的其余分支通过源码说明。</td></tr>
+<tr><td>缺少或未验证</td><td>没有可核验 Figma 链接。原生文件选择器、任务栏外观、真正 Codex 新聊窗口未采集。真实新聊接续、运行时配置采用、在线 Obsidian 写入、真实采集重启、移动盘与其他 Windows 环境未实测。普通 Markdown 映射的验证只生成指令，示例知识页内容前后一致。</td></tr>
+</tbody></table></div>
+<p><a href="manifest.json">生成时间、基线、文件 SHA-256 与缺失项</a> · <a href="RUN.md">复现命令</a></p>
+</section>
+<footer>轻续 Qingxu · 0.9.3 源码与真实界面交接 · 使用本地相对路径</footer>
+</main>
+</body>
+</html>
