@@ -21,6 +21,10 @@ class AppTests(RelayFixture, unittest.TestCase):
         self.assertIsNotNone(App, "desktop UI is missing")
         super().setUp()
         self.tk = tk.Tk()
+        clipboard = []
+        self.enterContext(patch.object(self.tk, "clipboard_clear", clipboard.clear))
+        self.enterContext(patch.object(self.tk, "clipboard_append", clipboard.append))
+        self.enterContext(patch.object(self.tk, "clipboard_get", lambda: "".join(clipboard)))
         self.tk.withdraw()
         self.addCleanup(self.tk.destroy)
         self.ui = App(self.tk, self.relay, self.root / "appdata")

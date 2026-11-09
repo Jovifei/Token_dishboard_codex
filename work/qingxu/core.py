@@ -2,10 +2,11 @@
 import copy, datetime, hashlib, json, os, re, tempfile, tomllib
 from pathlib import Path
 TOKEN_KEYS = {'model_context_window', 'model_auto_compact_token_limit', 'tool_output_token_limit'}
+MODEL = "model"
 AGENT_MODEL = "agents.default_subagent_model"
 AGENT_EFFORT = "agents.default_subagent_reasoning_effort"
 AGENT_KEYS = {AGENT_MODEL, AGENT_EFFORT}
-ALLOWED = TOKEN_KEYS | {'model_reasoning_effort', 'compact_prompt'} | AGENT_KEYS
+ALLOWED = TOKEN_KEYS | {MODEL, 'model_reasoning_effort', 'compact_prompt'} | AGENT_KEYS
 EFFORTS = ('low','medium','high','xhigh','max','ultra')
 class SafeError(ValueError): pass
 
@@ -27,8 +28,8 @@ def validate(changes):
         if k in TOKEN_KEYS:
             if type(v) is not int or not 1 <= v <= 10000000: raise SafeError('token 数必须是 1–10000000 的整数（本工具输入保护，非官方推荐范围）。')
         elif k in ('model_reasoning_effort', AGENT_EFFORT) and v not in EFFORTS: raise SafeError('推理档位无效。')
-        elif k == AGENT_MODEL and (not isinstance(v, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}", v)):
-            raise SafeError('子 agent 模型需填写有效模型 ID 或选「继承」。')
+        elif k in (MODEL, AGENT_MODEL) and (not isinstance(v, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}", v)):
+            raise SafeError(('主模型' if k == MODEL else '子 agent 模型') + '需填写有效模型 ID 或选「继承」。')
         elif k=='compact_prompt' and (not isinstance(v,str) or not v.strip() or len(v)>12000): raise SafeError('压缩规则须为 1–12000 字符。')
 
 def propose(original, changes):

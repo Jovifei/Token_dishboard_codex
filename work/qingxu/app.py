@@ -20,7 +20,7 @@ from sync import locks, read_file, replace_checked, safe_path, sha
 from dashboard import ChatDashboard, Dashboard, ACCENT, BG, LABEL, SECONDARY, SEPARATOR, SURFACE
 
 TITLE = "轻续 · Token 工作台"
-VERSION = "0.9.3"
+VERSION = "0.10.0-rc2"
 INHERIT = "继承"
 PRESETS = ("官方默认（继承）", "轻续推荐（继承数值）", "用户自定义")
 FILE_MODEL = "所选文件的模型"
@@ -32,6 +32,7 @@ MODEL_CHOICES = {
 CONFIG_RESTART = ("应用或恢复后先在旧聊天保存交接。桌面端完全退出并重新打开 Codex，再开同项目新聊天验证。"
                   "CLI 退出并重新启动 Codex。无需重启 Windows。")
 CONFIG_FIELDS = {
+    "model": ("主 Agent 模型", "继承客户端默认"),
     "model_context_window": ("上下文窗口 (tokens)", "继承模型默认"),
     "model_auto_compact_token_limit": ("自动压缩阈值 (tokens)", "继承模型默认"),
     "tool_output_token_limit": ("工具输出上限 (tokens)", "继承模型默认"),
@@ -1371,8 +1372,9 @@ class App:
             raise
 
 def main(data_root=None):
+    from workbench import Workbench
     root = tk.Tk()
-    App(root, data_root=data_root)
+    Workbench(root, data_root=data_root)
     root.mainloop()
 
 

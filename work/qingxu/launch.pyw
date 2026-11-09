@@ -11,6 +11,8 @@ if __name__ == "__main__":
     if getattr(sys, "frozen", False):
         local = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
         data_root = Path(os.environ.get("QINGXU_DATA_DIR") or local / "Qingxu").expanduser().absolute()
+    if os.environ.get("QINGXU_DATA_DIR"):
+        data_root = Path(os.environ["QINGXU_DATA_DIR"]).expanduser().absolute()
     try:
         from app import main
         main(data_root)
@@ -25,6 +27,9 @@ if __name__ == "__main__":
             destination = str(logfile)
         except Exception:
             pass
-        ctypes.windll.user32.MessageBoxW(
-            None, "轻续启动失败；没有自动修改配置或知识库。\n\n" + destination
-            + "\n\n" + error[-1600:], "轻续 · Token 工作台", 0x10)
+        message = "轻续启动失败；没有自动修改配置或知识库。\n\n" + destination + "\n\n" + error[-1600:]
+        if os.name == "nt":
+            ctypes.windll.user32.MessageBoxW(None, message, "轻续 · Token 工作台", 0x10)
+        else:
+            print(message, file=sys.stderr)
+        raise SystemExit(1)

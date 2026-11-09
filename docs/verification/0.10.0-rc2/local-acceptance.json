@@ -1,0 +1,132 @@
+{
+  "version": "0.10.0-rc2",
+  "tk_version": "8.6.15",
+  "monitor_scale_percent": 150,
+  "geometry": [
+    {
+      "tk_dpi": 96,
+      "window": [
+        980,
+        680
+      ],
+      "three_pages_and_pickers_fit": true,
+      "handoff_fixed_actions_visible": true,
+      "floating_rows": 4,
+      "floating_expand_and_hide": true
+    },
+    {
+      "tk_dpi": 144,
+      "window": [
+        980,
+        680
+      ],
+      "three_pages_and_pickers_fit": true,
+      "handoff_fixed_actions_visible": true,
+      "floating_rows": 4,
+      "floating_expand_and_hide": true
+    }
+  ],
+  "normal_picker": {
+    "normal_source": true,
+    "project_dropdown_matches_requested_project": true,
+    "both_expected_thread_titles": true,
+    "exact_paths_displayed": true,
+    "both_paths_currently_exist": true,
+    "recent_chat_mode": true,
+    "auto_selects_latest_in_project": true,
+    "scratch_preferences": true
+  },
+  "cross_project_and_chat": {
+    "distinct_fresh_thread_ids": true,
+    "same_named_projects_with_distinct_roots": true,
+    "other_chat_has_no_automatic_handoff": true,
+    "cross_project_import_rejected": true,
+    "modified_handoff_copy_rejected": true,
+    "original_handoff_sha256_unchanged": true,
+    "selection_sequence_uses_own_real_measurement": true,
+    "measurements_observed": 5
+  },
+  "real_codex_handoff": {
+    "cli_version": "0.167.0-alpha.3.2",
+    "old_summary_saved_and_read_back": true,
+    "default_shell_read_blocked": true,
+    "file": {
+      "fresh_turn_completed": true,
+      "correct_stage": true,
+      "first_step_result": true,
+      "reads": [
+        "handoff",
+        "next"
+      ],
+      "read_only_approval_limited_to_fixture_tool": true
+    },
+    "inline": {
+      "fresh_turn_completed": true,
+      "correct_stage": true,
+      "first_step_result": true,
+      "reads": [
+        "next"
+      ],
+      "read_only_approval_limited_to_fixture_tool": true
+    }
+  },
+  "codex_runtime": {
+    "effective_project_config": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "low",
+      "model_auto_compact_token_limit": 48000,
+      "tool_output_token_limit": 12000,
+      "agents": {
+        "default_subagent_model": "gpt-6-luna",
+        "default_subagent_reasoning_effort": "medium"
+      }
+    },
+    "primary_turn_context": [
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "low"
+      }
+    ],
+    "child_matches_written_defaults": true,
+    "child_turn_context": [
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "low"
+      },
+      {
+        "model": "gpt-6-luna",
+        "effort": "medium"
+      }
+    ],
+    "project_config_restored": true,
+    "main_config_hash_unchanged": true,
+    "compaction_trigger_observed": false
+  },
+  "desktop_install": {
+    "original_entry_reused": true,
+    "original_application_data_files_verified": 10,
+    "original_program_backup_verified": true,
+    "real_picker_in_installed_source": true,
+    "original_registry_and_snapshot_bindings_preserved": true
+  },
+  "portable_smoke": {
+    "isolated_qingxu_data": true,
+    "uses_default_real_codex_source": true,
+    "remembered_real_chat_kept": true,
+    "python_on_path": false,
+    "chinese_space_unpack_path": true,
+    "version": "0.10.0-rc2"
+  },
+  "portable_artifact": {
+    "version": "0.10.0-rc2",
+    "platform": "Windows x64",
+    "file": "Qingxu-0.10.0-rc2-Windows-x64.zip",
+    "bytes": 14335346,
+    "sha256": "1bbe4a258315694c2c729ed2bee5eb59883e0b5e98e1a9255f471eff3e768a73",
+    "exe_bytes": 14540276,
+    "exe_sha256": "7dc9722d47d32b656a1b7b7d0c4bd0437d0f24829d08a9f060fd438d759d5a09",
+    "application_modules_compared": 8,
+    "icon_matches": true,
+    "zip_entries": 14
+  }
+}

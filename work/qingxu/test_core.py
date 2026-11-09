@@ -1,5 +1,6 @@
 import tempfile, unittest
 from pathlib import Path
+from test_path_support import file_symlink
 from core import *
 class CoreTests(unittest.TestCase):
  def test_insert_before_tables(self):
@@ -47,7 +48,7 @@ class CoreTests(unittest.TestCase):
    self.assertEqual(p.read_bytes(),b'x=2')
  def test_symlink_rejected(self):
   with tempfile.TemporaryDirectory() as d:
-   p=Path(d)/'real.toml';p.write_bytes(b'x=1');link=Path(d)/'config.toml';link.symlink_to(p)
+   p=Path(d)/'real.toml';p.write_bytes(b'x=1');link=Path(d)/'config.toml';file_symlink(self,link,p)
    with self.assertRaises(SafeError):read_target(link)
  def test_no_change(self):
   with tempfile.TemporaryDirectory() as d:
@@ -72,7 +73,7 @@ class ExportTests(unittest.TestCase):
    with self.assertRaises(SafeError):read_backup(p,digest(b'x=1'))
  def test_backup_symlink(self):
   with tempfile.TemporaryDirectory() as d:
-   p=Path(d)/'real';p.write_bytes(b'x=1');q=Path(d)/'link';q.symlink_to(p)
+   p=Path(d)/'real';p.write_bytes(b'x=1');q=Path(d)/'link';file_symlink(self,q,p)
    with self.assertRaises(SafeError):read_backup(q,digest(b'x=1'))
  def test_valid_backup(self):
   with tempfile.TemporaryDirectory() as d:

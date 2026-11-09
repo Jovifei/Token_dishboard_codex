@@ -1,0 +1,142 @@
+[
+  {
+    "file": "01-usage.jpg",
+    "caption": "用量概览：宽屏双栏和最近四条活动",
+    "sha256": "57a1a2477795cf37d6dc83af1e0e1830a1e71c32e28143366ef8ba9e90f8f35e",
+    "bytes": 116218,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "02-handoff-old.jpg",
+    "caption": "接续第一步：旧聊提示词预览与固定动作栏",
+    "sha256": "300510ab03850687411fc2fe13e402710083a99188357f65b8d5dafb4c39263e",
+    "bytes": 129315,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "03-handoff-saved.jpg",
+    "caption": "接续第二步：实际保存合成摘要并读回",
+    "sha256": "2fe8c5ffce7a3b32443897cac7572171a9bc9335a51bec0712170c536516ccfa",
+    "bytes": 123520,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "04-handoff-new.jpg",
+    "caption": "接续第三步：复制文件型提示词，明确待新聊执行",
+    "sha256": "f8f73d81488ad46b773a2c4951ac6f09065fcc06726f3bf2dcb8f85adaf572a7",
+    "bytes": 131115,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "05-settings.jpg",
+    "caption": "提醒策略和可更改目录",
+    "sha256": "ed6f43fc0db979bd4e580fa4dcc49b98389f0376fc61436f9aa29ad92b9a0e66",
+    "bytes": 111817,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "06-settings-saved.jpg",
+    "caption": "自定义65%轻续提醒保存、读回成功",
+    "sha256": "e12f5e6fce73e7646b1d76928a8fa3ec2227627368bee03c76b357ef7fb894d7",
+    "bytes": 110306,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "07-config.jpg",
+    "caption": "主/子Agent模型、推理配置和文件值对照",
+    "sha256": "b055e66d4afb5b7308f2eed2b402c49656d13a2cfab7259b35883dc38bb63bcc",
+    "bytes": 118989,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "08-floating-alert.jpg",
+    "caption": "达到提醒线：全局横幅与悬浮窗，四条进度及底部操作完整可见",
+    "sha256": "f5593d7f813c1af2836a099e5e03401a000f74e07b39836c10e2df133eb71c9e",
+    "bytes": 157101,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "09-floating-selected.jpg",
+    "caption": "悬浮窗切换为跟随轻续所选聊天",
+    "sha256": "55ba7d37808098eff13753457905b2a54eb3740c3f6167fba79b453693d087d5",
+    "bytes": 148710,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  },
+  {
+    "file": "10-floating-compact.jpg",
+    "caption": "仅此会话暂缓10分钟，并收起为可拖动小牌",
+    "sha256": "6f7cd63df6ce8fd446af91f8bf4b6e82247bca9baf87d4fd703451369f774f2c",
+    "bytes": 134926,
+    "size": [
+      1364,
+      1024
+    ],
+    "kind": "real_Tk_CUA_screenshot",
+    "platform": "Linux desktop / native Tk",
+    "synthetic_data": true,
+    "pixel_editing": false
+  }
+]

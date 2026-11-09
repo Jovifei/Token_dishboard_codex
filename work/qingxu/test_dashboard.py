@@ -230,6 +230,11 @@ class DefaultTests(unittest.TestCase):
             self.assertEqual(model_defaults(catalog, "terra")["model_auto_compact_token_limit"], 200000)
             data["client_version"] = "0.168.0"
             catalog.write_text(json.dumps(data), encoding="utf-8")
+            # Explicit catalog evidence survives an unknown client version.
+            self.assertEqual(model_defaults(catalog, "terra")["model_auto_compact_token_limit"], 200000)
+            # Without that evidence, do not infer a threshold from its window.
+            del entry["auto_compact_token_limit"]
+            catalog.write_text(json.dumps(data), encoding="utf-8")
             self.assertIsNone(model_defaults(catalog, "terra")["model_auto_compact_token_limit"])
 
     def test_unset_only_selected_root_fields(self):

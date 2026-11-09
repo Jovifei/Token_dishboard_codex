@@ -1,65 +1,43 @@
 # 轻续 Qingxu · Codex Token 工作台
 
-轻续是面向 Codex 桌面端用户的 Windows 本地工具。它按项目和聊天解释 token 用量，提醒你何时检查上下文，并生成旧聊天收尾和同项目新聊天接续的指令。
+轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前版本** 0.9.3 · Windows x64 分享预览版
+**当前候选版** 0.10.0-rc2 · Windows x64
 
-[Windows x64 便携 ZIP](releases/Qingxu-0.9.3-Windows-x64.zip) · [单文件 EXE](releases/轻续.exe) · [UI 与源码交接 ZIP](releases/Qingxu-UI-Handoff-0.9.3-20261109.zip)
+[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.10.0-rc2-Windows-x64.zip) · [源码与本机验收包](releases/Qingxu-0.10.0-rc2-Local-Acceptance.zip) · [本机验收结果](docs/LOCAL-ACCEPTANCE.md)
 
-![轻续聊天用量与诊断页面的合成数据示例](docs/ui-handoff-0.9.3/assets/screens/04-diagnosis.jpg)
+![用量概览的合成数据示例，来自 rc1 Linux Tk](docs/ui-handoff-0.10.0-rc1/assets/current-screens/01-usage.jpg)
 
 ## 快速开始
 
-1. 下载并解压便携 ZIP，双击 `轻续.exe`。程序自带运行环境。通过 GitHub 文件页面获取时，点击 **Download raw file**。
-2. 在「聊天用量 → 当前聊天」选择 Codex 项目和聊天。查看最近请求、聊天累计、内容来源和诊断。顶部提醒默认在 80% 提示，可调整或暂停。
-3. 想换聊时，在「交接与知识库」复制保存指令给旧聊天。把返回的短摘要粘贴到「交接摘要」，核对后将恢复指令发到同项目的新聊天。
-4. 要试用「配置与恢复」，先选 `config.toml` 的副本。读取后勾选字段、预览、确认应用。工作台备份原文件并读回，恢复时会检查目标是否已有其他改动。
+1. 下载便携 ZIP 并完整解压，运行 `轻续.exe`。在 GitHub 文件页面可用 **Download raw file**。
+2. 正常启动会列出本机 Codex 项目和聊天。使用自定义数据位置时，可在「设置 → 目录与提醒」调整。无知识库时可以直接接续。
+3. 在顶部选择项目和聊天。「用量概览」显示最近请求参考、来源和四条最近活动。按需打开悬浮窗。
+4. 在「会话接续」把旧聊指令发给所选会话，粘贴或导入摘要，点「保存并核对」。在同项目新建聊天，发送文件引用或携带摘要的恢复指令。
+5. 修改「Codex 配置」时先用副本验证读取、预览、备份、写后读回和恢复。轻续提醒策略与 Codex 自动压缩参数分别保存。
 
-## 三个工作区
+## 数据与边界
 
-| 页面 | 功能 |
-| --- | --- |
-| 聊天用量 | 从本机可识别的日志读取选中聊天。最近请求、同聊累计、工具调用次数和内容来源的日志字节各有口径。可选的日期快照读取已有 ccusage 增量统计。 |
-| 交接与知识库 | 分享版默认生成手动接力指令，由使用者选择发送和换聊。普通 Markdown 文件夹可用，私有短断点、Obsidian 映射和快照采集需分别配置。 |
-| 配置与恢复 | 核对文件值和模型目录参考，比较继承、推荐和自定义方案。对选中的 TOML 字段执行预览、备份、确认、写后读回及冲突检查。 |
-
-## 本机数据与权限
-
-轻续默认读取当前 Windows 用户的 `%USERPROFILE%\.codex`，支持 `CODEX_HOME`。需要隔离时可用 `QINGXU_CODEX_HOME` 指定单独的数据目录。EXE 的偏好、日志和配置备份默认保存在 `%LOCALAPPDATA%\Qingxu`，源码启动保存在 `work/qingxu/data`。配置备份可能含凭据，应留在本机。
-
-用量来自可识别的本机样本。缺失显示未知，日志字节、会员额度和账单各有独立口径。配置页的写后读回确认文件内容，Codex 运行时是否采用需要另行验收。
+- 最近请求、聊天累计、日志字节、ccusage 快照各有口径。未知、过期、真实零和压缩后待测分别展示。悬浮窗跟随轻续所选或本机记录的最近活动。
+- EXE 默认在 `%LOCALAPPDATA%\Qingxu` 保存自己的偏好、备份和日志，源码默认使用 `work/qingxu/data`。可用 `QINGXU_DATA_DIR` 隔离轻续数据，用 `QINGXU_CODEX_HOME` 指定初始 Codex 来源。更换绑定目录无需迁移已有文件。
+- 摘要校验所选项目、工作路径、来源会话和哈希。文件引用要求新会话具备读取交接文件的权限。携带摘要可以直接在提示词中恢复任务状态。
+- 普通 Markdown、Obsidian 和 ccusage 是可选接入。消息由使用者发送，知识更新受实际授权约束。配置备份可能含凭据，应留在本机。
 
 ## 从源码运行
 
-在仓库根目录使用带 Tk 的 Python 3.11 或更高版本。下面的合成演示会在新的临时目录生成样本，打开窗口后可以体验三页。
+在仓库根目录使用带 Tk 的 Python 3.11 或以上版本。双击 `Preview-Demo.cmd` 可先体验标为「合成演示」的窗口，`Start-Qingxu.cmd` 启动真实数据入口。
 
 ```powershell
 $demoRoot = Join-Path $env:TEMP ('Qingxu-Demo-' + [guid]::NewGuid().ToString('N'))
-py -3 -B .\tools\demo-current.py --root $demoRoot
+py -3 -B .\tools\demo-current.py --root $demoRoot --check
+.\Test-Windows.cmd
 ```
 
-将 `--check` 加到演示命令末尾可核对 Tk 启动、合成聊天和请求去重后退出。需要读取本机 Codex 数据时，从仓库根目录运行 `py -3 -B .\work\qingxu\launch.pyw`。
+Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已安装该依赖的 Python 环境运行 `py -3 -B .\tools\build-windows.py --output <新目录>`，或使用 `Build-Windows.cmd <新目录>`。
 
-运行当前源码的相关回归：
+## 项目资料
 
-```powershell
-Push-Location .\work\qingxu
-try { py -3 -B -m unittest test_context_usage test_dashboard test_relay test_app.ConfigTests }
-finally { Pop-Location }
-```
-
-## 项目资料与验收
-
-| 入口 | 内容 |
-| --- | --- |
-| [START-HERE.md](START-HERE.md) | 接手顺序、当前基线和验收边界 |
-| [项目背景](docs/PROJECT-BACKGROUND.md) | 产品需求、技术路线和优先级 |
-| [work/qingxu/](work/qingxu/) | 当前维护的 Python/Tk 源码、使用细节和测试 |
-| [离线 UI 报告](docs/ui-handoff-0.9.3/index.html) | 0.9.3 冻结截图、控件回调、指标定义和验证记录。下载交接 ZIP 后在本地打开。 |
-| [0.9.3 复现与打包](docs/ui-handoff-0.9.3/RUN.md) | 冻结源码的合成演示、测试、PyInstaller 打包和可选集成 |
-
-0.9.3 的冻结记录包括 27 张使用合成或空白数据的原生 Tk 截图、49 项相关回归、配置副本的冲突与恢复、私有断点版本保存和读回，以及解压启动和重建。真实新聊接续、配置运行时采用、实际知识库写回、真实采集器启停和跨线程 fork 用量对账仍待验。Token 节省比例需要同任务对照。 [冻结验收记录](docs/ui-handoff-0.9.3/manifest.json)
-
-## 许可
-
-轻续沿用 Codex Pocket 的 MIT 许可，保留原版权声明。便携包附带打包依赖的许可证。 [MIT 许可](LICENSE) · [源码来源](work/qingxu/provenance.json) · [第三方许可证](docs/ui-handoff-0.9.3/source/licenses/)
+- [使用指南](docs/USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
+- [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
+- [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)
+- [0.9.3 Windows x64 便携版](releases/Qingxu-0.9.3-Windows-x64.zip) · [MIT 许可](LICENSE) · [源码来源](work/qingxu/provenance.json)

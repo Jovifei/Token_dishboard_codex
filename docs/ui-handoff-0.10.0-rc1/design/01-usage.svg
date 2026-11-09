@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1120" viewBox="0 0 1440 1120" role="img" aria-labelledby="title desc">
+<title id="title">01 / 用量概览 — 轻续静态设计稿</title>
+<desc id="desc">静态向量设计稿，不是运行截图。项目、路径、测量数值与摘要均为演示内容。所有文字保留为 SVG text 元素；不含位图、脚本或真实个人数据。</desc>
+<rect x="0" y="0" width="1440" height="1120" rx="0" fill="#ECEEF2"/>
+<text x="40" y="43" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="26" font-weight="700" fill="#1D1D1F" text-anchor="start">01 / 用量概览</text>
+<text x="40" y="71" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">轻续 0.10.0-rc1  ·  静态向量设计稿，非运行截图  ·  示例数据</text>
+<text x="1400" y="43" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#0067D9" text-anchor="end">设计交付 / 可编辑 SVG</text>
+<g id="application-shell">
+<rect x="40" y="100" width="1360" height="858" rx="18" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<rect x="40" y="100" width="1360" height="36" rx="18" fill="#F8F9FA"/>
+<rect x="40" y="124" width="1360" height="12" rx="0" fill="#F8F9FA"/>
+<text x="60" y="124" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="600" fill="#6E6E73" text-anchor="start">轻续</text>
+<text x="1376" y="124" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="end">—     □     ×</text>
+<rect x="40" y="136" width="184" height="822" rx="0" fill="#EBEDF1"/>
+<rect x="224" y="136" width="1176" height="822" rx="0" fill="#F5F5F7"/>
+<text x="66" y="186" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="29" font-weight="700" fill="#1D1D1F" text-anchor="start">轻续</text>
+<text x="66" y="214" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">把工作轻轻续上</text>
+<rect x="54" y="251" width="156" height="43" rx="10" fill="#FFFFFF"/>
+<text x="72" y="279" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="600" fill="#0067D9" text-anchor="start">用量概览</text>
+<text x="72" y="330" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="400" fill="#1D1D1F" text-anchor="start">会话接续</text>
+<text x="72" y="381" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="400" fill="#1D1D1F" text-anchor="start">设置</text>
+<rect x="54" y="842" width="156" height="38" rx="8" fill="#F0F2F5"/>
+<text x="132.0" y="866.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">打开悬浮监测</text>
+<text x="64" y="905" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">0.10.0-rc1</text>
+<text x="64" y="927" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">本地数据 · 按需读取</text>
+<text x="250" y="182" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="28" font-weight="700" fill="#1D1D1F" text-anchor="start">用量概览</text>
+<text x="250" y="208" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">知道何时收尾，让下一次对话更轻。</text>
+<rect x="1192" y="163" width="180" height="36" rx="8" fill="#F0F2F5"/>
+<text x="1282.0" y="186.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">选择项目目录…</text>
+<rect x="250" y="230" width="1122" height="84" rx="12" fill="#FFFFFF"/>
+<rect x="264" y="243" width="138" height="34" rx="7" fill="#F0F2F5"/>
+<rect x="267" y="246" width="65" height="28" rx="6" fill="#EAF3FF"/>
+<text x="299" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#0067D9" text-anchor="middle">项目</text>
+<text x="366" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="middle">最近</text>
+<text x="422" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">项目</text>
+<rect x="460" y="242" width="240" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="471" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">省 token · 示例                  ⌄</text>
+<text x="719" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">聊天</text>
+<rect x="757" y="242" width="464" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="768" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">轻续 UI 改版 · 示例                             ⌄</text>
+<rect x="1235" y="243" width="120" height="34" rx="8" fill="#F0F2F5"/>
+<text x="1295.0" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">刷新</text>
+<text x="266" y="299" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">工作目录 D:\Projects\qingxu-demo   ·   聊天 demo-chat-01   ·   仅为演示身份</text>
+</g>
+<rect x="250" y="326" width="1122" height="42" rx="9" fill="#FFF0D7"/>
+<text x="266" y="353" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#8F5100" text-anchor="start">即将达到轻续提醒线。可准备交接，先别追加大任务。</text>
+<rect x="250" y="380" width="90" height="34" rx="8" fill="#FFFFFF"/>
+<text x="295.0" y="403" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#0067D9" text-anchor="middle">概览</text>
+<rect x="347" y="380" width="90" height="34" rx="8" fill="#E9ECF0"/>
+<text x="392.0" y="403" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="middle">详细记录</text>
+<rect x="444" y="380" width="115" height="34" rx="8" fill="#E9ECF0"/>
+<text x="501.5" y="403" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="middle">ccusage 快照</text>
+<g id="context-reference-card">
+<rect x="250" y="426" width="1122" height="270" rx="14" fill="#FFFFFF"/>
+<text x="272" y="457" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="600" fill="#1D1D1F" text-anchor="start">轻续 UI 改版</text>
+<rect x="1240" y="438" width="110" height="26" rx="13" fill="#FFF0D7"/>
+<text x="1295.0" y="456" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="600" fill="#8F5100" text-anchor="middle">准备交接</text>
+<text x="270" y="513" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="46" font-weight="700" fill="#8F5100" text-anchor="start">72.0%</text>
+<text x="459" y="508" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="18" font-weight="400" fill="#6E6E73" text-anchor="start">144,000 / 200,000 tokens</text>
+<text x="272" y="544" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">最近请求总量参考 · 演示时间 14:32</text>
+<rect x="272" y="562" width="1076" height="9" rx="4" fill="#E9ECF0"/>
+<rect x="272" y="562" width="774.72" height="9" rx="4" fill="#8F5100"/>
+<path d="M1132.8000000000002 558L1132.8000000000002 575" stroke="#4D5661" stroke-width="2" fill="none"/>
+<text x="272" y="599" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">容量依据：配置文件参考线；本会话是否采用仍未知。</text>
+<text x="272" y="624" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">轻续推荐提醒 160,000 tokens  ·  来源为参考压缩线的 80%  ·  运行时压缩线未知</text>
+<rect x="272" y="646" width="142" height="36" rx="8" fill="#0067D9"/>
+<text x="343.0" y="669.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle">准备交接</text>
+<rect x="426" y="646" width="144" height="36" rx="8" fill="#F0F2F5"/>
+<text x="498.0" y="669.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">打开悬浮窗</text>
+<rect x="582" y="646" width="124" height="36" rx="8" fill="#F0F2F5"/>
+<text x="644.0" y="669.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">调整提醒</text>
+<rect x="1220" y="646" width="130" height="36" rx="8" fill="#F0F2F5"/>
+<text x="1285.0" y="669.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">刷新测量</text>
+</g>
+<text x="250" y="729" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="18" font-weight="700" fill="#1D1D1F" text-anchor="start">最近活动</text>
+<text x="1372" y="728" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="end">轻量监测 · 最多 4 条</text>
+<rect x="250" y="743" width="1122" height="37" rx="8" fill="#FFFFFF"/>
+<text x="266" y="766" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#1D1D1F" text-anchor="start">● 轻续 UI 改版</text>
+<text x="502" y="766" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">省 token · 准备交接</text>
+<rect x="900" y="758" width="290" height="9" rx="4" fill="#E9ECF0"/>
+<rect x="900" y="758" width="208.79999999999998" height="9" rx="4" fill="#8F5100"/>
+<text x="1351" y="766" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#8F5100" text-anchor="end">72.0%</text>
+<rect x="250" y="786" width="1122" height="37" rx="8" fill="#FFFFFF"/>
+<text x="266" y="809" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">导入与恢复验证</text>
+<text x="502" y="809" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">示例工程 · 可以继续</text>
+<rect x="900" y="801" width="290" height="9" rx="4" fill="#E9ECF0"/>
+<rect x="900" y="801" width="130.5" height="9" rx="4" fill="#267348"/>
+<text x="1351" y="809" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#267348" text-anchor="end">45.0%</text>
+<rect x="250" y="829" width="1122" height="37" rx="8" fill="#FFFFFF"/>
+<text x="266" y="852" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">新项目初始化</text>
+<text x="502" y="852" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">示例工程 · 等待数据</text>
+<rect x="900" y="844" width="290" height="9" rx="4" fill="#E9ECF0"/>
+<text x="1351" y="852" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#6E6E73" text-anchor="end">—</text>
+<rect x="250" y="872" width="1122" height="37" rx="8" fill="#FFFFFF"/>
+<text x="266" y="895" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">目录整理</text>
+<text x="502" y="895" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">资料实验 · 最后已知值</text>
+<rect x="900" y="887" width="290" height="9" rx="4" fill="#E9ECF0"/>
+<rect x="900" y="887" width="197.20000000000002" height="9" rx="4" fill="#6E6E73"/>
+<text x="1351" y="895" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#6E6E73" text-anchor="end">上次 68.0%</text>
+<text x="250" y="938" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">进度为最近可读请求的参考，无法确定 Codex 当前点击的聊天；累计用量与费用请查看独立记录。</text>
+<rect x="40" y="984" width="438" height="100" rx="12" fill="#FFFFFF"/>
+<text x="58" y="1011" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#1D1D1F" text-anchor="start">一级动作 · 准备交接</text>
+<text x="58" y="1035" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">保持项目与会话身份，进入三步交接；不自动发消息或新建 Codex 聊</text>
+<text x="58" y="1055" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">天。</text>
+<rect x="495" y="984" width="438" height="100" rx="12" fill="#FFFFFF"/>
+<text x="513" y="1011" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#1D1D1F" text-anchor="start">二级动作 · 解释数值</text>
+<text x="513" y="1035" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">详细记录看请求与来源；ccusage 看已有快照。未知显示 —，过期显</text>
+<text x="513" y="1055" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">示最后已知值。</text>
+<rect x="950" y="984" width="450" height="100" rx="12" fill="#FFFFFF"/>
+<text x="968" y="1011" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#1D1D1F" text-anchor="start">选择与提醒的边界</text>
+<text x="968" y="1035" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">顶部或列表的选择改变轻续目标。浮窗跟随轻续选择；后台结果不得串</text>
+<text x="968" y="1055" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">到新选择。</text>
+</svg>

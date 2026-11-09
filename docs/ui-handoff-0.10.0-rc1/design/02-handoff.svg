@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1370" viewBox="0 0 1440 1370" role="img" aria-labelledby="title desc">
+<title id="title">02 / 会话接续 — 轻续静态设计稿</title>
+<desc id="desc">静态向量设计稿，不是运行截图。项目、路径、测量数值与摘要均为演示内容。所有文字保留为 SVG text 元素；不含位图、脚本或真实个人数据。</desc>
+<rect x="0" y="0" width="1440" height="1370" rx="0" fill="#ECEEF2"/>
+<text x="40" y="43" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="26" font-weight="700" fill="#1D1D1F" text-anchor="start">02 / 会话接续</text>
+<text x="40" y="71" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">轻续 0.10.0-rc1  ·  静态向量设计稿，非运行截图  ·  示例数据</text>
+<text x="1400" y="43" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#0067D9" text-anchor="end">设计交付 / 可编辑 SVG</text>
+<g id="application-shell">
+<rect x="40" y="100" width="1360" height="858" rx="18" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<rect x="40" y="100" width="1360" height="36" rx="18" fill="#F8F9FA"/>
+<rect x="40" y="124" width="1360" height="12" rx="0" fill="#F8F9FA"/>
+<text x="60" y="124" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="600" fill="#6E6E73" text-anchor="start">轻续</text>
+<text x="1376" y="124" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="end">—     □     ×</text>
+<rect x="40" y="136" width="184" height="822" rx="0" fill="#EBEDF1"/>
+<rect x="224" y="136" width="1176" height="822" rx="0" fill="#F5F5F7"/>
+<text x="66" y="186" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="29" font-weight="700" fill="#1D1D1F" text-anchor="start">轻续</text>
+<text x="66" y="214" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">把工作轻轻续上</text>
+<text x="72" y="279" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="400" fill="#1D1D1F" text-anchor="start">用量概览</text>
+<rect x="54" y="302" width="156" height="43" rx="10" fill="#FFFFFF"/>
+<text x="72" y="330" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="600" fill="#0067D9" text-anchor="start">会话接续</text>
+<text x="72" y="381" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="16" font-weight="400" fill="#1D1D1F" text-anchor="start">设置</text>
+<rect x="54" y="842" width="156" height="38" rx="8" fill="#F0F2F5"/>
+<text x="132.0" y="866.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">打开悬浮监测</text>
+<text x="64" y="905" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">0.10.0-rc1</text>
+<text x="64" y="927" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">本地数据 · 按需读取</text>
+<text x="250" y="182" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="28" font-weight="700" fill="#1D1D1F" text-anchor="start">会话接续</text>
+<text x="250" y="208" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">保留项目目标和当前断点，在新聊天继续。</text>
+<rect x="1192" y="163" width="180" height="36" rx="8" fill="#F0F2F5"/>
+<text x="1282.0" y="186.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">选择项目目录…</text>
+<rect x="250" y="230" width="1122" height="84" rx="12" fill="#FFFFFF"/>
+<rect x="264" y="243" width="138" height="34" rx="7" fill="#F0F2F5"/>
+<rect x="267" y="246" width="65" height="28" rx="6" fill="#EAF3FF"/>
+<text x="299" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#0067D9" text-anchor="middle">项目</text>
+<text x="366" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="middle">最近</text>
+<text x="422" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">项目</text>
+<rect x="460" y="242" width="240" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="471" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">省 token · 示例                  ⌄</text>
+<text x="719" y="266" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">聊天</text>
+<rect x="757" y="242" width="464" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="768" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">轻续 UI 改版 · 示例                             ⌄</text>
+<rect x="1235" y="243" width="120" height="34" rx="8" fill="#F0F2F5"/>
+<text x="1295.0" y="265.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">刷新</text>
+<text x="266" y="299" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">工作目录 D:\Projects\qingxu-demo   ·   聊天 demo-chat-01   ·   仅为演示身份</text>
+</g>
+<rect x="250" y="326" width="1122" height="42" rx="9" fill="#EAF3FF"/>
+<text x="266" y="353" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#245078" text-anchor="start">当前目标：省 token / 轻续 UI 改版。新聊天须使用同一项目与工作目录。</text>
+<g id="three-step-selector">
+<rect x="250" y="383" width="364" height="55" rx="10" fill="#E8EBEF"/>
+<text x="266" y="405" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#1D1D1F" text-anchor="start">1  整理旧会话</text>
+<text x="266" y="426" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">已复制旧聊指令</text>
+<rect x="629" y="383" width="364" height="55" rx="10" fill="#FFFFFF" stroke="#0067D9" stroke-width="1"/>
+<text x="645" y="405" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#0067D9" text-anchor="start">2  保存交接</text>
+<text x="645" y="426" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">当前步骤</text>
+<rect x="1008" y="383" width="364" height="55" rx="10" fill="#E8EBEF"/>
+<text x="1024" y="405" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="15" font-weight="700" fill="#1D1D1F" text-anchor="start">3  开始新会话</text>
+<text x="1024" y="426" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">待保存后继续</text>
+</g>
+<rect x="250" y="452" width="1122" height="386" rx="14" fill="#FFFFFF"/>
+<text x="272" y="482" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="19" font-weight="700" fill="#1D1D1F" text-anchor="start">2 · 把摘要保存成可恢复的交接</text>
+<text x="272" y="509" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">粘贴旧聊返回的 Markdown，或读取它保存的文件。每次保存生成一个新版本并读回核对。</text>
+<rect x="272" y="529" width="112" height="36" rx="8" fill="#F0F2F5"/>
+<text x="328.0" y="552.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">粘贴摘要</text>
+<rect x="395" y="529" width="120" height="36" rx="8" fill="#F0F2F5"/>
+<text x="455.0" y="552.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">导入文件…</text>
+<rect x="526" y="529" width="212" height="36" rx="8" fill="#F0F2F5"/>
+<text x="632.0" y="552.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">读取旧聊保存的文件</text>
+<rect x="749" y="529" width="150" height="36" rx="8" fill="#F0F2F5"/>
+<text x="824.0" y="552.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">读取最近交接</text>
+<rect x="272" y="579" width="1078" height="185" rx="8" fill="#FAFBFC" stroke="#DFE3E8" stroke-width="1"/>
+<text x="286" y="602" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">&lt;!-- qingxu-source:v1 … --&gt;    来源身份由模板提供，保存时核对</text>
+<text x="286" y="625" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">项目目标：让用户看懂上下文压力，并把未完成工作交给下一次聊天。</text>
+<text x="286" y="648" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">已完成：选择项目与聊天、三步交接布局；待办：本机端到端验收。</text>
+<text x="286" y="671" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">约束：保留用户文件；不自动写知识库；数据未知时明确说明。</text>
+<text x="286" y="694" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">证据：按交接中的实际文件与验证记录核对，不能把本示例当完成证据。</text>
+<text x="286" y="717" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">下一步：在目标机器读取保存文件，验证新聊天能接续当前任务。</text>
+<text x="286" y="740" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">按需资料：先读项目入口 / 任务记录，仅在需要时打开具体文档。</text>
+<text x="272" y="794" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="600" fill="#8F5100" text-anchor="start">已编辑 · 尚未保存。文件型新聊指令需保存并读回通过后才可复制。</text>
+<text x="272" y="818" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">本次知识策略：仅保存交接  ·  无需 Obsidian 或登记引擎</text>
+<rect x="250" y="853" width="1122" height="77" rx="12" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="272" y="878" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">固定操作栏 · 内容滚动时仍可操作</text>
+<rect x="272" y="888" width="150" height="36" rx="8" fill="#0067D9"/>
+<text x="347.0" y="911.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle">保存并核对</text>
+<rect x="434" y="888" width="150" height="36" rx="8" fill="#F0F2F5"/>
+<text x="509.0" y="911.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">打开保存目录</text>
+<rect x="1163" y="888" width="187" height="36" rx="8" fill="#F0F2F5"/>
+<text x="1256.5" y="911.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">去新会话续接 →</text>
+<text x="250" y="949" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="12" font-weight="400" fill="#6E6E73" text-anchor="start">保存、复制、旧聊执行、新聊恢复为不同状态；只有完成的本地操作才显示成功。</text>
+<g id="other-step-states">
+<text x="40" y="1000" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="18" font-weight="700" fill="#1D1D1F" text-anchor="start">其余步骤 / 状态示意（不与上方步骤同时显示）</text>
+<rect x="40" y="1020" width="666" height="310" rx="14" fill="#FFFFFF"/>
+<rect x="724" y="1020" width="676" height="310" rx="14" fill="#FFFFFF"/>
+<text x="60" y="1051" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="18" font-weight="700" fill="#1D1D1F" text-anchor="start">步骤 1 · 复制给旧会话</text>
+<text x="60" y="1080" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">选择聊天后自动生成预览；不自动复制、不创建文件。旧聊可写到指定的新文件，</text>
+<text x="60" y="1101" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#6E6E73" text-anchor="start">也可直接返回规范的交接正文。</text>
+<text x="60" y="1140" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">本次长期知识处理</text>
+<rect x="60" y="1153" width="410" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="71" y="1176.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">仅保存交接                                  ⌄</text>
+<text x="60" y="1216" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">模板可编辑，身份与格式校验由工具补齐。</text>
+<rect x="60" y="1244" width="156" height="36" rx="8" fill="#0067D9"/>
+<text x="138.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle">复制给旧会话</text>
+<rect x="228" y="1244" width="120" height="36" rx="8" fill="#F0F2F5"/>
+<text x="288.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">编辑模板</text>
+<rect x="360" y="1244" width="120" height="36" rx="8" fill="#F0F2F5"/>
+<text x="420.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">重新生成</text>
+<text x="60" y="1306" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">完成反馈：已复制，等待你发送到旧会话。</text>
+<text x="744" y="1051" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="18" font-weight="700" fill="#1D1D1F" text-anchor="start">步骤 3 · 复制给新会话</text>
+<text x="744" y="1085" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#0067D9" text-anchor="start">● 读取交接文件 · 指令更短</text>
+<text x="744" y="1110" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="start">○ 携带摘要 · 可直接粘贴</text>
+<rect x="744" y="1127" width="632" height="36" rx="7" fill="#FFFFFF" stroke="#DFE3E8" stroke-width="1"/>
+<text x="755" y="1150.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#1D1D1F" text-anchor="start">下一阶段目标（可选）</text>
+<text x="744" y="1193" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">文件型：保存、读回、身份和哈希全部有效。携带摘要型：可用未保存文本，明确来源与未验证状态。</text>
+<rect x="744" y="1244" width="156" height="36" rx="8" fill="#0067D9"/>
+<text x="822.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle">复制给新会话</text>
+<rect x="912" y="1244" width="120" height="36" rx="8" fill="#F0F2F5"/>
+<text x="972.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">预览指令</text>
+<rect x="1044" y="1244" width="146" height="36" rx="8" fill="#F0F2F5"/>
+<text x="1117.0" y="1267.0" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="14" font-weight="400" fill="#1D1D1F" text-anchor="middle">返回保存摘要</text>
+<text x="744" y="1306" font-family="&#x27;SF Pro Text&#x27;, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, &#x27;Noto Sans CJK SC&#x27;, sans-serif" font-size="13" font-weight="400" fill="#6E6E73" text-anchor="start">完成反馈：已复制，等待你在同项目新聊天执行。</text>
+</g>
+</svg>

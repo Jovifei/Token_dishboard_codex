@@ -1,9 +1,22 @@
 @echo off
 setlocal
-if not exist "D:\Python\Python3.14\pythonw.exe" (
-  echo Python runtime not found: D:\Python\Python3.14\pythonw.exe
-  echo See README.md. No configuration was changed.
-  pause
-  exit /b 1
+cd /d "%~dp0"
+where pyw >nul 2>nul
+if %errorlevel%==0 (
+  start "" pyw -3 "%~dp0launch.pyw"
+  exit /b 0
 )
-start "" /D "%~dp0" "D:\Python\Python3.14\pythonw.exe" "%~dp0launch.pyw"
+where pythonw >nul 2>nul
+if %errorlevel%==0 (
+  start "" pythonw "%~dp0launch.pyw"
+  exit /b 0
+)
+where py >nul 2>nul
+if %errorlevel%==0 (
+  start "" py -3 "%~dp0launch.pyw"
+  exit /b 0
+)
+echo Install Python 3.11 or newer with Tcl/Tk support, then try again.
+echo No Codex configuration or knowledge files were changed.
+pause
+exit /b 1

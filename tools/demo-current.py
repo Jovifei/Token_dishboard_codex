@@ -13,21 +13,23 @@ def main():
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(project / "work" / "qingxu"))
-    from app import App, VERSION
+    from app import VERSION
+    from workbench import Workbench
     from context_usage import chat_metrics
     from relay import Relay
 
-    fixture = runpy.run_path(str(project / "docs" / "ui-handoff-0.9.3" / "fixtures" / "demo.py"))
+    fixture = runpy.run_path(str(project / "tools/fixtures/demo.py"))
     data = fixture["create"](args.root)
     root = tk.Tk()
     try:
         if args.check:
             root.withdraw()
-        ui = App(root, Relay(data["settings"]), data["prefs"])
+        ui = Workbench(root, Relay(data["settings"]), data["prefs"])
+        root.title(root.title() + " · 合成演示")
         if args.check:
-            assert len(ui.chat_usage.chats) == 5
+            assert len(ui.catalog["chats"]) == 5
             chat_id = fixture["IDS"]["normal"]
-            ui.choose_usage_chat(ui.chat_usage.chats[chat_id])
+            ui.choose_record(next(row for row in ui.catalog["chats"] if row["chat_id"] == chat_id))
             report = chat_metrics(data["settings"]["chat_db"], chat_id, include_totals=True)
             assert report["sample"]["usage"]["totalTokens"] == 128000
             assert report["requests"]["requests"] == 1 and report["requests"]["duplicates"] == 1

@@ -202,14 +202,15 @@ def _tail(path, identity, _file_version, measure_sources=False):
             except ValueError:
                 continue
             total = info.get("total_token_usage")
-            counter = _number(total.get("total_tokens")) if isinstance(total, dict) else None
+            counter = total.get("total_tokens") if isinstance(total, dict) else None
+            counter = counter if type(counter) is int and counter >= 0 else None
             if counter is not None and counter == last_counter:
                 continue
-            if usage["totalTokens"]:
-                last_counter = counter
-                sample = {"time": timestamp, "usage": usage,
-                          "window": _number(info.get("model_context_window")) or window,
-                          "runtime_limit": _number(info.get("model_auto_compact_token_limit"))}
+            # An explicit, reconciled zero is a measurement, not missing data.
+            last_counter = counter
+            sample = {"time": timestamp, "usage": usage,
+                      "window": _number(info.get("model_context_window")) or window,
+                      "runtime_limit": _number(info.get("model_auto_compact_token_limit"))}
     if sample and any(t and t > sample["time"] for t in (compacted, started)):
         sample = None
     sources = None

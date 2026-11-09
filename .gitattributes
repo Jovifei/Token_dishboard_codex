@@ -2,3 +2,5 @@
 docs/ui-handoff-0.9.3/** -text
 work/qingxu/** -text
 releases/** -text
+install/** -text
+docs/ui-handoff-0.10.0-rc1/** -text

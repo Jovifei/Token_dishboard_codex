@@ -26,8 +26,8 @@ def model_defaults(catalog, model):
     if window and data.get("client_version") == "0.167.0":
         window_limit = window * 9 // 10
         compact = min(compact, window_limit) if compact else window_limit
-    elif window:
-        compact = None
+    # In other client versions a missing default remains unknown, but an explicit
+    # catalog value is still evidence. Do not erase it just because window exists.
     policy = match.get("truncation_policy") or {}
     levels = match.get("supported_reasoning_levels")
     efforts = None
