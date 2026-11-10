@@ -8,6 +8,8 @@ import tkinter as tk
 from tkinter import font as tkfont, ttk
 
 from dashboard import ChatDashboard, Dashboard
+from ui_brand import BrandMark, set_window_icon
+from ui_motion import attach_motion_tree
 
 
 BG, CARD, INK, MUTED = "#f5f5f7", "#ffffff", "#1d1d1f", "#6e6e73"
@@ -31,7 +33,10 @@ def _styles(root, family):
     style.configure("MonitorMode.TButton", padding=(6, 4), font=(family, 9))
     style.configure("Selected.MonitorMode.TButton", background=CARD, foreground=BLUE)
     style.map("Selected.MonitorMode.TButton", background=[("!disabled", CARD)], foreground=[("!disabled", BLUE)])
-    style.configure("Mini.Monitor.TButton", padding=(3, 1), font=(family, 10))
+    style.configure("Mini.Monitor.TButton", padding=(3, 1), font=(family, 10),
+                    relief="flat", shiftrelief=0)
+    style.configure("FloatingTitle.TLabel", background=BG, foreground=INK,
+                    font=(family, 13, "bold"))
 
 
 def _recent_rank(row):
@@ -403,6 +408,10 @@ class FloatingMonitor:
         self.window = tk.Toplevel(self.app.root)
         self.window.title("轻续 · 上下文小窗")
         self.window.configure(background=BG)
+        try:
+            set_window_icon(self.window)
+        except tk.TclError:
+            pass
         x = max(16, self.app.root.winfo_screenwidth() - 370 - 24)
         y = max(16, self.app.root.winfo_screenheight() - 440 - 60)
         self._normal_geometry = f"370x440+{x}+{y}"
@@ -415,7 +424,8 @@ class FloatingMonitor:
         self.normal.pack(fill="both", expand=True)
         top = ttk.Frame(self.normal, style="App.TFrame")
         top.pack(fill="x")
-        ttk.Label(top, text="轻续 · 上下文", style="Heading.TLabel").pack(side="left")
+        BrandMark(top, size=28, background=BG).pack(side="left", padx=(0, 8))
+        ttk.Label(top, text="轻续 · 上下文", style="FloatingTitle.TLabel").pack(side="left")
         ttk.Button(top, text="隐藏", width=4, command=self.close,
                    style="Mini.Monitor.TButton").pack(side="right", padx=(5, 0))
         ttk.Button(top, text="收起", width=4, command=self.toggle_compact,
@@ -444,9 +454,13 @@ class FloatingMonitor:
         self.prepare_button.pack(side="left")
         self.snooze_button = ttk.Button(actions, text="稍后 10 分钟", command=self._snooze)
         self.snooze_button.pack(side="right")
-        self.mini = ttk.Frame(self.window, style="Card.TFrame", padding=(8, 5))
-        self.mini_value = ttk.Label(self.mini, text="轻续  —", style="Card.TLabel", font=(family, 11, "bold"))
-        self.mini_value.pack(anchor="center")
+        self.mini = ttk.Frame(self.window, style="Card.TFrame", padding=(7, 4))
+        self.mini_header = ttk.Frame(self.mini, style="Card.TFrame")
+        self.mini_header.pack(anchor="center")
+        self.mini_mark = BrandMark(self.mini_header, size=22, background=CARD)
+        self.mini_mark.pack(side="left", padx=(0, 4))
+        self.mini_value = ttk.Label(self.mini_header, text="轻续  —", style="Card.TLabel", font=(family, 10, "bold"))
+        self.mini_value.pack(side="left")
         mini_actions = ttk.Frame(self.mini, style="Card.TFrame")
         mini_actions.pack(anchor="center", pady=(3, 0))
         ttk.Button(mini_actions, text="展开", command=self.toggle_compact, width=4,
@@ -456,7 +470,7 @@ class FloatingMonitor:
         self.menu = tk.Menu(self.window, tearoff=False)
         self.menu.add_command(label="展开", command=lambda: self.toggle_compact() if self.compact else None)
         self.menu.add_command(label="隐藏悬浮窗", command=self.close)
-        for widget in (self.mini, self.mini_value):
+        for widget in (self.mini, self.mini_header, self.mini_mark, self.mini_value):
             widget.bind("<ButtonPress-1>", self._drag_begin)
             widget.bind("<B1-Motion>", self._drag_move)
             widget.bind("<ButtonRelease-1>", self._drag_end)
@@ -464,6 +478,7 @@ class FloatingMonitor:
         self.feedback.trace_add("write", self._queue_fit)
         self.window.bind("<Configure>", self._window_configured, add="+")
         self.window.bind("<Destroy>", self._window_destroyed, add="+")
+        attach_motion_tree(self.window)
 
     def _cancel_fit(self):
         if self._fit_job is not None and self.window is not None:
