@@ -75,6 +75,8 @@ class _Motion:
             foreground=[('disabled','#979DA8')])
 
     def _target(self):
+        if self.button.cget('style') != self.private:
+            self._source()
         if self.source and ('Primary.' in self.source or self.base.lower() in ('#007aff','#087cf7')):
             return _blend(self.button,self.base,'#FFFFFF',.17 if self.down else .11)
         return _blend(self.button,self.base,'#B9DDFE',.34 if self.down else .17)
