@@ -15,6 +15,10 @@ GREEN = "#238246"
 BORDER = "#D9D9DE"
 
 
+from ui_brand import BrandMark, set_window_icon
+from ui_motion import attach_motion_tree
+
+
 class HandoffPanel(ttk.Frame):
     """app: root, prefs(dict), chat, data_root, handoff_store, template_store;
     methods: set_status(text), show_page(name), open_path(path).
@@ -670,9 +674,16 @@ class HandoffPanel(ttk.Frame):
         window.minsize(620, 420)
         window.transient(self.app.root)
         window.configure(background=BG)
+        try:
+            set_window_icon(window)
+        except tk.TclError:
+            pass
         outer = ttk.Frame(window, padding=18, style="App.TFrame")
         outer.pack(fill="both", expand=True)
-        ttk.Label(outer, text="你的续聊方式", style="Heading.TLabel").pack(anchor="w")
+        modal_heading = ttk.Frame(outer, style="App.TFrame")
+        modal_heading.pack(fill="x")
+        BrandMark(modal_heading, size=30, background=BG).pack(side="left", padx=(0, 9))
+        ttk.Label(modal_heading, text="你的续聊方式", style="Section.TLabel").pack(side="left")
         ttk.Label(outer, text="编辑指导正文。项目身份、文件格式与校验要求仍由轻续自动添加。",
                   style="Muted.TLabel", wraplength=730).pack(anchor="w", pady=(6, 12))
         tabs = ttk.Notebook(outer)
@@ -717,5 +728,6 @@ class HandoffPanel(ttk.Frame):
         window.bind("<Escape>", lambda _: close())
         window.bind("<Control-Return>", lambda _: save())
         window.grab_set()
+        attach_motion_tree(window)
         self._template_boxes["save"].focus_set()
 
