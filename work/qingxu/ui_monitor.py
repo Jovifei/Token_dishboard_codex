@@ -172,7 +172,7 @@ class UsagePanel(ttk.Frame):
         self.overview_columns = ttk.Frame(body, style="App.TFrame")
         self.overview_columns.pack(fill="x")
         self._overview_wide = None
-        self.hero = hero = ttk.Frame(self.overview_columns, style="Card.TFrame", padding=(18, 14))
+        self.hero = hero = ttk.Frame(self.overview_columns, style="Card.TFrame", padding=(20, 18))
         top = ttk.Frame(hero, style="Card.TFrame")
         top.pack(fill="x")
         self.hero_title = tk.StringVar(value="选择一次聊天，了解当前余量")
@@ -210,16 +210,16 @@ class UsagePanel(ttk.Frame):
         ttk.Button(actions, text="调整提醒", command=lambda: app.show_page("settings")).pack(side="left")
         self.refresh_button = ttk.Button(actions, text="刷新测量", command=self._refresh)
         self.refresh_button.pack(side="right")
-        self.recent_section = ttk.Frame(self.overview_columns, style="App.TFrame")
-        recent_header = ttk.Frame(self.recent_section, style="App.TFrame")
+        self.recent_section = ttk.Frame(self.overview_columns, style="Card.TFrame", padding=(16, 14))
+        recent_header = ttk.Frame(self.recent_section, style="Card.TFrame")
         recent_header.pack(fill="x", pady=(0, 7))
         ttk.Label(recent_header, text="最近活动", style="Heading.TLabel").pack(side="left")
-        ttk.Label(recent_header, text="轻量监测 · 最多 4 条", style="Muted.TLabel").pack(side="right")
-        self.recent_frame = ttk.Frame(self.recent_section, style="App.TFrame")
+        ttk.Label(recent_header, text="轻量监测 · 最多 4 条", style="CardMuted.TLabel").pack(side="right")
+        self.recent_frame = ttk.Frame(self.recent_section, style="Card.TFrame")
         self.recent_frame.pack(fill="x")
         self.recent_rows = [_ChatRow(self.recent_frame, app.choose_record) for _ in range(4)]
         self.empty = ttk.Label(self.recent_frame, text="还没有可显示的聊天。可在设置中选择 Codex 数据目录。",
-                               style="Muted.TLabel", wraplength=650)
+                               style="CardMuted.TLabel", wraplength=650)
         self.empty.pack(anchor="w", pady=18)
         self.overview_note = ttk.Label(body, text="进度来自最近一次可读请求，不是精确实时上下文或费用。悬浮窗不跟踪 Codex 窗口焦点。",
                                        style="Muted.TLabel", wraplength=760)
