@@ -1,0 +1,57 @@
+{
+  "scales": [
+    {
+      "tk_test_dpi": 96,
+      "native_window_dpi": 96,
+      "workbench": [
+        980,
+        680
+      ],
+      "navigation_geometry_stable": true,
+      "project_chat_controls_fit": true,
+      "compact_pixels": [
+        120,
+        94
+      ],
+      "stale_percentage_and_controls_fit": true,
+      "hide_reopen_expand_passed": true,
+      "native_file_and_directory_picker_cancel": null
+    },
+    {
+      "tk_test_dpi": 144,
+      "native_window_dpi": 96,
+      "workbench": [
+        980,
+        680
+      ],
+      "navigation_geometry_stable": true,
+      "project_chat_controls_fit": true,
+      "compact_pixels": [
+        137,
+        115
+      ],
+      "stale_percentage_and_controls_fit": true,
+      "hide_reopen_expand_passed": true,
+      "native_file_and_directory_picker_cancel": true
+    },
+    {
+      "tk_test_dpi": 192,
+      "native_window_dpi": 96,
+      "workbench": [
+        980,
+        680
+      ],
+      "navigation_geometry_stable": true,
+      "project_chat_controls_fit": true,
+      "compact_pixels": [
+        169,
+        139
+      ],
+      "stale_percentage_and_controls_fit": true,
+      "hide_reopen_expand_passed": true,
+      "native_file_and_directory_picker_cancel": null
+    }
+  ],
+  "synthetic_data_only": true,
+  "system_scaling_changed": false
+}

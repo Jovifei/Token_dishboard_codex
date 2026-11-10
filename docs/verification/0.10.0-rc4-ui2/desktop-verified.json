@@ -1,0 +1,8 @@
+{
+  "version": "0.10.0-rc4-ui2",
+  "shortcut_started_new_version": true,
+  "desktop_native_window_icon": true,
+  "real_two_level_catalog": true,
+  "handoff_uses_selected_chat": true,
+  "existing_data_hashes_verified": 10
+}

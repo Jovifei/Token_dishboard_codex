@@ -1,0 +1,26 @@
+{
+  "version": "0.10.0-rc4-ui2",
+  "zip_crc_ok": true,
+  "sha256": "ccdb5ffa5aa71daade5945c336141d04ba7d4997f258d40803690eace66dbdc0",
+  "bytes": 14295451,
+  "pe_machine": "0x8664",
+  "program_modules_match_source": [
+    "app",
+    "workbench",
+    "ui_handoff",
+    "ui_monitor",
+    "ui_brand",
+    "ui_motion",
+    "knowledge",
+    "ui_preferences"
+  ],
+  "icon_frames": 6,
+  "source_icon_pixels_match": true,
+  "generated_icon_matches_pe_and_embedded": true,
+  "native_taskbar_eligible_window": true,
+  "native_window_icon_registered": true,
+  "chinese_path_with_spaces": true,
+  "python_on_path": false,
+  "startup_window_seen": true,
+  "closed_cleanly": true
+}

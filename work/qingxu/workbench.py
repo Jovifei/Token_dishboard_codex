@@ -77,7 +77,7 @@ class Workbench(App):
         root.configure(bg=BG)
         icon = Path(__file__).with_name("qingxu.ico")
         if os.name == "nt" and icon.is_file():
-            root.iconbitmap(default=str(icon))
+            root.iconbitmap(str(icon))
         # Original vector brand; the bundled ICO is rebuilt by tools/build-windows.py.
         try:
             set_window_icon(root)
@@ -93,7 +93,7 @@ class Workbench(App):
         self.root.bind("<Control-3>", lambda _: self.show_page("settings"))
         self.show_page("usage")
         # Keep ttk commands, focus and geometry. Motion decorates colors only.
-        self.root.after_idle(lambda: attach_motion_tree(self.root))
+        attach_motion_tree(self.root)
         try:
             self.reload_choices()
             self.recall_chat()
@@ -151,8 +151,15 @@ class Workbench(App):
         style.configure("Metrics.Treeview", rowheight=25)
         style.configure("Notice.TLabel", background="#E8F2FF", foreground="#245078", padding=(12, 8))
         style.configure("Alert.TLabel", background="#FFF0D7", foreground="#8F5100", padding=(12, 8))
-        style.configure("Toolbutton", padding=(9, 6), background="#E7EAEE")
-        style.map("Toolbutton", background=[("selected", SURFACE)], foreground=[("selected", BLUE)])
+        # The project-mode segmented controls must not inherit clam's sunken
+        # selected/pressed border. Selection is a surface + text change only.
+        style.configure("Toolbutton", padding=(9, 6), background="#E7EAEE",
+                        relief="flat", borderwidth=0, shiftrelief=0)
+        flat_surfaces = [("selected", SURFACE), ("active", "#E2EEFB"), ("!selected", "#E7EAEE")]
+        style.map("Toolbutton", background=flat_surfaces, lightcolor=flat_surfaces,
+                  darkcolor=flat_surfaces, bordercolor=flat_surfaces,
+                  relief=[("pressed", "flat"), ("selected", "flat"), ("!selected", "flat")],
+                  foreground=[("selected", BLUE)])
         self.configure_checks(style)
 
     def build_shell(self):

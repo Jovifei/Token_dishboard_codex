@@ -1,0 +1,118 @@
+{
+  "timestamp_utc": "2026-11-10T15:24:06.240676+00:00",
+  "platform": "linux",
+  "synthetic_data_only": true,
+  "not_windows_dpi_acceptance": true,
+  "captures": [
+    {
+      "file": "01-usage.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "02-handoff-old.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "03-handoff-saved.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "04-handoff-new.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "05-settings.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "06-config.png",
+      "size": [
+        1240,
+        840
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "07-template-dialog.png",
+      "size": [
+        800,
+        580
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "08-floating-full.png",
+      "size": [
+        390,
+        560
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "09-floating-compact-stale.png",
+      "size": [
+        120,
+        99
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk; injected synthetic stale/100% state for clipping regression",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "10-narrow-handoff.png",
+      "size": [
+        980,
+        680
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    },
+    {
+      "file": "11-narrow-usage.png",
+      "size": [
+        980,
+        680
+      ],
+      "version": "0.10.0-rc4-ui2",
+      "note": "Real Tk with synthetic fixture",
+      "tk_scaling": 1.3879781420765025
+    }
+  ]
+}

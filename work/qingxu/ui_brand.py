@@ -59,23 +59,35 @@ def _round_rect_inside(x, y, corner=.23):
     return xx*xx+yy*yy <= d*d
 
 
+def _coverage(distance, size):
+    return max(0., min(1., .5 - distance * size))
+
+
 def _rgba(size):
+    """Antialiased edge coverage using the same geometry as the SVG master."""
     points = _loop_points()
+    segments = tuple(zip(points, points[1:]))
     result = bytearray()
+    radius, half = 57 / 256, 125 / 256
     for yi in range(size):
         for xi in range(size):
-            x,y=(xi+.5)/size,(yi+.5)/size
-            if not _round_rect_inside(x,y):
-                result.extend((0,0,0,0))
+            x, y = (xi + .5) / size, (yi + .5) / size
+            qx = abs(x - .5) - (half - radius)
+            qy = abs(y - .5) - (half - radius)
+            distance = math.hypot(max(qx, 0.), max(qy, 0.)) + min(max(qx, qy), 0.) - radius
+            alpha = _coverage(distance, size)
+            if not alpha:
+                result.extend((0, 0, 0, 0))
                 continue
-            q=.65*x+.35*y
-            r,g,b=int(56*(1-q)),int(160*(1-q)+103*q),int(255*(1-q)+220*q)
-            if .17 < x < .84 and .30 < y < .69 and any(
-                _line_distance(x,y,a,b)<.0315 for a,b in zip(points,points[1:])):
-                r=g=b=255
-            elif (x-.7617)**2+(y-.3242)**2<.035**2:
-                r,g,b=204,235,255
-            result.extend((r,g,b,255))
+            q = (x + y) / 2
+            rgb = [56*(1-q), 160*(1-q)+103*q, 255*(1-q)+220*q]
+            if .15 < x < .86 and .28 < y < .71:
+                stroke = min(_line_distance(x, y, a, b) for a, b in segments)
+                coverage = _coverage(stroke - 8/256, size)
+                rgb = [c*(1-coverage)+255*coverage for c in rgb]
+            dot = _coverage(math.hypot(x-195/256, y-83/256)-9/256, size)
+            rgb = [c*(1-dot)+d*dot for c, d in zip(rgb, (201, 233, 255))]
+            result.extend((*[round(c) for c in rgb], round(255*alpha)))
     return bytes(result)
 
 
@@ -84,9 +96,9 @@ def _chunk(kind, body):
             struct.pack('>I',zlib.crc32(kind+body)&0xffffffff))
 
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=24)
 def icon_png(size=64):
-    if not 16<=size<=256:
+    if isinstance(size, bool) or not isinstance(size, int) or not 16<=size<=256:
         raise ValueError('The Qingxu icon supports sizes 16..256')
     rgba=_rgba(size)
     raw=b''.join(b'\x00'+rgba[y*size*4:(y+1)*size*4] for y in range(size))
@@ -112,21 +124,32 @@ def write_ico(destination):
     return path
 
 
+def _photo(master, size):
+    """Share images only within their own Tcl interpreter."""
+    root = master._root()
+    if not hasattr(root, '_qingxu_brand_images'):
+        root._qingxu_brand_images = {}
+    cache = root._qingxu_brand_images
+    if size not in cache:
+        cache[size] = tk.PhotoImage(master=root,
+            data=base64.b64encode(icon_png(size)).decode('ascii'))
+    return cache[size]
+
+
 def set_window_icon(window):
-    """Retain PhotoImage to avoid Tk silently losing the window icon."""
-    photo=tk.PhotoImage(master=window,
-                        data=base64.b64encode(icon_png(64)).decode('ascii'))
-    window.iconphoto(True,photo)
-    window._qingxu_icon_photo=photo
+    """Child dialogs do not replace the default icon of future windows."""
+    photo = _photo(window, 64)
+    window.iconphoto(window is window._root(), photo)
+    window._qingxu_icon_photo = photo
     return photo
 
 
 class BrandMark(tk.Canvas):
-    """An image-backed label with no click or focus side-effects."""
-    def __init__(self,parent,*,size=36,background='#F5F5F7'):
-        super().__init__(parent,width=size,height=size,background=background,
-                         borderwidth=0,highlightthickness=0,takefocus=0)
-        self.size=size
-        self.image=tk.PhotoImage(master=self,
-             data=base64.b64encode(icon_png(max(16,min(256,size)))).decode('ascii'))
-        self.create_image(size/2,size/2,image=self.image)
+    """Original continuity mark; does not change focus or click behavior."""
+    def __init__(self, parent, *, size=36, background='#F5F5F7'):
+        size = max(16, min(256, int(size)))
+        super().__init__(parent, width=size, height=size, background=background,
+                         borderwidth=0, highlightthickness=0, takefocus=0)
+        self.size = size
+        self.image = _photo(self, size)
+        self.create_image(size/2, size/2, image=self.image)

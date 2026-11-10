@@ -2,13 +2,13 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前候选版** 0.10.0-rc3 · Windows x64
+**当前候选版** 0.10.0-rc4-ui2 · Windows x64
 
-> **视觉升级分支（未发布）**：`codex/apple-ui-soft-motion-20261110`，源码版本 `0.10.0-rc4-dev`。添加原创双环软件图标、全界面非凹陷按钮色彩反馈、悬浮窗与弹窗品牌标识、导航强调和最近活动白卡布局。Windows 正式 EXE 尚未基于此分支验收；`install/` 中的下载文件仍为已发布的 rc3。设计素材及 Figma 交接见 [Apple UI v2](docs/design/apple-ui-v2/README.md)，验证边界见 [UI 测试说明](docs/verification/0.10.0-rc4-dev/README.md)。
+这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.10.0-rc3-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc3/README.md)
+[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.10.0-rc4-ui2-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc4-ui2/README.md)
 
-![用量概览的合成数据示例，来自 rc1 Linux Tk](docs/ui-handoff-0.10.0-rc1/assets/current-screens/01-usage.jpg)
+![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 
 ## 快速开始
 
@@ -41,6 +41,7 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 
 - [使用指南](docs/USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
+- [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) · [rc3 本机复验](docs/verification/0.10.0-rc3/README.md)
 - [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)
 - [rc2 源码与本机验收包](releases/Qingxu-0.10.0-rc2-Local-Acceptance.zip)
 - [0.9.3 Windows x64 便携版](releases/Qingxu-0.9.3-Windows-x64.zip) · [MIT 许可](LICENSE) · [源码来源](work/qingxu/provenance.json)

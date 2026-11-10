@@ -240,6 +240,20 @@ class WorkbenchTests(unittest.TestCase):
                                  self.tk.winfo_rootx() + self.tk.winfo_width())
         self.assertIn(self.app.project_choice.get(), self.app.project_choice["values"])
 
+    @unittest.skipUnless(sys.platform == "win32", "需要 Win32 窗口图标")
+    def test_workbench_registers_native_window_icon(self):
+        from ctypes import WinDLL, wintypes
+
+        self.tk.deiconify()
+        self.tk.update()
+        user32 = WinDLL("user32")
+        user32.GetAncestor.argtypes = (wintypes.HWND, wintypes.UINT)
+        user32.GetAncestor.restype = wintypes.HWND
+        user32.SendMessageW.argtypes = (wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+        user32.SendMessageW.restype = wintypes.LPARAM
+        window = user32.GetAncestor(self.tk.winfo_id(), 2)  # GA_ROOT
+        self.assertTrue(user32.SendMessageW(window, 0x007F, 1, 96))  # WM_GETICON, ICON_BIG
+
     def test_settings_controls_fit_and_open_knowledge_at_minimum_size(self):
         ui = self.app
         self.tk.tk.call("tk", "scaling", 2.0)

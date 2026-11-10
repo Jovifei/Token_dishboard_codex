@@ -1,0 +1,10 @@
+{
+  "real_old_chat_summary": true,
+  "summary_readback_verified": true,
+  "inline_before_save": true,
+  "file_reference_verified_locally": true,
+  "distinct_fresh_chat": true,
+  "pending_task_recovered": true,
+  "tool_calls": 0,
+  "scope": "synthetic task; read-only Codex CLI; fresh inline mode"
+}

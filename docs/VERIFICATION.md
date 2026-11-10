@@ -1,6 +1,6 @@
 # 轻续 0.10.0-rc2 · 验证记录
 
-当前维护版的测试与交付核对见 [0.10.0-rc3 本机复验](verification/0.10.0-rc3/README.md)。
+当前维护版的测试与交付核对见 [0.10.0-rc4-ui2 本机复验](verification/0.10.0-rc4-ui2/README.md)。[rc3 本机复验](verification/0.10.0-rc3/README.md)
 
 ## Windows 回归
 

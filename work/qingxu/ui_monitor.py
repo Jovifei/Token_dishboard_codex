@@ -9,7 +9,7 @@ from tkinter import font as tkfont, ttk
 
 from dashboard import ChatDashboard, Dashboard
 from ui_brand import BrandMark, set_window_icon
-from ui_motion import attach_motion_tree
+from ui_motion import attach_motion_tree, reduced_motion, set_reduced_motion
 
 
 BG, CARD, INK, MUTED = "#f5f5f7", "#ffffff", "#1d1d1f", "#6e6e73"
@@ -461,6 +461,12 @@ class FloatingMonitor:
         self.mini_mark.pack(side="left", padx=(0, 4))
         self.mini_value = ttk.Label(self.mini_header, text="轻续  —", style="Card.TLabel", font=(family, 10, "bold"))
         self.mini_value.pack(side="left")
+        self.mini_line = ProgressLine(self.mini, height=9, background=CARD)
+        self.mini_line.configure(width=1)  # Let the compact content determine width.
+        self.mini_line.pack(fill="x", pady=(2, 0))
+        self.mini_scope = ttk.Label(self.mini, text="等待聊天", style="CardMuted.TLabel",
+                                   font=(family, 8), anchor="center")
+        self.mini_scope.pack(fill="x")
         mini_actions = ttk.Frame(self.mini, style="Card.TFrame")
         mini_actions.pack(anchor="center", pady=(3, 0))
         ttk.Button(mini_actions, text="展开", command=self.toggle_compact, width=4,
@@ -468,9 +474,14 @@ class FloatingMonitor:
         ttk.Button(mini_actions, text="隐藏", command=self.close, width=4,
                    style="Mini.Monitor.TButton").pack(side="left")
         self.menu = tk.Menu(self.window, tearoff=False)
+        self.menu.add_command(label="等待聊天", state="disabled")
+        self.menu.add_separator()
         self.menu.add_command(label="展开", command=lambda: self.toggle_compact() if self.compact else None)
         self.menu.add_command(label="隐藏悬浮窗", command=self.close)
-        for widget in (self.mini, self.mini_header, self.mini_mark, self.mini_value):
+        self.reduce_motion_var = tk.BooleanVar(self.window, value=reduced_motion(self.app.root))
+        self.menu.add_checkbutton(label="减少动态效果（本次运行）", variable=self.reduce_motion_var,
+            command=lambda: set_reduced_motion(self.app.root, self.reduce_motion_var.get()))
+        for widget in (self.mini, self.mini_header, self.mini_mark, self.mini_value, self.mini_scope, self.mini_line):
             widget.bind("<ButtonPress-1>", self._drag_begin)
             widget.bind("<B1-Motion>", self._drag_move)
             widget.bind("<ButtonRelease-1>", self._drag_end)
@@ -504,10 +515,26 @@ class FloatingMonitor:
             self._queue_fit()
 
     def _queue_fit(self, *_args):
-        if self._fitting or self.compact or self.window is None or not self.window.winfo_exists():
+        if self._fitting or self.window is None or not self.window.winfo_exists():
             return
         if self._fit_job is None:
-            self._fit_job = self.window.after_idle(self._fit_normal)
+            self._fit_job = self.window.after_idle(self._fit_compact if self.compact else self._fit_normal)
+
+    def _fit_compact(self):
+        """Size from the actual font and labels, including DPI changes."""
+        self._fit_job = None
+        if not self.compact or self.window is None or not self.window.winfo_exists():
+            return
+        self._fitting = True
+        try:
+            self.window.update_idletasks()
+            width = max(120, self.mini.winfo_reqwidth() + 4)
+            height = max(64, self.mini.winfo_reqheight() + 4)
+            self.window.minsize(width, height)
+            x, y = self.window.winfo_x(), self.window.winfo_y()
+            self.window.geometry(f"{width}x{height}{x:+d}{y:+d}")
+        finally:
+            self._fitting = False
 
     def _fit_normal(self):
         self._fit_job = None
@@ -591,7 +618,14 @@ class FloatingMonitor:
         mini_percent = "—" if actual is None else f"{actual:.0f}%"
         if mini_row and mini_row.get("state") == "stale" and actual is not None:
             mini_percent += "·旧"
-        self.mini_value.configure(text="轻续  " + mini_percent, foreground=display["color"])
+        self.mini_value.configure(text=mini_percent, foreground=display["color"])
+        self.mini_line.render(display["progress"], marker=display["threshold"], color=display["color"])
+        scope = "所选" if target is not None else "最近"
+        project = (mini_row or {}).get("project") or "未归类"
+        caption = project if len(project) <= 7 else project[:6] + "…"
+        self.mini_scope.configure(text=f"{scope} · {caption}" if mini_row else "等待聊天")
+        title = (mini_row or {}).get("title") or "未命名聊天"
+        self.menu.entryconfigure(0, label=f"{project} · {title} · {display['status']}" if mini_row else "等待聊天")
         if shown and target is None:
             self.feedback.set("先点击一条聊天，再交接或暂缓提醒。")
         self._queue_fit()
@@ -641,8 +675,7 @@ class FloatingMonitor:
             self.window.geometry(self._normal_geometry)
         self.compact = not self.compact
         self.window.attributes("-topmost", True)
-        if not self.compact:
-            self._queue_fit()
+        self._queue_fit()
 
     def _drag_begin(self, event):
         self._dragged = False

@@ -2,7 +2,7 @@
 
 ## 基线与工程入口
 
-当前维护版本为 **0.10.0-rc3**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动新版 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
+当前维护版本为 **0.10.0-rc4-ui2**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
 
 0.9.3 冻结包保留在 `docs/ui-handoff-0.9.3/`。外部 0.10.0-rc1 升级 ZIP 的 97 个清单文件已核对，当前代码以 rc1 接入的 `work/qingxu/` 为基础继续修改。`docs/ui-handoff-0.10.0-rc1/` 中的截图、设计和测试证据属于历史交接，应以当前源码与实际运行结果判断现状。
 
@@ -11,6 +11,7 @@
 | `work/qingxu/workbench.py`、`app.py` | 三页面工作台、项目与聊天选择、异步数据读取及沿用的配置逻辑。旧 `App` 保留兼容和复用实现及相关测试。 |
 | `handoff.py`、`ui_handoff.py` | 摘要保存和读回、文件型与内嵌型提示词、模板及三步交接。 |
 | `monitor.py`、`ui_monitor.py` | 当前用量、提醒、概览、详细记录、ccusage 快照及悬浮窗。 |
+| `ui_motion.py`、`ui_brand.py` | 原生 ttk 的色彩反馈、定时器清理、主窗与小窗图案及 Windows ICO 生成。 |
 | `preferences.py`、`ui_preferences.py`、`knowledge.py` | 数据目录、提醒策略、项目知识目录绑定、勾选分类和缺失模板的独占创建。 |
 | `core.py`、`config_store.py` | 白名单配置预览、备份、写入和冲突保护的恢复。 |
 | `chats.py`、`context_usage.py` | Codex 项目和聊天发现、会话日志与用量读取。 |
@@ -28,6 +29,8 @@
 7. 目录切换保留原有数据。来源关闭与重新启用需要维持正确的文件绑定，损坏的偏好不得被静默覆盖。
 
 ## 验收记录
+
+UI2 在 `5e4a6e5` 上接入动效、精简悬浮窗和品牌资源。[UI2 增量交接](UI-REVISION-HANDOFF.md) · [Windows 本机复验](verification/0.10.0-rc4-ui2/README.md)
 
 rc3 简化默认内嵌摘要流程，恢复知识分类勾选，并将数值方案放在配置字段之前。[rc3 本机复验](verification/0.10.0-rc3/README.md)
 

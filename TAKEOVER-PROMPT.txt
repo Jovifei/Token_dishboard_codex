@@ -1,1 +1,1 @@
-请接手本仓库中的轻续 Qingxu。先读 START-HERE.md，核对 work/qingxu、install/ 和 releases/ 的实际版本，再按需读工程交接与本机验收。界面任务用 docs/UX-SPEC.md 和 rc1 远端截图对照当前 Tk 源码。默认只读本项目相关材料，沿用现有授权与基线。
+请接手本仓库中的轻续 Qingxu。先读 START-HERE.md，核对 work/qingxu、install/ 和 releases/ 的实际版本，再按需读工程交接与本机验收。界面任务用 docs/UX-SPEC.md 和 docs/design/apple-ui-v2/ 对照当前 Tk 源码。默认只读本项目相关材料，沿用现有授权与基线。

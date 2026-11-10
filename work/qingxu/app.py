@@ -20,7 +20,7 @@ from sync import locks, read_file, replace_checked, safe_path, sha
 from dashboard import ChatDashboard, Dashboard, ACCENT, BG, LABEL, SECONDARY, SEPARATOR, SURFACE
 
 TITLE = "轻续 · Token 工作台"
-VERSION = "0.10.0-rc4-dev"
+VERSION = "0.10.0-rc4-ui2"
 INHERIT = "继承"
 PRESETS = ("官方默认（继承）", "轻续推荐（继承数值）", "用户自定义")
 FILE_MODEL = "所选文件的模型"
