@@ -15,6 +15,7 @@ SUITES = (
     "test_core", "test_context_usage", "test_dashboard", "test_relay", "test_sync",
     "test_app", "test_handoff", "test_monitor", "test_preferences", "test_ui_preferences",
     "test_ui_handoff", "test_ui_monitor", "test_workbench_gui", "test_workbench_logic",
+    "test_ui_brand_motion",
 )
 
 if __name__ == "__main__":
