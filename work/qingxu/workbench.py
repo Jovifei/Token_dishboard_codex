@@ -26,6 +26,8 @@ from sync import read_file, safe_path, sha
 from ui_handoff import HandoffPanel
 from ui_monitor import UsagePanel, FloatingMonitor
 from ui_preferences import PreferencesPanel
+from ui_brand import BrandMark, set_window_icon
+from ui_motion import attach_motion_tree
 
 BG, SURFACE, INK, SECONDARY, BLUE, BORDER = "#F5F5F7", "#FFFFFF", "#1D1D1F", "#6E6E73", "#007AFF", "#D9DCE2"
 
@@ -76,6 +78,11 @@ class Workbench(App):
         icon = Path(__file__).with_name("qingxu.ico")
         if os.name == "nt" and icon.is_file():
             root.iconbitmap(default=str(icon))
+        # Original vector brand; the bundled ICO is rebuilt by tools/build-windows.py.
+        try:
+            set_window_icon(root)
+        except tk.TclError:
+            pass
         self.build_shell()
         self.floating = FloatingMonitor(self)
         self.root.report_callback_exception = self.callback_error
@@ -85,6 +92,8 @@ class Workbench(App):
         self.root.bind("<Control-2>", lambda _: self.show_page("handoff"))
         self.root.bind("<Control-3>", lambda _: self.show_page("settings"))
         self.show_page("usage")
+        # Keep ttk commands, focus and geometry. Motion decorates colors only.
+        self.root.after_idle(lambda: attach_motion_tree(self.root))
         try:
             self.reload_choices()
             self.recall_chat()
@@ -105,21 +114,28 @@ class Workbench(App):
         style.theme_use("clam")
         style.configure(".", font=(self.font_family, 10), background=BG, foreground=INK)
         style.configure("App.TFrame", background=BG)
-        style.configure("Side.TFrame", background="#EBEDF1")
+        style.configure("Side.TFrame", background="#EEF3F9")
         style.configure("Card.TFrame", background=SURFACE, relief="flat")
         for name, background, foreground, size, weight in (
             ("TLabel", BG, INK, 10, "normal"), ("Title.TLabel", BG, INK, 22, "bold"),
             ("Heading.TLabel", SURFACE, INK, 13, "bold"), ("Section.TLabel", BG, INK, 13, "bold"),
             ("CardTitle.TLabel", SURFACE, INK, 12, "bold"), ("Card.TLabel", SURFACE, INK, 10, "normal"),
             ("Muted.TLabel", BG, SECONDARY, 9, "normal"), ("CardMuted.TLabel", SURFACE, SECONDARY, 9, "normal"),
-            ("Number.TLabel", SURFACE, INK, 25, "bold"), ("Side.TLabel", "#EBEDF1", SECONDARY, 9, "normal")):
+            ("Number.TLabel", SURFACE, INK, 25, "bold"), ("Side.TLabel", "#EEF3F9", SECONDARY, 9, "normal")):
             style.configure(name, background=background, foreground=foreground, font=(self.font_family, size, weight))
-        style.configure("TButton", padding=(12, 7), background="#E8EBEF", relief="flat", borderwidth=0, focusthickness=2, focuscolor=BLUE)
-        style.map("TButton", background=[("disabled", "#EFF0F2"), ("pressed", "#C9D0D9"), ("active", "#DDE5EF")], foreground=[("disabled", "#9A9CA1")])
-        style.configure("Primary.TButton", background=BLUE, foreground="white", font=(self.font_family, 10, "bold"))
-        style.map("Primary.TButton", background=[("disabled", "#BDD9F5"), ("pressed", "#005AC2"), ("active", "#1686FF")], foreground=[("disabled", "#F7FAFF"), ("!disabled", "white")])
-        style.configure("Nav.TButton", anchor="w", padding=(16, 13), background="#EBEDF1", font=(self.font_family, 11))
-        style.configure("Selected.Nav.TButton", anchor="w", background=SURFACE, foreground=BLUE, font=(self.font_family, 11, "bold"))
+        # Pressed never shifts, scales or appears recessed: only a soft light tint.
+        style.configure("TButton", padding=(12, 7), background="#E9EEF5", relief="flat", borderwidth=0,
+                        shiftrelief=0, focusthickness=2, focuscolor=BLUE)
+        style.map("TButton", background=[("disabled", "#EFF0F2"), ("pressed", "#EAF4FF"), ("active", "#E2EEFB")],
+                  relief=[("pressed", "flat"), ("!disabled", "flat")], foreground=[("disabled", "#9A9CA1")])
+        style.configure("Primary.TButton", background=BLUE, foreground="white", font=(self.font_family, 10, "bold"), shiftrelief=0)
+        style.map("Primary.TButton", background=[("disabled", "#BDD9F5"), ("pressed", "#3B9BFF"), ("active", "#238CFF")],
+                  relief=[("pressed", "flat"), ("!disabled", "flat")], foreground=[("disabled", "#F7FAFF"), ("!disabled", "white")])
+        style.configure("Nav.TButton", anchor="w", padding=(16, 13), background="#EEF3F9",
+                        foreground="#3B485C", font=(self.font_family, 11), relief="flat", shiftrelief=0)
+        style.map("Nav.TButton", background=[("pressed", "#DAEBFF"), ("active", "#E3EDFB")], relief=[("pressed", "flat")])
+        style.configure("Selected.Nav.TButton", anchor="w", background=SURFACE, foreground=BLUE,
+                        font=(self.font_family, 11, "bold"), relief="flat", shiftrelief=0)
         style.map("Selected.Nav.TButton", background=[("active", "#FFFFFF"), ("!active", "#FFFFFF")])
         style.configure("TCombobox", padding=(7, 5), fieldbackground=SURFACE, arrowsize=13, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
         style.map("TCombobox", fieldbackground=[("readonly", SURFACE)], foreground=[("readonly", INK)])
@@ -142,12 +158,15 @@ class Workbench(App):
     def build_shell(self):
         shell = ttk.Frame(self.root, style="App.TFrame")
         shell.pack(fill="both", expand=True)
-        side = ttk.Frame(shell, style="Side.TFrame", width=178, padding=(16, 24))
+        side = ttk.Frame(shell, style="Side.TFrame", width=190, padding=(16, 24))
         side.pack(side="left", fill="y")
         side.pack_propagate(False)
-        brand = tk.Label(side, text="轻续", bg="#EBEDF1", fg=INK, font=(self.font_family, 24, "bold"), anchor="w")
-        brand.pack(fill="x", pady=(0, 2))
-        ttk.Label(side, text="把工作轻轻续上", style="Side.TLabel").pack(anchor="w", pady=(0, 26))
+        brand_row = ttk.Frame(side, style="Side.TFrame")
+        brand_row.pack(fill="x", pady=(0, 5))
+        BrandMark(brand_row, size=40, background="#EEF3F9").pack(side="left", padx=(0, 9))
+        tk.Label(brand_row, text="轻续", bg="#EEF3F9", fg=INK,
+                 font=(self.font_family, 22, "bold"), anchor="w").pack(side="left")
+        ttk.Label(side, text="让工作持续向前", style="Side.TLabel").pack(anchor="w", pady=(0, 26))
         self.nav = {}
         for key, label in (("usage", "用量概览"), ("handoff", "会话接续"), ("settings", "设置")):
             button = ttk.Button(side, text=label, style="Nav.TButton", command=lambda k=key: self.show_page(k))
