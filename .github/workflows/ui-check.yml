@@ -1,0 +1,45 @@
+name: Qingxu Apple UI checks
+
+on:
+  pull_request:
+    paths:
+      - "work/qingxu/**"
+      - "tools/**"
+      - ".github/workflows/ui-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tk-gui-tests:
+    name: Linux Xvfb Tk regression
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install native Tk and virtual display
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-tk xvfb
+      - name: Compile all maintained Python
+        run: python3 -m compileall -q work/qingxu tools
+      - name: Run existing and Apple UI suites
+        run: xvfb-run -a python3 tools/run-windows-tests.py --result ui-check-result.json
+      - name: Upload synthetic test receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qingxu-ui-test-receipt
+          path: ui-check-result.json
+          if-no-files-found: ignore
+
+  icon-stdlib:
+    name: Stdlib-only icon build
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm GUI imports and icon generator
+        shell: pwsh
+        run: |
+          py -3 -c "import sys;sys.path.insert(0, 'work/qingxu');from ui_brand import write_ico;from pathlib import Path;path=write_ico(Path('qingxu-ci.ico'));assert path.stat().st_size > 1000;print(path)"
