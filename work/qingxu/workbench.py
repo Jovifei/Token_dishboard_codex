@@ -168,10 +168,16 @@ class Workbench(App):
                  font=(self.font_family, 22, "bold"), anchor="w").pack(side="left")
         ttk.Label(side, text="让工作持续向前", style="Side.TLabel").pack(anchor="w", pady=(0, 26))
         self.nav = {}
+        self.nav_indicator = {}
         for key, label in (("usage", "用量概览"), ("handoff", "会话接续"), ("settings", "设置")):
-            button = ttk.Button(side, text=label, style="Nav.TButton", command=lambda k=key: self.show_page(k))
-            button.pack(fill="x", pady=4)
+            slot = ttk.Frame(side, style="Side.TFrame")
+            slot.pack(fill="x", pady=4)
+            rail = tk.Frame(slot, bg="#EEF3F9", width=3, highlightthickness=0)
+            rail.pack(side="left", fill="y", padx=(0, 5))
+            button = ttk.Button(slot, text=label, style="Nav.TButton", command=lambda k=key: self.show_page(k))
+            button.pack(side="left", fill="x", expand=True)
             self.nav[key] = button
+            self.nav_indicator[key] = rail
         ttk.Label(side, text=f"{VERSION}\n本地数据 · 按需读取", style="Side.TLabel", justify="left").pack(side="bottom", anchor="w", pady=6)
         ttk.Button(side, text="打开悬浮监测", command=lambda: self.floating.show()).pack(side="bottom", fill="x", pady=14)
         main = ttk.Frame(shell, style="App.TFrame", padding=(22, 18, 22, 12))
@@ -266,7 +272,9 @@ class Workbench(App):
         self.page_title.set(captions[key][0])
         self.page_subtitle.set(captions[key][1])
         for name, button in self.nav.items():
-            button.configure(style="Selected.Nav.TButton" if name == key else "Nav.TButton")
+            selected = name == key
+            button.configure(style="Selected.Nav.TButton" if selected else "Nav.TButton")
+            self.nav_indicator[name].configure(bg=BLUE if selected else "#EEF3F9")
 
     def set_status(self, text):
         self.status.set(text)
