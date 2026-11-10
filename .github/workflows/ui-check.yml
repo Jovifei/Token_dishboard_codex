@@ -12,12 +12,33 @@ permissions:
   contents: read
 
 jobs:
+  source-review:
+    name: Exact source review bundle
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Archive tracked application source only
+        run: |
+          mkdir review-source
+          git archive --format=tar HEAD work/qingxu tools docs README.md START-HERE.md AGENTS.md LICENSE Build-Windows.cmd Preview-Demo.cmd Start-Qingxu.cmd Test-Windows.cmd TAKEOVER-PROMPT.txt .github .gitignore .gitattributes | tar -xf - -C review-source
+          git rev-parse HEAD > review-source/SOURCE-COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qingxu-ui-review-source
+          path: review-source/
+          include-hidden-files: true
+          retention-days: 14
+
   tk-gui-tests:
     name: Linux Xvfb Tk regression
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Install native Tk and virtual display
         run: |
           sudo apt-get update -qq
@@ -39,6 +60,8 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Confirm GUI imports and icon generator
         shell: pwsh
         run: |
