@@ -4,6 +4,8 @@
 
 **当前候选版** 0.10.0-rc3 · Windows x64
 
+> **视觉升级分支（未发布）**：`codex/apple-ui-soft-motion-20261110`，源码版本 `0.10.0-rc4-dev`。添加原创双环软件图标、全界面非凹陷按钮色彩反馈、悬浮窗与弹窗品牌标识、导航强调和最近活动白卡布局。Windows 正式 EXE 尚未基于此分支验收；`install/` 中的下载文件仍为已发布的 rc3。设计素材及 Figma 交接见 [Apple UI v2](docs/design/apple-ui-v2/README.md)，验证边界见 [UI 测试说明](docs/verification/0.10.0-rc4-dev/README.md)。
+
 [Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.10.0-rc3-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc3/README.md)
 
 ![用量概览的合成数据示例，来自 rc1 Linux Tk](docs/ui-handoff-0.10.0-rc1/assets/current-screens/01-usage.jpg)
