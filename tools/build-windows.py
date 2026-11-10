@@ -18,9 +18,11 @@ def main():
     app = project / "work/qingxu"
     sys.path.insert(0, str(app))
     from app import VERSION
+    from ui_brand import write_ico
     output = args.output.absolute()
     output.mkdir()
-    icon = app / "qingxu.ico"
+    # The EXE and taskbar must share the new continuity mark, not the 0.9.3 icon.
+    icon = write_ico(output / "qingxu.ico")
     run(["--onefile", "--windowed", "--name", "Qingxu", "--noupx", "--icon", str(icon),
          "--add-data", f"{icon}:.", "--distpath", str(output / "dist"), "--workpath", str(output / "work"),
          "--specpath", str(output), str(app / "launch.pyw")])
