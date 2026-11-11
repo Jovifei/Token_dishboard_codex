@@ -1,0 +1,22 @@
+{
+  "version": "0.11.0-billing-rc3",
+  "zip_crc_ok": true,
+  "sha256": "4cbc58ff44cf5227fae923aa29810e17efeebf67eaee08ad2454f1a899481d96",
+  "bytes": 14393585,
+  "pe_machine": "0x8664",
+  "program_modules_match_source": [
+    "app",
+    "workbench",
+    "billing",
+    "billing_index",
+    "ui_billing",
+    "ui_monitor",
+    "chats",
+    "usage",
+    "handoff",
+    "knowledge",
+    "ui_preferences"
+  ],
+  "bundled_icon_matches_build": true,
+  "icon_frames": 6
+}

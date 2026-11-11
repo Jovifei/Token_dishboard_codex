@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import webbrowser
 
-from billing import (Request, PriceStore, default_prices, validate_prices, summary, quote,
+from billing import (Request, PriceStore, default_prices, validate_prices, summary, quote, project_identity,
                      filter_requests, group_requests, daily, money, short_number, export_csv, fixed_timezone, timestamp)
 from billing_index import BillingIndex
 from ui_motion import attach_motion_tree, reduced_motion
@@ -153,40 +153,48 @@ class BillingPanel(ttk.Frame):
         self._apply_period()
 
     def _build(self):
-        # Filters remain reachable while long tables/details scroll independently.
         filters=ttk.Frame(self,padding=(2,7,2,8))
         filters.pack(fill='x')
-        filters.columnconfigure(3,weight=1)
-        for col,(var,values,width) in enumerate(((self.period,PERIODS,8),
+        self.filters=filters
+        self._filters_in_canvas=False
+        selectors=ttk.Frame(filters)
+        selectors.pack(fill='x')
+        selector_controls=[]
+        for var,values,width in ((self.period,PERIODS,8),
                          (self.scope,('全部项目','当前项目','当前会话'),9),
-                         (self.provider,('全部供应商',),12),(self.model,('全部模型',),16))):
-            box=ttk.Combobox(filters,textvariable=var,values=values,width=width,state='readonly')
-            box.grid(row=0,column=col,sticky='ew',padx=(0,7),pady=3)
+                         (self.provider,('全部供应商',),12),(self.model,('全部模型',),16)):
+            box=ttk.Combobox(selectors,textvariable=var,values=values,width=width,state='readonly')
+            selector_controls.append(box)
             box.bind('<<ComboboxSelected>>',lambda e,v=var:self.changed(v))
             if var is self.provider:self.provider_box=box
             if var is self.model:self.model_box=box
-        self.refresh_button=ttk.Button(filters,text='同步用量',width=8,command=self.refresh,style='Primary.TButton')
-        self.refresh_button.grid(row=0,column=6,padx=(5,0))
+        self.refresh_button=ttk.Button(selectors,text='同步用量',width=8,command=self.refresh,style='Primary.TButton')
+        selector_controls.append(self.refresh_button)
         dates=ttk.Frame(filters)
-        dates.grid(row=1,column=0,columnspan=4,sticky='w',pady=(5,0))
-        self.start_entry=ttk.Entry(dates,textvariable=self.start,width=10)
+        dates.pack(fill='x',pady=(5,0))
+        date_range=ttk.Frame(dates)
+        self.start_entry=ttk.Entry(date_range,textvariable=self.start,width=10)
         self.start_entry.pack(side='left')
-        ttk.Label(dates,text=' 至 ').pack(side='left')
-        self.end_entry=ttk.Entry(dates,textvariable=self.end,width=10)
+        ttk.Label(date_range,text=' 至 ').pack(side='left')
+        self.end_entry=ttk.Entry(date_range,textvariable=self.end,width=10)
         self.end_entry.pack(side='left')
         zone=ttk.Combobox(dates,textvariable=self.tz,values=('本机时区','UTC+08:00','UTC+09:00','UTC'),state='readonly',width=9)
-        zone.pack(side='left',padx=7)
         zone.bind('<<ComboboxSelected>>',lambda _:self.changed(self.period))
         mode=ttk.Combobox(dates,textvariable=self.cost_mode,values=('当前价表估算','来源报告金额'),state='readonly',width=12)
-        mode.pack(side='left')
         mode.bind('<<ComboboxSelected>>',lambda _:self.apply_filters())
-        ttk.Button(dates,text='应用',command=self.apply_filters).pack(side='left',padx=7)
-        ttk.Button(filters,text='单价设置',width=8,command=self.edit_prices).grid(row=1,column=6,pady=(5,0),sticky='e')
+        apply_button=ttk.Button(dates,text='应用',command=self.apply_filters)
+        price_button=ttk.Button(dates,text='单价设置',width=8,command=self.edit_prices)
+        date_controls=(date_range,zone,mode,apply_button,price_button)
+        for frame,controls in ((selectors,selector_controls),(dates,date_controls)):
+            for column,control in enumerate(controls):
+                control.grid(row=0,column=column,sticky='w',padx=(0,7),pady=3)
+            frame.bind('<Configure>',lambda event,items=controls:self._layout_filters(event,items))
         for entry in (self.start_entry,self.end_entry):
             entry.bind('<Return>',lambda _:self.apply_filters())
         # A vertical canvas gives 980x680/DPI users all four KPIs and the full table.
         viewport=ttk.Frame(self)
         viewport.pack(fill='both',expand=True)
+        self.viewport=viewport
         self.canvas=tk.Canvas(viewport,background=BG,highlightthickness=0)
         scroll=ttk.Scrollbar(viewport,orient='vertical',command=self.canvas.yview)
         scroll.pack(side='right',fill='y')
@@ -198,6 +206,7 @@ class BillingPanel(ttk.Frame):
         self.canvas.bind('<Configure>',lambda e:self.canvas.itemconfigure(window,width=e.width))
         hero=ttk.Frame(self.body,style='Card.TFrame',padding=(16,12))
         hero.pack(fill='x')
+        self.hero=hero
         self.kpis={}
         labels=(('cost','估算成本 · USD'),('requests','已记录请求'),('tokens','已记录 Tokens'),('cache_hit','缓存命中率'))
         for i,(key,caption) in enumerate(labels):
@@ -271,10 +280,54 @@ class BillingPanel(ttk.Frame):
         self._wheel_bindings=[]
         for seq in ('<MouseWheel>','<Button-4>','<Button-5>'):
             self._wheel_bindings.append((seq,self.app.root.bind(seq,self._wheel,add='+')))
+        for control in (*selector_controls,self.start_entry,self.end_entry,zone,mode,apply_button,price_button):
+            control.bind('<FocusIn>',self._show_filter_focus,add='+')
+        self.bind('<Configure>',self._fit_filters,add='+')
+        filters.bind('<Configure>',self._fit_filters,add='+')
         attach_motion_tree(self)
 
+    def _layout_filters(self,event,controls):
+        frame=event.widget
+        width=max(1,event.width-4)
+        for columns in (len(controls),3,2,1):
+            widths=[max(control.winfo_reqwidth()+7 for control in controls[column::columns])
+                    for column in range(min(columns,len(controls)))]
+            if sum(widths)<=width:
+                break
+        if getattr(frame,'_filter_columns',None)==columns:
+            return
+        frame._filter_columns=columns
+        for index,control in enumerate(controls):
+            control.grid(row=index//columns,column=index%columns,sticky='w',padx=(0,7),pady=3)
+
+    def _fit_filters(self,event):
+        if event.widget not in (self,self.filters):
+            return
+        reserve=60 if self._filters_in_canvas else 32
+        needs_scroll=self.winfo_height()<self.filters.winfo_reqheight()+reserve
+        if needs_scroll==self._filters_in_canvas:
+            return
+        self.filters.pack_forget()
+        if needs_scroll:
+            self.filters.pack(in_=self.body,fill='x',before=self.hero)
+        else:
+            self.filters.pack(in_=self,fill='x',before=self.viewport)
+        self._filters_in_canvas=needs_scroll
+
+    def _show_filter_focus(self,event):
+        if not self._filters_in_canvas:
+            return
+        offset=event.widget.winfo_rooty()-self.canvas.winfo_rooty()
+        bottom=offset+event.widget.winfo_height()
+        if offset<0 or bottom>self.canvas.winfo_height():
+            shift=offset if offset<0 else bottom-self.canvas.winfo_height()
+            position=self.canvas.canvasy(0)+shift
+            self.canvas.yview_moveto(position/max(1,self.body.winfo_height()))
+
     def _wheel(self,event):
-        if not str(event.widget).startswith(str(self.body)) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
+        inside_body=str(event.widget).startswith(str(self.body))
+        inside_filters=self._filters_in_canvas and str(event.widget).startswith(str(self.filters))
+        if not (inside_body or inside_filters) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
             return
         if self.canvas.yview()==(0.0,1.0):return
         delta=getattr(event,'delta',0)
@@ -381,16 +434,19 @@ class BillingPanel(ttk.Frame):
     def apply_filters(self):
         try:
             start,end=date.fromisoformat(self.start.get()),date.fromisoformat(self.end.get())
-            cwd=thread=''
+            cwd=thread=project_id=''
             if self.scope.get()!='全部项目':
                 record=getattr(self.app,'chat',None)
                 if not record:raise ValueError('先在顶部选择项目和聊天，或使用“全部项目”')
-                if self.scope.get()=='当前项目':cwd=record.get('path','')
+                if self.scope.get()=='当前项目':
+                    project_id=str(record.get('app_project_id') or '')
+                    if not project_id:cwd=record.get('path','')
                 else:thread=record.get('chat_id','')
-                if not (cwd or thread):raise ValueError('当前选择缺少可核对的项目/会话身份')
+                if not (cwd or thread or project_id):raise ValueError('当前选择缺少可核对的项目/会话身份')
             self.filtered=filter_requests(self.requests,start=start,end=end,tz_label=self.tz.get(),
                     provider='' if self.provider.get()=='全部供应商' else self.provider.get(),
-                    model='' if self.model.get()=='全部模型' else self.model.get(),cwd=cwd,thread_id=thread)
+                    model='' if self.model.get()=='全部模型' else self.model.get(),cwd=cwd,thread_id=thread,
+                    app_project_id=project_id,unassigned_only=bool(cwd))
             mode=self.mode
             data=summary(self.filtered,self.prices,mode=mode)
             self.stats=data
@@ -402,7 +458,10 @@ class BillingPanel(ttk.Frame):
         self.select_metric(self.metric)
         self.render_tables()
         issues=(self.result or {}).get('issues',{})
-        excluded=sum(issues.get(k,0) for k in ('conflicts_excluded','invalid_requests','invalid_records','unsafe_files','oversize_requests','read_errors','pending_files','incomplete_files','compressed_files_unsupported','source_unavailable'))
+        excluded_keys = ('conflicts_excluded', 'invalid_requests', 'invalid_records', 'unsafe_files',
+                         'oversize_requests', 'read_errors', 'pending_files', 'incomplete_files',
+                         'compressed_files_unsupported', 'source_unavailable', 'file_limit_reached')
+        excluded=sum(issues.get(key, 0) for key in excluded_keys)
         detail=f"{data['priced']:,}/{data['requests']:,} 条可计价；{data['unpriced']:,} 条价格或用量未知。"
         if self.mode=='estimate':
             detail+='按本地价表重算的 Token 估算，不是订阅或供应商账单；不含工具、税费。'
@@ -414,6 +473,8 @@ class BillingPanel(ttk.Frame):
         if excluded:detail+=f' 索引有 {excluded} 项未纳入或待继续同步，范围可能不完整。'
         if issues.get('files_seen') is not None:detail+=f" 本轮检查 {issues['files_seen']} 个日志 / 读取 {issues.get('bytes_read',0)/1048576:.1f} MiB。"
         if (self.result or {}).get('mapping_note'):detail+=' 项目映射受限。'
+        if project_id and any(not r.app_project_id for r in self.requests):detail+=' 项目归属未确认的记录未纳入当前项目。'
+        if cwd:detail+=' 当前项目按所选工作目录筛选未归属记录。'
         if (self.result or {}).get('synthetic'):detail='合成演示数据 · '+detail
         self.notice.set(detail)
 
@@ -506,7 +567,7 @@ class BillingPanel(ttk.Frame):
         if key=='model':self.provider.set(ident[0]);self.model.set(ident[1])
         elif key=='provider':self.provider.set(ident)
         elif key in ('project','session'):
-            rows=[r for r in self.filtered if (r.thread_id==ident[0] if key=='session' else r.project==ident[1])]
+            rows=[r for r in self.filtered if (r.thread_id==ident[0] if key=='session' else project_identity(r)==ident[0])]
             if rows:
                 self.detail_text.set(f"{ident[1]}：{len(rows)} 条请求；可在顶部选择对应项目，再用当前项目/会话筛选。")
             return

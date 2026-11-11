@@ -16,7 +16,7 @@ import sqlite3
 import threading
 
 from billing import Request, timestamp, text
-from chats import metadata_db, ProjectCatalog, title_expression, path_key
+from chats import metadata_db, ProjectCatalog, title_expression, path_key, usage_metadata
 from privacy import ensure_private
 from sync import safe_path
 
@@ -41,6 +41,7 @@ def thread_metadata(database):
                 resolved, _ = catalog.membership(ident, cwd, pid)
                 result[ident] = {'project': catalog.projects[resolved]['label'] if resolved else Path(str(cwd)).name or '未归类',
                                  'cwd': cwd or '', 'title': title or '未命名聊天',
+                                 'app_project_id': str(resolved) if resolved is not None else '',
                                  'role': 'child' if role or 'subagent' in str(source).lower() else 'primary'}
     except (ValueError, OSError, sqlite3.Error, KeyError, TypeError) as exc:
         return {}, '项目映射不可用：'+str(exc)[:240]
@@ -267,13 +268,30 @@ class BillingIndex:
                 issue.update(json.loads(stats))
             contexts=con.execute('SELECT f.state FROM files f WHERE f.root=? AND NOT EXISTS(SELECT 1 FROM events e WHERE e.file=f.path)',(str(root),)).fetchall()
             issue['files_without_requests']=sum(bool(json.loads(r[0]).get('thread_id')) for r in contexts)
+        requests = [Request.from_dict(json.loads(body), normalized=True) for (body,) in rows]
+        children = {req.thread_id for req in requests if req.thread_id and
+                    (req.role == 'child' or (req.role != 'fork' and
+                     metadata.get(req.thread_id, {}).get('role') == 'child'))}
+        parents = {}
+        if database and children:
+            try:
+                parents = usage_metadata(database, [{'thread_id': identity, 'role': 'child'}
+                                                     for identity in children])
+            except (ValueError, OSError, sqlite3.Error, KeyError, TypeError) as exc:
+                note = note or '子 Agent 项目映射不可用：' + str(exc)[:240]
         seen,conflicts={},set()
-        for (body,) in rows:
-            req=Request.from_dict(json.loads(body),normalized=True)
+        for req in requests:
             meta=metadata.get(req.thread_id,{})
             if meta:
                 req=replace(req, project=meta['project'], title=meta['title'], cwd=req.cwd or meta['cwd'],
+                            app_project_id=meta['app_project_id'],
                             role=meta['role'] if req.role not in ('child','fork') else req.role)
+            elif req.app_project_id:
+                req=replace(req, app_project_id='')
+            parent = parents.get(req.thread_id)
+            if (req.role == 'child' and not req.app_project_id and parent
+                    and parent.get('chat_id') != req.thread_id and parent.get('project_id')):
+                req = replace(req, project=parent['project_name'], app_project_id=str(parent['project_id']))
             key=req.identity
             if key in seen:
                 prev=seen[key]

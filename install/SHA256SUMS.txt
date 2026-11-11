@@ -2,3 +2,4 @@
 4f336ea91b9ae82cd77a61ff52f5677ef666f937377a2af610add72b655c48e7  Qingxu-0.10.0-rc3-Windows-x64.zip
 ccdb5ffa5aa71daade5945c336141d04ba7d4997f258d40803690eace66dbdc0  Qingxu-0.10.0-rc4-ui2-Windows-x64.zip
 1be5a3134246d0da56f160124c18be00719bf7008616c9c285a51a4d8235dca9  Qingxu-0.11.0-billing-rc2-Windows-x64.zip
+4cbc58ff44cf5227fae923aa29810e17efeebf67eaee08ad2454f1a899481d96  Qingxu-0.11.0-billing-rc3-Windows-x64.zip

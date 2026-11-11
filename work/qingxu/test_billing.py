@@ -1,5 +1,6 @@
 """Money/denominator/date tests use explicit synthetic requests, never a live bill."""
 from datetime import date
+from dataclasses import replace
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -21,6 +22,34 @@ def request(**updates):
 
 class BillingMathTests(unittest.TestCase):
     def setUp(self):self.prices=validate_prices(default_prices())
+
+    def test_project_identity_groups_worktrees_and_keeps_unrelated_names_separate(self):
+        first = replace(request(), app_project_id='p1')
+        worktree = replace(first, response_id='r2', cwd='/other/worktree', project='项目改名')
+        same_name = replace(first, response_id='r3', app_project_id='p2')
+        unassigned = replace(first, response_id='r4', app_project_id='')
+        rows = [first, worktree, same_name, unassigned]
+        period = dict(start=date(2026,11,1), end=date(2026,11,30), tz_label='UTC')
+        self.assertEqual(len(filter_requests(rows, **period, app_project_id='p1')), 2)
+        self.assertEqual(filter_requests(rows, **period, cwd=first.cwd, unassigned_only=True), [unassigned])
+        groups = group_requests(rows, 'project', self.prices)
+        self.assertEqual(sorted(s['requests'] for _, s in groups), [1, 1, 2])
+
+    def test_old_serialized_requests_stay_compatible(self):
+        original = request()
+        legacy = original.as_dict()
+        self.assertNotIn('app_project_id', legacy)
+        self.assertEqual(Request.from_dict(legacy, normalized=True), original)
+        self.assertEqual(request(app_project_id='untrusted').app_project_id, '')
+
+    def test_unknown_project_without_directory_is_not_named_after_first_import(self):
+        first = replace(request(), cwd='.', project='项目甲')
+        second = replace(first, response_id='r2', cwd='', project='项目乙')
+        third = replace(first, response_id='r3', cwd='relative/path', project='项目丙')
+        groups = group_requests([first, second, third], 'project', self.prices)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0][0][1], '未归类')
+        self.assertEqual(groups[0][1]['requests'], 3)
     def test_cost_components_and_reasoning_not_double_billed(self):
         r=request();q=quote(r,self.prices)
         self.assertEqual(q.amount,Decimal('0.0153'))

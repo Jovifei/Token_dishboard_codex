@@ -14,8 +14,10 @@ import hashlib
 import io
 import json
 import math
+import ntpath
 import os
 from pathlib import Path
+import posixpath
 import tempfile
 from typing import Any
 
@@ -128,6 +130,7 @@ class Request:
     cache_known: bool = True
     cache_write_30m: int | None = None
     cache_write_12h: int | None = None
+    app_project_id: str = ''
 
     @property
     def identity(self) -> str:
@@ -136,7 +139,11 @@ class Request:
         return self.provider + '\x1f' + self.response_id
 
     def as_dict(self) -> dict:
-        return dict(self.__dict__)
+        result = dict(self.__dict__)
+        # Preserve the serialized form of existing imports and cache entries.
+        if not self.app_project_id:
+            result.pop('app_project_id')
+        return result
 
     @classmethod
     def from_dict(cls, raw: dict, *, normalized: bool = False) -> 'Request':
@@ -180,7 +187,8 @@ class Request:
                    duration, ttft, optional_number(raw.get('tokens_per_second')),
                    str(decimal(report)) if report is not None else None,
                    text(raw.get('origin'), 'import'), text(raw.get('model_source'), 'record'), cache_known,
-                   split[0] if split else None, split[1] if split else None)
+                   split[0] if split else None, split[1] if split else None,
+                   text(raw.get('app_project_id')) if normalized else '')
 
 
 def default_prices() -> dict:
@@ -373,13 +381,16 @@ def local_date(req: Request, tz_label: str) -> date:
     return timestamp(req.time).astimezone(fixed_timezone(tz_label)).date()
 
 
-def filter_requests(rows, *, start: date, end: date, tz_label='本机时区', provider='', model='', cwd='', thread_id=''):
+def filter_requests(rows, *, start: date, end: date, tz_label='本机时区', provider='', model='',
+                    cwd='', thread_id='', app_project_id='', unassigned_only=False):
     if start > end or (end-start).days > 3660:
         raise ValueError('日期范围需按先后排列且不超过十年')
     tz = fixed_timezone(tz_label)
     return [r for r in rows if start <= timestamp(r.time).astimezone(tz).date() <= end
             and (not provider or r.provider == provider) and (not model or r.model == model)
-            and (not cwd or path_key(r.cwd) == path_key(cwd)) and (not thread_id or r.thread_id == thread_id)]
+            and (not cwd or path_key(r.cwd) == path_key(cwd)) and (not thread_id or r.thread_id == thread_id)
+            and (not app_project_id or r.app_project_id == app_project_id)
+            and (not unassigned_only or not r.app_project_id)]
 
 
 def summary(rows: list[Request], prices: dict, *, mode='estimate') -> dict:
@@ -405,12 +416,34 @@ def summary(rows: list[Request], prices: dict, *, mode='estimate') -> dict:
             'quotes': quotes, 'costs': costs}
 
 
+def project_identity(req):
+    if req.app_project_id:
+        return 'project:' + req.app_project_id
+    if req.cwd and (ntpath.isabs(req.cwd) or posixpath.isabs(req.cwd)):
+        return 'cwd:' + path_key(req.cwd)
+    return 'unassigned'
+
+
 def group_requests(rows, key, prices, mode='estimate'):
     groups = defaultdict(list)
     for r in rows:
-        identity = (r.provider, r.model) if key == 'model' else ((path_key(r.cwd), r.project) if key == 'project' else (r.thread_id, r.title) if key == 'session' else r.provider)
+        if key == 'model':
+            identity = (r.provider, r.model)
+        elif key == 'project':
+            identity = project_identity(r)
+        elif key == 'session':
+            identity = (r.thread_id, r.title)
+        else:
+            identity = r.provider
         groups[identity].append(r)
-    return [(ident, summary(items, prices, mode=mode)) for ident, items in groups.items()]
+    result = []
+    for identity, items in groups.items():
+        if key == 'project':
+            first = items[0]
+            label = first.project if identity != 'unassigned' else '未归类'
+            identity = (identity, label)
+        result.append((identity, summary(items, prices, mode=mode)))
+    return result
 
 
 def daily(rows, start, end, tz_label, prices, mode='estimate'):

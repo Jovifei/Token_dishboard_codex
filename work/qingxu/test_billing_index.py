@@ -1,6 +1,8 @@
 from collections import Counter
+from contextlib import closing
 import json
 from pathlib import Path
+import sqlite3
 import tempfile
 import unittest
 
@@ -95,6 +97,85 @@ class IndexTests(unittest.TestCase):
         p=self.root/'requests.json';p.write_text(json.dumps({'schema':'qingxu.requests.v1','requests':[self.imported()]}))
         self.assertEqual(self.index.import_file(p),1);self.assertEqual(self.index.import_file(p),0)
         self.assertEqual(len(self.scan()['requests']),2)
+
+    def test_cached_records_resolve_current_project_identity_without_rescan(self):
+        self.scan()
+        database = self.home/'state.sqlite'
+        with closing(sqlite3.connect(database)) as conn:
+            conn.execute('CREATE TABLE threads (id TEXT, name TEXT, cwd TEXT, project_id TEXT, source TEXT)')
+            conn.execute('CREATE TABLE projects (id TEXT, name TEXT)')
+            conn.execute('INSERT INTO projects VALUES (?, ?)', ('project-a', '同名项目'))
+            conn.execute('INSERT INTO threads VALUES (?, ?, ?, ?, ?)', (THREAD, '聊天', '/demo', 'project-a', 'user'))
+            conn.commit()
+        result = self.index.scan(self.home, database)
+        self.assertEqual(result['issues']['bytes_read'], 0)
+        self.assertEqual(result['requests'][0].app_project_id, 'project-a')
+        with closing(sqlite3.connect(database)) as conn:
+            conn.execute('UPDATE projects SET name=? WHERE id=?', ('新名称', 'project-a'))
+            conn.commit()
+        self.assertEqual(self.index.scan(self.home, database)['requests'][0].project, '新名称')
+
+    def test_child_project_uses_only_unique_trusted_parent_without_rescan(self):
+        children = ('child', 'other-project', 'multiple-parents', 'agent-parent', 'missing-child')
+        for identity in children:
+            header = meta()
+            header['payload'].update(id=identity, agent_role='worker')
+            write(self.home/'sessions'/f'{identity}.jsonl',
+                  [header, ctx(), event('request-'+identity, thread_id=identity)])
+        imported = self.imported('imported-child')
+        imported.update(thread_id='child', role='child')
+        input_file = self.root/'imported-child.json'
+        input_file.write_text(json.dumps({'schema': 'qingxu.requests.v1', 'requests': [imported]}),
+                              encoding='utf-8')
+        self.assertEqual(self.index.import_file(input_file), 1)
+        before = self.index.scan(self.home)
+        self.assertTrue(all(not r.app_project_id for r in before['requests']))
+
+        database = self.home/'state.sqlite'
+        with closing(sqlite3.connect(database)) as conn:
+            conn.executescript('''
+                CREATE TABLE projects(id TEXT, name TEXT);
+                CREATE TABLE threads(id TEXT, name TEXT, cwd TEXT, project_id TEXT,
+                                     source TEXT, agent_role TEXT, thread_source TEXT);
+                CREATE TABLE thread_spawn_edges(child_thread_id TEXT, parent_thread_id TEXT);
+            ''')
+            conn.executemany('INSERT INTO projects VALUES (?, ?)',
+                             [('project-a', '甲项目'), ('project-b', '乙项目')])
+            conn.executemany('INSERT INTO threads VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                ('parent-a', '父聊甲', '/parent-a', 'project-a', 'cli', None, 'user'),
+                ('parent-b', '父聊乙', '/parent-b', 'project-b', 'cli', None, 'user'),
+                ('worker-parent', '非人类父线程', '/worker', 'project-a', 'subagent', 'worker', None),
+                ('child', '子聊', '/worktree', None, 'subagent', 'worker', None),
+                ('other-project', '明确归属乙', '/other', 'project-b', 'subagent', 'worker', None),
+                ('multiple-parents', '多父线程', '/shared', None, 'subagent', 'worker', None),
+                ('agent-parent', '非人类父边', '/unassigned', None, 'subagent', 'worker', None),
+            ])
+            conn.executemany('INSERT INTO thread_spawn_edges VALUES (?, ?)', [
+                ('child', 'parent-a'), ('other-project', 'parent-a'),
+                ('multiple-parents', 'parent-a'), ('multiple-parents', 'parent-b'),
+                ('agent-parent', 'worker-parent'), ('missing-child', 'parent-a'),
+            ])
+            conn.commit()
+
+        result = self.index.scan(self.home, database)
+        self.assertEqual(result['issues']['bytes_read'], 0)
+        found = {r.response_id: r for r in result['requests']}
+        self.assertEqual((found['request-child'].app_project_id, found['request-child'].project), ('project-a', '甲项目'))
+        self.assertEqual((found['request-child'].title, found['request-child'].role, found['request-child'].cwd),
+                         ('子聊', 'child', '/demo'))
+        self.assertEqual(found['request-other-project'].app_project_id, 'project-b')
+        self.assertEqual(found['request-multiple-parents'].app_project_id, '')
+        self.assertEqual(found['request-agent-parent'].app_project_id, '')
+        self.assertEqual(found['request-missing-child'].app_project_id, 'project-a')
+        self.assertTrue(all(r.app_project_id == 'project-a' for r in result['requests']
+                            if r.thread_id == 'child'))
+        self.assertEqual(self.index.import_file(input_file), 0)
+
+        isolated = self.root/'other-home'
+        isolated.mkdir()
+        isolated_index = BillingIndex(self.root/'other-cache')
+        self.assertFalse(isolated_index.scan(isolated, database)['requests'])
+
     def test_import_validation_atomic(self):
         p=self.root/'requests.json';p.write_text(json.dumps({'schema':'qingxu.requests.v1','requests':[self.imported(),{'response_id':'broken'}]}))
         with self.assertRaises(ValueError):self.index.import_file(p)

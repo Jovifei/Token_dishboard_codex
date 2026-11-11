@@ -1,0 +1,41 @@
+[
+  {
+    "tk_dpi": 96,
+    "window": [
+      980,
+      680
+    ],
+    "panel": [
+      730,
+      326
+    ],
+    "all_11_controls_reachable": true,
+    "filters_scroll": false
+  },
+  {
+    "tk_dpi": 144,
+    "window": [
+      980,
+      680
+    ],
+    "panel": [
+      730,
+      231
+    ],
+    "all_11_controls_reachable": true,
+    "filters_scroll": true
+  },
+  {
+    "tk_dpi": 192,
+    "window": [
+      980,
+      680
+    ],
+    "panel": [
+      730,
+      152
+    ],
+    "all_11_controls_reachable": true,
+    "filters_scroll": true
+  }
+]

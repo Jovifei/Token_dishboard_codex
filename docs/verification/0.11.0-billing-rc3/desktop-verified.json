@@ -1,0 +1,12 @@
+{
+  "version": "0.11.0-billing-rc3",
+  "installed_program_files": 31,
+  "shortcut_launch": true,
+  "responsive": true,
+  "existing_data_hashes_unchanged": true,
+  "real_catalog_populated": true,
+  "isolated_real_source_index": true,
+  "incomplete_notice_visible": true,
+  "project_scope_checked": true,
+  "chat_scope_checked": true
+}

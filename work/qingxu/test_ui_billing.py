@@ -1,5 +1,6 @@
 """Real Tk checks on synthetic request metadata; no real user files touched."""
 from concurrent.futures import Future
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -43,6 +44,31 @@ class BillingGuiTests(unittest.TestCase):
         self.assertEqual(self.panel.stats['requests'],1)
         self.assertEqual(sum(s['requests'] for _,s in self.panel.date_rows),1)
         self.assertEqual(len(self.panel.trees['request'].get_children()),1)
+
+    def test_project_filter_and_drill_use_verified_identity(self):
+        first = replace(self.r1, app_project_id='project-a')
+        worktree = replace(self.r2, app_project_id='project-a', cwd='/another/worktree')
+        other = replace(first, response_id='same-name-other', app_project_id='project-b')
+        unassigned = replace(first, response_id='unassigned', app_project_id='')
+        self.panel.set_result({'requests':[first, worktree, other, unassigned], 'issues':{}})
+        self.app.chat['app_project_id']='project-a'
+        self.panel.scope.set('当前项目');self.panel.apply_filters()
+        self.assertEqual(self.panel.stats['requests'], 2)
+        self.assertIn('项目归属未确认', self.panel.notice.get())
+        self.app.chat['app_project_id']=''
+        self.panel.apply_filters()
+        self.assertEqual(self.panel.stats['requests'], 1)
+        self.assertEqual(self.panel.filtered[0].response_id, 'unassigned')
+        self.panel.scope.set('全部项目');self.panel.apply_filters()
+        tree = self.panel.trees['project']
+        other_row = next(iid for iid, (ident, _) in self.panel.row_objects['project'].items()
+                         if ident[0] == 'project:project-b')
+        tree.selection_set(other_row);self.panel.drill('project')
+        self.assertIn('1 条请求', self.panel.detail_text.get())
+
+    def test_file_limit_discloses_incomplete_scope(self):
+        self.panel.set_result({'requests':[self.r1], 'issues':{'file_limit_reached':1}})
+        self.assertIn('范围可能不完整', self.panel.notice.get())
     def test_daily_drill_keeps_selected_date(self):
         d=self.now.date().isoformat();self.panel.tz.set('UTC');self.panel.select_day(d)
         self.assertEqual(self.panel.start.get(),d);self.assertEqual(self.panel.end.get(),d)
@@ -79,6 +105,74 @@ class BillingGuiTests(unittest.TestCase):
         b=self.panel.refresh_button
         self.assertLessEqual(b.winfo_rootx()+b.winfo_width(),self.root.winfo_rootx()+self.root.winfo_width())
         self.assertGreaterEqual(b.winfo_width(),b.winfo_reqwidth())
+
+    def test_filter_controls_fit_at_windows_dpi_scales(self):
+        selectors = self.panel.refresh_button.master
+        dates = self.panel.start_entry.master.master
+        controls = list(selectors.winfo_children())
+        controls.extend((self.panel.start_entry, self.panel.end_entry))
+        controls.extend(widget for widget in dates.winfo_children()
+                        if isinstance(widget, (ttk.Combobox, ttk.Button)))
+        self.assertEqual(len(controls), 11)
+
+        self.root.geometry('730x620')
+        for dpi in (96, 144, 192):
+            with self.subTest(dpi=dpi):
+                self.root.tk.call('tk', 'scaling', dpi / 72)
+                ttk.Style(self.root).configure('.', font=('Microsoft YaHei UI', 10))
+                self.root.update()
+                left = self.panel.winfo_rootx()
+                right = left + self.panel.winfo_width()
+                top = self.panel.winfo_rooty()
+                bottom = top + self.panel.winfo_height()
+                for control in controls:
+                    with self.subTest(control=str(control)):
+                        self.assertTrue(control.winfo_ismapped())
+                        self.assertGreaterEqual(control.winfo_rootx(), left)
+                        self.assertLessEqual(control.winfo_rootx() + control.winfo_width(), right)
+                        self.assertGreaterEqual(control.winfo_rooty(), top)
+                        self.assertLessEqual(control.winfo_rooty() + control.winfo_height(), bottom)
+                        self.assertGreaterEqual(control.winfo_width(), control.winfo_reqwidth())
+
+        self.panel.period.set('自定义')
+        self.panel.changed(self.panel.period)
+        self.assertTrue(self.panel.start_entry.instate(['!readonly', '!disabled']))
+        self.assertTrue(self.panel.end_entry.instate(['!readonly', '!disabled']))
+
+    def test_short_panel_scrolls_focused_filters_into_view(self):
+        self.root.tk.call('tk', 'scaling', 192 / 72)
+        ttk.Style(self.root).configure('.', font=('Microsoft YaHei UI', 10))
+        self.root.geometry('730x152')
+        self.root.update()
+        self.assertTrue(self.panel._filters_in_canvas)
+
+        selectors = self.panel.refresh_button.master
+        dates = self.panel.start_entry.master.master
+        controls = list(selectors.winfo_children())
+        controls.extend((self.panel.start_entry, self.panel.end_entry))
+        controls.extend(widget for widget in dates.winfo_children()
+                        if isinstance(widget, (ttk.Combobox, ttk.Button)))
+        canvas = self.panel.canvas
+        for control in controls:
+            with self.subTest(control=str(control)):
+                control.event_generate('<FocusIn>')
+                self.root.update()
+                x = control.winfo_rootx() - canvas.winfo_rootx()
+                y = control.winfo_rooty() - canvas.winfo_rooty()
+                self.assertGreaterEqual(x, 0)
+                self.assertGreaterEqual(y, 0)
+                self.assertLessEqual(x + control.winfo_width(), canvas.winfo_width())
+                self.assertLessEqual(y + control.winfo_height(), canvas.winfo_height())
+
+        canvas.yview_moveto(0)
+        self.root.update()
+        before = canvas.yview()
+        unrelated = ttk.Label(self.root)
+        self.panel._wheel(SimpleNamespace(widget=unrelated, delta=-120, num=0))
+        self.assertEqual(canvas.yview(), before)
+        self.panel._wheel(SimpleNamespace(widget=self.panel.start_entry, delta=-120, num=0))
+        self.assertGreater(canvas.yview()[0], before[0])
+
     def test_pricing_save_actions_pinned_at_small_height(self):
         win=PriceEditor(self.panel);win.geometry('720x650');self.root.update()
         def descend(node):
