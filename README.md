@@ -2,9 +2,9 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**本包源码候选** 0.11.0-billing-rc1 · 新增计费统计。
+**本包源码候选** 0.11.0-billing-rc2 · 新增计费统计并完成 Windows 回归。
 
-**最近已发布 Windows 基线** 0.10.0-rc4-ui2；以下旧安装链接不是本轮新 EXE。
+**本轮 Windows x64 便携包** 已由本源码构建，安装说明见 `install/README.md`。
 
 计费入口：**用量概览 → 计费统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [图文验收](docs/billing/SCREENSHOTS.md)。
 
@@ -33,7 +33,7 @@
 
 ## 从源码运行
 
-在仓库根目录使用带 Tk 的 Python 3.11 或以上版本。双击 `Preview-Demo.cmd` 可先体验标为「合成演示」的窗口，`Start-Qingxu.cmd` 启动真实数据入口。
+在仓库根目录使用带 Tk 的 Python 3.11 或以上版本。双击 `Preview-Demo.cmd` 可先体验标为「合成演示」的窗口，`Preview-Billing.cmd` 体验计费页，`Start-Qingxu.cmd` 启动真实数据入口。
 
 ```powershell
 $demoRoot = Join-Path $env:TEMP ('Qingxu-Demo-' + [guid]::NewGuid().ToString('N'))
@@ -45,7 +45,8 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 
 ## 项目资料
 
-- [使用指南](docs/USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
+- [使用指南](docs/USER-GUIDE.md) · [计费使用指南](docs/BILLING-USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
+- [rc2 Windows 验收](docs/verification/0.11.0-billing-rc2/README.md)
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
 - [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) · [rc3 本机复验](docs/verification/0.10.0-rc3/README.md)
 - [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)

@@ -1,4 +1,4 @@
-# 轻续 0.11.0-billing-rc1 · 计费功能工程交接
+# 轻续 0.11.0-billing-rc2 · 计费功能工程交接
 
 ## 基线与本轮目标
 
@@ -6,7 +6,7 @@
 
 本轮取回 `Jovifei/Token_dishboard_codex` 主线 `2f53b196de01ccfb3d3d1170da3f511bab216389`（0.10.0-rc4-ui2，经用户 Windows 验收后发布）。来源为 GitHub Actions 运行 `42852267722` 的源码产物 `13780528035`，SHA-256 `8ba8dd29e7a40e5398abb378411a6d864cb850f3425d6c9992c13e03a6f22de8`。不是从 rc1 或此前未提交包覆盖。`SOURCE-COMMIT.txt` 标识取回基线，不意味着本包改动已提交到该 SHA。
 
-本轮源码版本 0.11.0-billing-rc1。仅在独立副本开发并附补丁，不自动替换用户本机源码、真实配置或发布 EXE。未推送远端、未合并主线、未完成 Figma 云端编辑。
+本轮源码版本 0.11.0-billing-rc2。基于计费分支进行 Windows 修复、版本提升和便携 EXE 构建；不改动用户真实配置或 Codex 数据。
 
 ## 入口及实现
 
@@ -57,9 +57,9 @@ Responses 的 `input_tokens_details.cache_write_tokens_details` 如提供 `ttl_3
 
 ## 本轮验证
 
-Linux + Tk 8.6 + Python 3.13.5 + Xvfb，使用隔离合成数据。完整回归 **382 项：381 通过，0 失败，0 异常，1 跳过**。跳过项为 Windows 专属路径验证，不等于 Windows 通过。最终证据在 `docs/verification/0.11.0-billing-rc1/`；真实 Tk 截图 9 张，包含 980×680、价格弹窗、单请求、部分计价与无请求记录。
+Windows 11 + Tk + Python 3.13.0，使用隔离合成数据。完整回归 **382 项：378 通过，0 失败，0 异常，4 跳过**。跳过项均为当前用户未启用符号链接权限；UTF-8 测试入口已固定，CSV 和 CRLF 增量字节计数已在 Windows 复验。最终证据在 `docs/verification/0.11.0-billing-rc2/`；计费界面截图沿用并核对 rc1 的 9 张原生 Tk 截图。
 
-Windows 缩放/EXE、真实账户账单对账、用户本机历史日志覆盖率未验证。包内现有 UI2 Windows 台账仅为上版历史证据。费用示例、截图数值和测试均非用户真实消费。
+Windows 缩放的更多 DPI 档位、真实账户账单对账、用户本机历史日志覆盖率未验证。费用示例、截图数值和测试均非用户真实消费。
 
 ## 本机接手
 
@@ -68,7 +68,7 @@ Windows 缩放/EXE、真实账户账单对账、用户本机历史日志覆盖�
 3. 运行 `Test-Windows.cmd`。核对所有表、图、卡片、CSV 的同范围合计；切换项目/供应商/模型/时区后复验。
 4. 从真实日志随机选 10 个 response_id，核输入/cache/write/output、对应当时模型、去重，再与真正供应商相同期间的 Token 账单核对；缺失字段不得补成 success 或 0。
 5. 人为修改一项单价，核对待保存状态、备份和重算；用两窗口模拟冲突。验证全部未知、部分已知和真实零分别显示。
-6. 准备好 `tools/requirements-build.txt` 中的构建依赖后，在 Windows x64 运行 `Build-Windows.cmd <新目录>`。不得把旧 UI2 EXE 当成本轮结果。
+6. 准备好 `tools/requirements-build.txt` 中的构建依赖后，在 Windows x64 运行 `Build-Windows.cmd <新目录>`；rc2 已完成本机构建并记录在验证目录。
 7. 验收后的修改和证据再提交功能分支/PR。未验收不替换当前发布版。
 
 ## 参考来源

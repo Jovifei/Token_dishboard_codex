@@ -71,7 +71,7 @@ class BillingGuiTests(unittest.TestCase):
         self.panel.turn_page(1);self.assertEqual(len(self.panel.trees['request'].get_children()),50)
         target=Path(self.tmp.name)/'out.csv'
         with patch('ui_billing.filedialog.asksaveasfilename',return_value=str(target)):self.panel.export()
-        self.assertEqual(len(target.read_text().splitlines()),151)
+        self.assertEqual(len(target.read_text(encoding='utf-8').splitlines()),151)
     def test_no_automatic_worker_until_tab_activated(self):
         self.assertIsNone(self.panel.future)
     def test_narrow_filters_not_cut(self):

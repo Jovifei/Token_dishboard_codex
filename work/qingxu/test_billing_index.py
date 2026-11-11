@@ -58,7 +58,7 @@ class IndexTests(unittest.TestCase):
     def test_append_incremental_no_rescan(self):
         first=self.scan();second=self.scan();self.assertEqual(second['issues']['bytes_read'],0)
         addition=json.dumps(event('r2'))+'\n'
-        with self.log.open('a') as f:f.write(addition)
+        with self.log.open('a', encoding='utf-8', newline='') as f:f.write(addition)
         third=self.scan();self.assertEqual(len(third['requests']),2)
         self.assertEqual(third['issues']['bytes_read'],len(addition.encode()))
     def test_partial_line_waits_for_newline(self):

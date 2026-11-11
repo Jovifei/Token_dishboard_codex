@@ -1,8 +1,8 @@
 # 轻续 Qingxu · 新聊天接手
 
-本包源码候选是 **0.11.0-billing-rc1**（最近已发布 Windows 基线为 0.10.0-rc4-ui2），源码与测试在 `work/qingxu/`，入口 `launch.pyw` 加载 Tk `Workbench`。先核对当前分支、源码版本、所选 Codex 项目和授权范围。
+本包源码候选是 **0.11.0-billing-rc2**，Windows x64 便携包已从同一源码构建；源码与测试在 `work/qingxu/`，入口 `launch.pyw` 加载 Tk `Workbench`。先核对当前分支、源码版本、所选 Codex 项目和授权范围。
 
-本轮新增计费功能请先读 [计费交接](docs/BILLING-HANDOFF.md) 和 [使用指南](docs/BILLING-USER-GUIDE.md)。`SOURCE-COMMIT.txt` 只标识取回基线，当前修改尚未推送。
+本轮新增计费功能请先读 [计费交接](docs/BILLING-HANDOFF.md) 和 [使用指南](docs/BILLING-USER-GUIDE.md)。`SOURCE-COMMIT.txt` 只标识取回基线。
 
 | 本次任务 | 入口 |
 | --- | --- |
