@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import json
 from pathlib import Path
+from queue import Empty, SimpleQueue
 import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -122,6 +123,7 @@ class BillingPanel(ttk.Frame):
         self.executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='qingxu-billing')
         self.stop=threading.Event()
         self.future=None
+        self.progress=SimpleQueue()
         self.poll_job=None
         self.closed=False
         self.source=None
@@ -359,23 +361,42 @@ class BillingPanel(ttk.Frame):
         home=Path(self.app.prefs.get('codex_home') or database.parent)
         return str(home.expanduser().absolute()),str(database)
 
-    def _index_for(self,home):
+    def _index_directory(self,home):
         import hashlib
-        return BillingIndex(self.directory/('source-'+hashlib.sha256(home.encode()).hexdigest()[:16]))
+        return self.directory/('source-'+hashlib.sha256(home.encode()).hexdigest()[:16])
 
     def refresh(self,import_path=None):
         if self.closed or self.future is not None:
             return
         home,db=self._source()
+        directory=self._index_directory(home)
+        index_factory=BillingIndex
         self.stop=threading.Event()
         stop=self.stop
+        progress=self.progress=SimpleQueue()
         self.refresh_button.configure(text='同步中…',state='disabled')
         self.sync_text.set('正在增量读取本机数值记录…')
         def work():
-            index=self._index_for(home)
+            index=index_factory(directory)
             imported=index.import_file(import_path) if import_path else None
+            total_bytes=batches=0
             try:
-                result=index.scan(home,db,stop=stop)
+                while True:
+                    if stop.is_set():raise InterruptedError('已停止索引')
+                    result=index.scan(home,db,stop=stop,include_requests=False)
+                    issues=dict(result['issues'])
+                    read=issues.get('bytes_read',0)
+                    total_bytes+=read
+                    batches+=1
+                    progress.put((batches,total_bytes))
+                    if not issues.get('resume_required'):break
+                    if not read:
+                        issues['continuation_stalled']=1
+                        break
+                if stop.is_set():raise InterruptedError('已停止索引')
+                issues['bytes_read']=total_bytes
+                issues['sync_batches']=batches
+                result=index.load(home,db,issues)
             except ValueError:
                 if import_path:
                     result=index.load(home,db,{'source_unavailable':1})
@@ -390,6 +411,13 @@ class BillingPanel(ttk.Frame):
     def _poll(self):
         self.poll_job=None
         if self.closed or self.future is None:return
+        latest=None
+        while True:
+            try:latest=self.progress.get_nowait()
+            except Empty:break
+        if latest and not self.stop.is_set():
+            batches,total_bytes=latest
+            self.sync_text.set(f'正在同步 · {batches} 批 / 已读取 {total_bytes/1048576:.1f} MiB…')
         if not self.future.done():
             self.poll_job=self.after(80,self._poll)
             return
@@ -397,10 +425,14 @@ class BillingPanel(ttk.Frame):
         self.refresh_button.configure(text='同步用量',state='normal')
         if self.stop.is_set() or self.source!=self._source()[0]:
             self.sync_text.set('已丢弃旧数据来源的读取结果，请重新同步')
+            if self.active:self.refresh()
             return
         try:
-            self.set_result(future.result())
-            self.sync_text.set('最后同步 '+datetime.now().strftime('%H:%M:%S')+' · 手动增量刷新')
+            result=future.result()
+            self.set_result(result)
+            batches=result.get('issues',{}).get('sync_batches',0)
+            suffix=f' · {batches} 批' if batches else ''
+            self.sync_text.set('最后同步 '+datetime.now().strftime('%H:%M:%S')+suffix)
         except Exception as exc:
             self.sync_text.set('同步失败；显示的仅为上次结果')
             self.notice.set('同步失败：'+str(exc)+'。不会用 0 代替未知费用。')
@@ -460,7 +492,8 @@ class BillingPanel(ttk.Frame):
         issues=(self.result or {}).get('issues',{})
         excluded_keys = ('conflicts_excluded', 'invalid_requests', 'invalid_records', 'unsafe_files',
                          'oversize_requests', 'read_errors', 'pending_files', 'incomplete_files',
-                         'compressed_files_unsupported', 'source_unavailable', 'file_limit_reached')
+                         'compressed_files_unsupported', 'compressed_read_errors', 'compressed_unavailable',
+                         'continuation_stalled', 'source_unavailable', 'file_limit_reached')
         excluded=sum(issues.get(key, 0) for key in excluded_keys)
         detail=f"{data['priced']:,}/{data['requests']:,} 条可计价；{data['unpriced']:,} 条价格或用量未知。"
         if self.mode=='estimate':
@@ -471,6 +504,10 @@ class BillingPanel(ttk.Frame):
         if issues.get('duplicates'):detail+=f" 已去重 {issues['duplicates']} 条。"
         if issues.get('files_without_requests'):detail+=f" {issues['files_without_requests']} 个日志无逐请求记录，未以累计/快照代替。"
         if excluded:detail+=f' 索引有 {excluded} 项未纳入或待继续同步，范围可能不完整。'
+        if issues.get('compressed_unavailable'):
+            detail+=f" {issues['compressed_unavailable']} 个压缩归档无法读取：Python 3.11–3.13 需安装 backports.zstd 后重新同步。"
+        if issues.get('compressed_read_errors'):
+            detail+=f" {issues['compressed_read_errors']} 个压缩归档损坏或截断，未纳入统计。"
         if issues.get('files_seen') is not None:detail+=f" 本轮检查 {issues['files_seen']} 个日志 / 读取 {issues.get('bytes_read',0)/1048576:.1f} MiB。"
         if (self.result or {}).get('mapping_note'):detail+=' 项目映射受限。'
         if project_id and any(not r.app_project_id for r in self.requests):detail+=' 项目归属未确认的记录未纳入当前项目。'

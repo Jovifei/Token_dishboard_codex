@@ -16,7 +16,7 @@ SUITES = (
     "test_app", "test_handoff", "test_monitor", "test_preferences", "test_ui_preferences",
     "test_ui_handoff", "test_ui_monitor", "test_workbench_gui", "test_workbench_logic",
     "test_ui_brand_motion", "test_ui_polish", "test_path_support",
-    "test_billing", "test_billing_index", "test_ui_billing",
+    "test_billing", "test_billing_index", "test_billing_zstd", "test_ui_billing",
 )
 
 if __name__ == "__main__":

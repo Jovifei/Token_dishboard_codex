@@ -1,0 +1,10 @@
+{
+  "real_source_readonly": true,
+  "isolated_private_index": true,
+  "all_discovered_compressed_archives_complete": true,
+  "compressed_read_errors": 0,
+  "source_requests_present": true,
+  "some_logs_have_no_request_records": true,
+  "real_project_scope_checked": true,
+  "real_chat_scope_checked": true
+}

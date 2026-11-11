@@ -1,8 +1,8 @@
 # 轻续 Qingxu · 新聊天接手
 
-本分支候选版是 **0.11.0-billing-rc3**，源码与测试在 `work/qingxu/`，入口 `launch.pyw` 加载 Tk `Workbench`。先核对当前分支、源码版本、所选 Codex 项目和授权范围。
+当前版本是 **0.11.0-billing-rc4**，源码与测试在 `work/qingxu/`，入口 `launch.pyw` 加载 Tk `Workbench`。先核对当前分支、源码版本、所选 Codex 项目和授权范围。
 
-计费功能请读 [计费交接](docs/BILLING-HANDOFF.md)、[使用指南](docs/BILLING-USER-GUIDE.md) 和 [本机验收](docs/verification/0.11.0-billing-rc3/README.md)。
+计费功能请读 [计费交接](docs/BILLING-HANDOFF.md)、[使用指南](docs/BILLING-USER-GUIDE.md) 和 [本机验收](docs/verification/0.11.0-billing-rc4/README.md)。
 
 | 本次任务 | 入口 |
 | --- | --- |

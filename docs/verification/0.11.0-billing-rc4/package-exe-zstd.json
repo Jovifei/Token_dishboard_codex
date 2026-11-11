@@ -1,0 +1,12 @@
+{
+  "version": "0.11.0-billing-rc4",
+  "exe_window_opened": true,
+  "python_not_on_path": true,
+  "chinese_path_with_spaces": true,
+  "synthetic_codex_home": true,
+  "synthetic_data_root": true,
+  "packaged_exe_indexed_zstd": true,
+  "compressed_and_plain_deduplicated": true,
+  "damaged_archive_marked": true,
+  "gui_opened_billing": true
+}

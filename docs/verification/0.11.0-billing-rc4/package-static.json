@@ -1,0 +1,22 @@
+{
+  "version": "0.11.0-billing-rc4",
+  "zip_crc_ok": true,
+  "zip_sha256": "931d420f5686236631cc48a8373289e386c1040203869dd8aeba84fe16ff3ba5",
+  "zip_bytes": 16506849,
+  "exe_x64": true,
+  "zstd_native_extension_present": true,
+  "zstd_python_modules_present": true,
+  "frozen_modules_match_source": [
+    "app",
+    "workbench",
+    "billing",
+    "billing_index",
+    "ui_billing",
+    "ui_monitor",
+    "chats",
+    "usage",
+    "handoff",
+    "knowledge",
+    "ui_preferences"
+  ]
+}

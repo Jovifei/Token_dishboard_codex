@@ -67,6 +67,9 @@ class IndexTests(unittest.TestCase):
         self.scan();line=json.dumps(event('r2'))
         with self.log.open('a') as f:f.write(line[:-5])
         self.assertEqual(len(self.scan()['requests']),1)
+        waiting=self.scan()
+        self.assertEqual(waiting['issues']['bytes_read'],0)
+        self.assertGreater(waiting['issues'].get('incomplete_files',0),0)
         with self.log.open('a') as f:f.write(line[-5:]+'\n')
         self.assertEqual(len(self.scan()['requests']),2)
     def test_rewrite_rescans_removes_deleted_requests(self):

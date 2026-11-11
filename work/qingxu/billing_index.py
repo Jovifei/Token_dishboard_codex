@@ -6,11 +6,12 @@ SQLite stores only whitelisted metadata/numbers, never prompts/auth/config.
 """
 from __future__ import annotations
 from collections import Counter
-from contextlib import closing
+from contextlib import closing, nullcontext
 from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import sqlite3
 import threading
@@ -19,6 +20,16 @@ from billing import Request, timestamp, text
 from chats import metadata_db, ProjectCatalog, title_expression, path_key, usage_metadata
 from privacy import ensure_private
 from sync import safe_path
+
+try:
+    from compression import zstd
+except ImportError:
+    try:
+        from backports import zstd
+    except ImportError:
+        zstd = None
+
+ZSTD_ERRORS = (EOFError, zstd.ZstdError) if zstd is not None else (EOFError,)
 
 MAX_LINE = 1024 * 1024
 MAX_IMPORT = 16 * 1024 * 1024
@@ -136,7 +147,8 @@ class BillingIndex:
     def connect(self):
         return sqlite3.connect(self.db, timeout=5)
 
-    def scan(self, home, database=None, *, stop: threading.Event | None = None, budget=SCAN_BUDGET):
+    def scan(self, home, database=None, *, stop: threading.Event | None = None, budget=SCAN_BUDGET,
+             include_requests=True):
         home=Path(home).expanduser().absolute()
         root_key=str(home)
         issue=Counter()
@@ -155,9 +167,7 @@ class BillingIndex:
             for p in folder.rglob('*'):
                 if stop and stop.is_set():
                     raise InterruptedError('已停止索引')
-                if p.name.endswith('.jsonl.zst'):
-                    issue['compressed_files_unsupported']+=1
-                elif p.suffix=='.jsonl':
+                if p.name.endswith('.jsonl.zst') or p.suffix=='.jsonl':
                     if p.is_symlink():
                         issue['unsafe_files']+=1
                         continue
@@ -165,6 +175,8 @@ class BillingIndex:
                     if len(paths)>=MAX_FILES:
                         issue['file_limit_reached']+=1
                         break
+            if issue['file_limit_reached']:
+                break
         # Never call stat through an unverified path.
         safe=[]
         for p in paths:
@@ -182,69 +194,122 @@ class BillingIndex:
         seen={str(p) for p,_ in safe}
         consumed=0
         refreshed=0
+        budget_incomplete=False
         with closing(self.connect()) as con:
             for p,st in safe:
                 if stop and stop.is_set():
                     raise InterruptedError('已停止索引')
                 key=str(p)
                 row=con.execute('SELECT size,mtime,inode,offset,anchor,state,issues FROM files WHERE path=?',(key,)).fetchone()
-                if row and row[0]==st.st_size and row[1]==st.st_mtime_ns and row[3]==st.st_size:
+                compressed=p.name.endswith('.jsonl.zst')
+                unchanged=bool(row and row[0]==st.st_size and row[1]==st.st_mtime_ns and row[2]==st.st_ino)
+                cached_state=json.loads(row[5]) if row else {}
+                if compressed and zstd is None:
+                    issue['compressed_unavailable']+=1
+                    if row and not unchanged:
+                        con.execute('DELETE FROM events WHERE file=?',(key,))
+                        con.execute('DELETE FROM files WHERE path=?',(key,))
+                        con.commit()
+                    continue
+                if unchanged and (cached_state.get('_zstd_done') if compressed else row[3]==st.st_size):
+                    continue
+                if unchanged and not compressed and cached_state.get('_waiting_tail'):
+                    issue['incomplete_files']+=1
                     continue
                 if consumed>=budget:
                     issue['pending_files']+=1
                     continue
                 try:
-                    with p.open('rb') as stream:
-                        # Resume only after unchanged seam; any rewrite rescans.
-                        append = bool(row and row[2]==st.st_ino and st.st_size>=row[0]
-                                      and (st.st_size>row[0] or st.st_mtime_ns==row[1])
-                                      and _anchor(stream,row[3])==row[4])
+                    with p.open('rb') as raw:
+                        opened=os.fstat(raw.fileno())
+                        fingerprint=lambda value:(value.st_size,value.st_mtime_ns,value.st_ino)
+                        if compressed and fingerprint(opened)!=fingerprint(st):
+                            raise OSError('压缩日志已变化')
+                        # Zstandard offsets are decoded bytes; unchanged archives replay to that point.
+                        anchor=_anchor(raw,st.st_size) if compressed else None
+                        append = (bool(unchanged and row[4]==anchor) if compressed else
+                                  bool(row and row[2]==st.st_ino and st.st_size>=row[0]
+                                       and (st.st_size>row[0] or st.st_mtime_ns==row[1])
+                                       and _anchor(raw,row[3])==row[4]))
                         offset,state,local = (row[3],json.loads(row[5]),Counter(json.loads(row[6]))) if append else (0,{},Counter())
+                        state.pop('_waiting_tail',None)
                         if not append:
                             con.execute('DELETE FROM events WHERE file=?',(key,))
-                        stream.seek(offset)
-                        while stream.tell()<st.st_size and consumed<budget:
-                            if stop and stop.is_set():
-                                raise InterruptedError('已停止索引')
-                            pos=stream.tell()
-                            line=stream.readline(min(MAX_LINE,st.st_size-pos))
-                            consumed+=len(line)
-                            if state.get('_draining_line'):
-                                offset=stream.tell()
-                                if line.endswith(b'\n'):state.pop('_draining_line',None)
-                                continue
-                            if not line.endswith(b'\n'):
-                                if len(line)<MAX_LINE:
-                                    # Do not commit a partially-written record.
-                                    stream.seek(pos)
+                        raw.seek(0)
+                        with (zstd.open(raw,'rb') if compressed else nullcontext(raw)) as stream:
+                            stream.seek(offset)
+                            done=False
+                            while (compressed or stream.tell()<st.st_size) and consumed<budget:
+                                if stop and stop.is_set():
+                                    raise InterruptedError('已停止索引')
+                                pos=stream.tell()
+                                line=stream.readline(MAX_LINE if compressed else min(MAX_LINE,st.st_size-pos))
+                                if not line:
+                                    done=True
+                                    state.pop('_draining_line',None)
                                     break
-                                is_request=b'"token_usage_record"' in line[:256]
-                                local['oversize_requests' if is_request else 'oversize_other_lines']+=1
-                                state['_draining_line']=True
+                                consumed+=len(line)
+                                if state.get('_draining_line'):
+                                    offset=stream.tell()
+                                    if line.endswith(b'\n'):state.pop('_draining_line',None)
+                                    continue
+                                if not line.endswith(b'\n'):
+                                    if len(line)>=MAX_LINE:
+                                        is_request=b'"token_usage_record"' in line[:256]
+                                        local['oversize_requests' if is_request else 'oversize_other_lines']+=1
+                                        state['_draining_line']=True
+                                        offset=stream.tell()
+                                        continue
+                                    if not compressed:
+                                        # Do not commit an active, partially-written record.
+                                        state['_waiting_tail']=True
+                                        stream.seek(pos)
+                                        break
                                 offset=stream.tell()
-                                continue
-                            offset=stream.tell()
-                            # Narrow before deserializing: large message bodies are not
-                            # required for billing and never enter our cache.
-                            if not any(t in line[:512] for t in (b'"session_meta"',b'"turn_context"',b'"token_usage_record"',b'"token_count"')):
-                                continue
-                            try:
-                                item=json.loads(line)
-                                req=consume(item,state,local)
-                            except (UnicodeDecodeError,ValueError,TypeError):
-                                local['invalid_records']+=1
-                                continue
-                            if req is not None:
-                                con.execute('INSERT OR REPLACE INTO events VALUES(?,?,?,?)',(key,pos,req.identity,_json(req.as_dict())))
-                        anchor=_anchor(stream,offset)
+                                # Only these metadata lines are parsed; message bodies are never cached.
+                                if not any(t in line[:512] for t in (b'"session_meta"',b'"turn_context"',b'"token_usage_record"',b'"token_count"')):
+                                    continue
+                                try:
+                                    item=json.loads(line)
+                                    req=consume(item,state,local)
+                                except (UnicodeDecodeError,ValueError,TypeError):
+                                    local['invalid_records']+=1
+                                    continue
+                                if req is not None:
+                                    con.execute('INSERT OR REPLACE INTO events VALUES(?,?,?,?)',(key,pos,req.identity,_json(req.as_dict())))
+                            if compressed:
+                                if done:state['_zstd_done']=True
+                            else:
+                                anchor=_anchor(stream,offset)
+                        if compressed and (fingerprint(os.fstat(raw.fileno()))!=fingerprint(st)
+                                           or fingerprint(safe_path(p).stat())!=fingerprint(st)):
+                            raise OSError('压缩日志读取时已变化')
                         con.execute('INSERT OR REPLACE INTO files VALUES(?,?,?,?,?,?,?,?,?)',
                                     (key,root_key,st.st_size,st.st_mtime_ns,st.st_ino,offset,anchor,_json(state),_json(local)))
                         con.commit()
                         refreshed+=1
-                        if offset<st.st_size:
+                        if (compressed and not done) or (not compressed and offset<st.st_size):
                             issue['incomplete_files']+=1
-                except OSError:
+                            if consumed>=budget:budget_incomplete=True
+                except InterruptedError:
                     con.rollback()
+                    raise
+                except ZSTD_ERRORS:
+                    con.rollback()
+                    if compressed:
+                        con.execute('DELETE FROM events WHERE file=?',(key,))
+                        con.execute('INSERT OR REPLACE INTO files VALUES(?,?,?,?,?,?,?,?,?)',
+                                    (key,root_key,st.st_size,st.st_mtime_ns,st.st_ino,0,'',
+                                     _json({'_zstd_done':True}),_json({'compressed_read_errors':1})))
+                        con.commit()
+                    else:
+                        issue['read_errors']+=1
+                except (OSError,ValueError):
+                    con.rollback()
+                    if compressed:
+                        con.execute('DELETE FROM events WHERE file=?',(key,))
+                        con.execute('DELETE FROM files WHERE path=?',(key,))
+                        con.commit()
                     issue['read_errors']+=1
             # Only purge positively missing paths, never on a bounded/partial listing.
             if not issue['file_limit_reached'] and not issue['unsafe_files']:
@@ -256,6 +321,9 @@ class BillingIndex:
         issue['files_seen']=len(safe)
         issue['files_refreshed']=refreshed
         issue['bytes_read']=consumed
+        issue['resume_required']=bool(budget_incomplete or issue['pending_files'])
+        if not include_requests:
+            return {'issues':dict(issue)}
         return self.load(root_key, database, issue)
 
     def load(self, root, database=None, issues=None):

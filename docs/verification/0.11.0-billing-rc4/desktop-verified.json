@@ -1,0 +1,9 @@
+{
+  "version": "0.11.0-billing-rc4",
+  "shortcut_launch": true,
+  "responsive": true,
+  "original_data_hashes_unchanged": true,
+  "backup_preserved": true,
+  "completed_index_seeded_without_overwrite": true,
+  "real_billing_page_displayed": true
+}

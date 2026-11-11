@@ -2,9 +2,12 @@
 from concurrent.futures import Future
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+import gc
+import json
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
+import threading
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -12,6 +15,7 @@ import unittest
 from unittest.mock import patch
 
 from billing import Request, quote
+from billing_index import BillingIndex, zstd
 from ui_billing import BillingPanel, PriceEditor
 from test_billing import request
 from test_billing_index import meta,ctx,event,write
@@ -35,6 +39,15 @@ class BillingGuiTests(unittest.TestCase):
         self.root.update()
     def tearDown(self):
         self.root.destroy()
+        self.panel.executor.shutdown(wait=True,cancel_futures=True)
+        del self.panel,self.app,self.root
+        gc.collect()
+
+    def wait_for_sync(self):
+        deadline=time.monotonic()+15
+        while self.panel.future is not None and time.monotonic()<deadline:
+            self.root.update();time.sleep(.015)
+        self.assertIsNone(self.panel.future)
     def test_default_summary_matches_rows(self):
         self.assertEqual(self.panel.stats['requests'],2)
         self.assertEqual(self.panel.stats['priced'],2)
@@ -68,6 +81,15 @@ class BillingGuiTests(unittest.TestCase):
 
     def test_file_limit_discloses_incomplete_scope(self):
         self.panel.set_result({'requests':[self.r1], 'issues':{'file_limit_reached':1}})
+        self.assertIn('范围可能不完整', self.panel.notice.get())
+    def test_compressed_failures_disclose_incomplete_scope(self):
+        self.panel.set_result({'requests':[self.r1], 'issues':{'compressed_unavailable':1}})
+        self.assertIn('范围可能不完整', self.panel.notice.get())
+        self.assertIn('Python 3.11–3.13 需安装 backports.zstd', self.panel.notice.get())
+        self.panel.set_result({'requests':[self.r1], 'issues':{'compressed_read_errors':1}})
+        self.assertIn('范围可能不完整', self.panel.notice.get())
+        self.assertIn('压缩归档损坏或截断，未纳入统计', self.panel.notice.get())
+        self.panel.set_result({'requests':[self.r1], 'issues':{'compressed_files_unsupported':1}})
         self.assertIn('范围可能不完整', self.panel.notice.get())
     def test_daily_drill_keeps_selected_date(self):
         d=self.now.date().isoformat();self.panel.tz.set('UTC');self.panel.select_day(d)
@@ -202,10 +224,129 @@ class BillingGuiTests(unittest.TestCase):
     def test_real_async_scan_uses_isolated_log(self):
         write(self.home/'sessions'/'r.jsonl',[meta(),ctx(),event()])
         self.panel.refresh()
-        deadline=time.monotonic()+4
-        while self.panel.future is not None and time.monotonic()<deadline:
-            self.root.update();time.sleep(.015)
-        self.assertIsNone(self.panel.future);self.assertEqual(len(self.panel.requests),1)
+        self.wait_for_sync()
+        self.assertEqual(len(self.panel.requests),1)
+
+    @unittest.skipIf(zstd is None,'Python Zstandard decoder is unavailable')
+    def test_real_compressed_archive_syncs_multiple_batches(self):
+        items=[meta(),ctx(),event('request-a'),event('request-b'),event('request-c')]
+        source=b''.join((json.dumps(item)+'\n').encode('utf-8') for item in items)
+        (self.home/'sessions'/'synthetic.jsonl.zst').write_bytes(zstd.compress(source))
+        calls=[]
+        class SmallBudgetIndex(BillingIndex):
+            def scan(self,*args,**kwargs):
+                calls.append(('scan',kwargs.get('include_requests')))
+                return super().scan(*args,budget=128,**kwargs)
+            def load(self,*args,**kwargs):
+                calls.append(('load',None))
+                return super().load(*args,**kwargs)
+        with patch('ui_billing.BillingIndex',SmallBudgetIndex):
+            self.panel.refresh()
+            self.wait_for_sync()
+        self.assertGreater(len(calls),2)
+        self.assertEqual(calls[-1],('load',None))
+        self.assertEqual(sum(item[0]=='load' for item in calls),1)
+        self.assertTrue(all(not include for kind,include in calls if kind=='scan'))
+        self.assertEqual({r.response_id for r in self.panel.requests},
+                         {'request-a','request-b','request-c'})
+        self.assertGreater(self.panel.result['issues']['sync_batches'],1)
+        self.assertFalse(self.panel.result['issues'].get('resume_required'))
+        self.panel.tz.set('UTC');self.panel.period.set('自定义');self.panel._apply_period()
+        self.panel.start.set('2026-11-11');self.panel.end.set('2026-11-11');self.panel.apply_filters()
+        self.assertEqual(self.panel.stats['requests'],3)
+
+    def test_refresh_worker_does_not_capture_widgets(self):
+        pending=Future()
+        with patch.object(self.panel.executor,'submit',return_value=pending) as submit:
+            self.panel.refresh()
+            work=submit.call_args.args[0]
+        self.assertFalse(any(isinstance(cell.cell_contents,tk.Misc) for cell in work.__closure__))
+        pending.cancel()
+
+    def test_refresh_continues_batches_and_imports_only_once(self):
+        calls=[];r1=self.r1
+        def scan(home,db,*,stop,include_requests):
+            calls.append(('scan',threading.get_ident(),include_requests))
+            return {'issues':{'resume_required':len(calls)<4,'bytes_read':100}}
+        def load(home,db,issues):
+            calls.append(('load',threading.get_ident()))
+            return {'requests':[r1],'issues':dict(issues)}
+        def import_file(path):
+            calls.append(('import',threading.get_ident()))
+            return 1
+        index=SimpleNamespace(scan=scan,load=load,import_file=import_file)
+        with patch('ui_billing.BillingIndex',return_value=index):
+            self.panel.refresh('ledger.json')
+            self.wait_for_sync()
+        self.assertEqual([c[0] for c in calls],['import','scan','scan','scan','load'])
+        self.assertTrue(all(c[1]!=threading.get_ident() for c in calls))
+        self.assertTrue(all(not c[2] for c in calls if c[0]=='scan'))
+        self.assertEqual(self.panel.result['issues']['bytes_read'],300)
+        self.assertEqual(self.panel.result['issues']['sync_batches'],3)
+        self.assertEqual(self.panel.result['imported'],1)
+        self.assertIn('3 批',self.panel.sync_text.get())
+
+    def test_source_change_stops_batch_loop(self):
+        started=threading.Event();release=threading.Event();calls=[];r1=self.r1
+        self.addCleanup(release.set)
+        def scan(home,db,*,stop,include_requests):
+            calls.append('scan');started.set()
+            if not release.wait(10):raise TimeoutError('test did not release scan')
+            return {'issues':{'resume_required':1,'bytes_read':100}}
+        def load(*args):
+            calls.append('load')
+            return {'requests':[r1],'issues':{}}
+        index=SimpleNamespace(scan=scan,load=load)
+        with patch('ui_billing.BillingIndex',return_value=index):
+            self.panel.refresh()
+            self.assertTrue(started.wait(10))
+            self.app.prefs['codex_home']=str(self.home/'new')
+            self.panel.source_changed();release.set()
+            self.wait_for_sync()
+        self.assertEqual(calls,['scan'])
+        self.assertFalse(self.panel.requests)
+        self.assertIn('丢弃旧',self.panel.sync_text.get())
+
+    def test_source_change_starts_new_scan_only_after_old_worker_stops(self):
+        started=threading.Event();release=threading.Event();calls=[];r1=self.r1
+        self.addCleanup(release.set)
+        def old_scan(home,db,*,stop,include_requests):
+            calls.append('old');started.set()
+            if not release.wait(10):raise TimeoutError('test did not release scan')
+            return {'issues':{'resume_required':1,'bytes_read':100}}
+        def new_scan(home,db,*,stop,include_requests):
+            if not release.is_set():raise AssertionError('old worker did not finish')
+            calls.append('new')
+            return {'issues':{'resume_required':0,'bytes_read':10}}
+        def new_load(home,db,issues):
+            calls.append('load')
+            return {'requests':[r1],'issues':dict(issues)}
+        old=SimpleNamespace(scan=old_scan)
+        new=SimpleNamespace(scan=new_scan,load=new_load)
+        with patch('ui_billing.BillingIndex',side_effect=[old,new]):
+            self.panel.refresh()
+            self.assertTrue(started.wait(10))
+            self.app.prefs['codex_home']=str(self.home/'new')
+            self.panel.source_changed();self.panel.activate();release.set()
+            self.wait_for_sync()
+        self.assertEqual(calls,['old','new','load'])
+        self.assertEqual(self.panel.result['issues']['bytes_read'],10)
+
+    def test_zero_progress_stops_automatic_retry_and_warns(self):
+        calls=[];r1=self.r1
+        def scan(home,db,*,stop,include_requests):
+            calls.append('scan')
+            return {'issues':{'resume_required':1,'bytes_read':0,'compressed_read_errors':1}}
+        def load(home,db,issues):
+            calls.append('load')
+            return {'requests':[r1],'issues':dict(issues)}
+        index=SimpleNamespace(scan=scan,load=load)
+        with patch('ui_billing.BillingIndex',return_value=index):
+            self.panel.refresh()
+            self.wait_for_sync()
+        self.assertEqual(calls,['scan','load'])
+        self.assertEqual(self.panel.result['issues']['continuation_stalled'],1)
+        self.assertIn('范围可能不完整',self.panel.notice.get())
     def test_reset_filters(self):
         self.panel.model.set('gpt-6-astra');self.panel.scope.set('当前会话');self.panel.reset()
         self.assertEqual(self.panel.model.get(),'全部模型');self.assertEqual(self.panel.scope.get(),'全部项目')

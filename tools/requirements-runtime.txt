@@ -1,0 +1,2 @@
+# Python 3.14+ includes compression.zstd; older supported Python needs its backport.
+backports.zstd==1.8.0; python_version < '3.14'
