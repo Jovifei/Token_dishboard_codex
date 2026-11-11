@@ -367,6 +367,7 @@ class Workbench(App):
             self.config_path.set(settings["config"])
             self.config_auto_read = False
         if source_changed:
+            self.usage_panel.billing_panel.source_changed()
             self.request_cache = {}
             self.pid, self.chat = None, None
             self.catalog = {"app_projects": [], "chats": [], "total": 0}

@@ -1,1 +1,1 @@
-请接手本仓库中的轻续 Qingxu。先读 START-HERE.md，核对 work/qingxu、install/ 和 releases/ 的实际版本，再按需读工程交接与本机验收。界面任务用 docs/UX-SPEC.md 和 docs/design/apple-ui-v2/ 对照当前 Tk 源码。默认只读本项目相关材料，沿用现有授权与基线。
+请接手轻续 0.11.0-billing-rc1 计费源码候选。先读 START-HERE.md、docs/BILLING-HANDOFF.md 和 docs/BILLING-USER-GUIDE.md；核对本机 Git 状态与基线 2f53b196，保留未提交改动后增量合并 CODE-CHANGES.patch。先运行 Preview-Billing.cmd 和 Test-Windows.cmd，再核对真实请求与账单、Windows 缩放，最后才在新目录构建 EXE。不要将示例金额当成用户消费，不覆盖旧安装版，不将历史 UI2 验收套用本轮。

@@ -1,8 +1,10 @@
 # 轻续 Qingxu 工程交接
 
+本轮计费增量与验收入口：[BILLING-HANDOFF.md](BILLING-HANDOFF.md)。新增三个模块 billing.py / billing_index.py / ui_billing.py；不修改原接续及实际 Codex 配置。
+
 ## 基线与工程入口
 
-当前维护版本为 **0.10.0-rc4-ui2**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
+本包源码候选为 **0.11.0-billing-rc1**，最近已发布 Windows 基线为 0.10.0-rc4-ui2。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动 Tk `Workbench`。开始工作前核对当前分支、工作区变更和用户授权。
 
 0.9.3 冻结包保留在 `docs/ui-handoff-0.9.3/`。外部 0.10.0-rc1 升级 ZIP 的 97 个清单文件已核对，当前代码以 rc1 接入的 `work/qingxu/` 为基础继续修改。`docs/ui-handoff-0.10.0-rc1/` 中的截图、设计和测试证据属于历史交接，应以当前源码与实际运行结果判断现状。
 

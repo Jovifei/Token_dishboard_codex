@@ -1,0 +1,32 @@
+{
+  "schema": "qingxu.requests.v1",
+  "synthetic": true,
+  "requests": [
+    {
+      "response_id": "example-mixed-ttl-not-real",
+      "time": "2026-11-11T01:00:00Z",
+      "provider": "openai",
+      "model": "gpt-6.1-sol",
+      "thread_id": "example-thread",
+      "project": "缓存计价示例（非真实账单）",
+      "cwd": "/example/project",
+      "title": "混合缓存写入",
+      "role": "primary",
+      "service_tier": "standard",
+      "region": "global",
+      "usage": {
+        "input_tokens": 12000,
+        "output_tokens": 1000,
+        "total_tokens": 13000,
+        "input_tokens_details": {
+          "cached_tokens": 4000,
+          "cache_write_tokens": 7000,
+          "cache_write_tokens_details": {
+            "ttl_30m_tokens": 3000,
+            "ttl_12h_tokens": 4000
+          }
+        }
+      }
+    }
+  ]
+}

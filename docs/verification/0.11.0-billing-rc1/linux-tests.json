@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "2026-11-11T05:09:35.341395+00:00",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "tests": 382,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 1,
+  "success": true,
+  "failure_details": [],
+  "synthetic_data_only": true,
+  "not_verified": [
+    "Windows taskbar and packaging",
+    "real Codex new-chat continuation",
+    "Codex runtime adopts edited settings",
+    "real knowledge-base writes",
+    "collector lifecycle",
+    "real billing reconciliation",
+    "unsupported or legacy request log coverage"
+  ]
+}

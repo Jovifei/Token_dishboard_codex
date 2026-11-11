@@ -1,3 +1,7 @@
+# 计费增量说明（0.11.0-billing-rc1）
+
+用量概览现在有“上下文概览 / 计费统计 / 详细记录 / ccusage 快照”四个二级页签。计费指标、交互及未知状态见 [计费使用指南](BILLING-USER-GUIDE.md)；来源和计算契约见 [计费交接](BILLING-HANDOFF.md)。下方旧版本规范仍适用于原功能，新增计费不代表上下文占用或实际账单。
+
 # 轻续 0.10.0-rc4-ui2 · 界面与交互规范
 
 本规范以当前 Tk 源码为依据，说明三页工作台及悬浮窗的操作关系。UI2 的运行截图使用 Linux Tk 和合成数据，Windows 结果另见本机验收。[UI2 设计交接](design/apple-ui-v2/README.md) · [Windows 本机验收](verification/0.10.0-rc4-ui2/README.md)

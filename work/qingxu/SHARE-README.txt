@@ -1,4 +1,4 @@
-轻续 · Token 工作台 0.10.0-rc4-ui2
+轻续 · Token 工作台 0.11.0-billing-rc1
 Windows x64 候选版
 
 1. 若此说明位于已构建的 EXE 包中，解压后双击「轻续.exe」。若位于源码包，请从根目录 Start-Qingxu.cmd 启动，需要带 Tk 的 Python 3.11+。
@@ -11,3 +11,6 @@ Windows x64 候选版
 8. EXE 的偏好与配置备份默认在 %LOCALAPPDATA%\Qingxu，可用 QINGXU_DATA_DIR 指定。更换目录不搬移原文件。
 
 项目与使用指南见 https://github.com/Jovifei/Token_dishboard_codex 。
+
+9. 新增“用量概览 → 计费统计”。先同步逐请求记录，再按日期、供应商、模型或当前项目/会话筛选；单价可配置，导出当前范围全部 CSV。金额为当前价表 Token 估算或来源报告金额（未对账），不是订阅账单。无单价、无逐请求记录或无耗时均显示未知，不填假零。
+10. 源码根目录 Preview-Billing.cmd 可运行 84 条合成数据演示；不可当作自己的实际消费。

@@ -16,6 +16,7 @@ SUITES = (
     "test_app", "test_handoff", "test_monitor", "test_preferences", "test_ui_preferences",
     "test_ui_handoff", "test_ui_monitor", "test_workbench_gui", "test_workbench_logic",
     "test_ui_brand_motion", "test_ui_polish", "test_path_support",
+    "test_billing", "test_billing_index", "test_ui_billing",
 )
 
 if __name__ == "__main__":
@@ -32,7 +33,8 @@ if __name__ == "__main__":
                 "failure_details": [(str(test), message) for test, message in result.failures + result.errors],
                 "synthetic_data_only": True,
                 "not_verified": ["Windows taskbar and packaging", "real Codex new-chat continuation",
-                                 "Codex runtime adopts edited settings", "real knowledge-base writes", "collector lifecycle"]}
+                                 "Codex runtime adopts edited settings", "real knowledge-base writes", "collector lifecycle",
+                                 "real billing reconciliation", "unsupported or legacy request log coverage"]}
     if args.result is not None:
         args.result.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(not result.wasSuccessful())

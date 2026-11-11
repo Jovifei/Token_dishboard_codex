@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import font as tkfont, ttk
 
 from dashboard import ChatDashboard, Dashboard
+from ui_billing import BillingPanel
 from ui_brand import BrandMark, set_window_icon
 from ui_motion import attach_motion_tree, reduced_motion, set_reduced_motion
 
@@ -163,10 +164,15 @@ class UsagePanel(ttk.Frame):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill="both", expand=True)
         overview = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
+        billing = ttk.Frame(self.tabs, style="App.TFrame")
         detail = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
         snapshot = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
-        for panel, label in ((overview, "概览"), (detail, "详细记录"), (snapshot, "ccusage 快照")):
+        for panel, label in ((overview, "上下文概览"), (billing, "计费统计"), (detail, "详细记录"), (snapshot, "ccusage 快照")):
             self.tabs.add(panel, text=label)
+        self.billing_panel = BillingPanel(billing, app)
+        self.billing_panel.pack(fill="both", expand=True)
+        self.billing_tab = billing
+        self.tabs.bind("<<NotebookTabChanged>>", self._billing_selected, add="+")
         self.overview_canvas, body = self._scroll_page(overview)
         self.overview_body = body
         self.overview_columns = ttk.Frame(body, style="App.TFrame")
@@ -239,6 +245,10 @@ class UsagePanel(ttk.Frame):
         self.dashboard.pack(fill="both", expand=True)
         self.bind("<Destroy>", self._destroyed, add="+")
 
+    def _billing_selected(self, _event=None):
+        if self.tabs.select() == str(self.billing_tab):
+            self.billing_panel.activate()
+
     def _destroyed(self, event):
         if event.widget is self and self._refresh_timer:
             self.after_cancel(self._refresh_timer)
@@ -309,6 +319,7 @@ class UsagePanel(ttk.Frame):
         self.chat_usage.render_catalog(catalog)
 
     def set_record(self, record):
+        self.billing_panel.selection_changed()
         self.record = record
         self.chat_usage.set_chat(record)
         self.prepare_button.configure(state="normal" if record else "disabled")

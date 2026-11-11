@@ -109,8 +109,8 @@ class TkControlTests(unittest.TestCase):
         self.panel.destroy()
         self.root.update_idletasks()
 
-    def test_three_views_and_handoff_button_states(self):
-        self.assertEqual(len(self.panel.tabs.tabs()), 3)
+    def test_four_usage_views_and_handoff_button_states(self):
+        self.assertEqual(len(self.panel.tabs.tabs()), 4)
         self.assertFalse(hasattr(self.panel, "project_choice"))
         self.panel.set_record(None)
         self.assertTrue(self.panel.prepare_button.instate(["disabled"]))

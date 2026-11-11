@@ -1,0 +1,58 @@
+{
+  "schema": "qingxu.requests.v1",
+  "synthetic": true,
+  "requests": [
+    {
+      "response_id": "demo-6-2-2",
+      "time": "2026-11-11T03:10:00+00:00",
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "thread_id": "demo-ui-main",
+      "project": "轻续 · 示例工程",
+      "cwd": "/demo/qingxu",
+      "title": "计费功能与页面验收",
+      "role": "primary",
+      "service_tier": "standard",
+      "retention": "30m",
+      "region": "global",
+      "status": "success",
+      "duration_ms": 29000,
+      "ttft_ms": 940,
+      "tokens_per_second": 28,
+      "usage": {
+        "input_tokens": 274500,
+        "cached_input_tokens": 238815,
+        "cache_write_input_tokens": 5490,
+        "output_tokens": 1040,
+        "reasoning_output_tokens": 346,
+        "total_tokens": 275540
+      }
+    },
+    {
+      "response_id": "demo-6-2-3",
+      "time": "2026-11-11T04:10:00+00:00",
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "thread_id": "demo-ui-main",
+      "project": "轻续 · 示例工程",
+      "cwd": "/demo/qingxu",
+      "title": "计费功能与页面验收",
+      "role": "primary",
+      "service_tier": "standard",
+      "retention": "30m",
+      "region": "global",
+      "status": "success",
+      "duration_ms": 31000,
+      "ttft_ms": 1020,
+      "tokens_per_second": 30,
+      "usage": {
+        "input_tokens": 276000,
+        "cached_input_tokens": 240120,
+        "cache_write_input_tokens": 5520,
+        "output_tokens": 1180,
+        "reasoning_output_tokens": 393,
+        "total_tokens": 277180
+      }
+    }
+  ]
+}

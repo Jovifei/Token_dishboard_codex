@@ -2,11 +2,17 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前候选版** 0.10.0-rc4-ui2 · Windows x64
+**本包源码候选** 0.11.0-billing-rc1 · 新增计费统计。
+
+**最近已发布 Windows 基线** 0.10.0-rc4-ui2；以下旧安装链接不是本轮新 EXE。
+
+计费入口：**用量概览 → 计费统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [图文验收](docs/billing/SCREENSHOTS.md)。
+
+本地 Token 成本估算与来源报告金额分开；不等于订阅或供应商实际账单。
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.10.0-rc4-ui2-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc4-ui2/README.md)
+[Windows 安装包目录](https://github.com/Jovifei/Token_dishboard_codex/tree/main/install) · [下载便携 ZIP](https://github.com/Jovifei/Token_dishboard_codex/blob/main/install/Qingxu-0.10.0-rc4-ui2-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc4-ui2/README.md)
 
 ![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 
@@ -43,5 +49,5 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
 - [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) · [rc3 本机复验](docs/verification/0.10.0-rc3/README.md)
 - [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)
-- [rc2 源码与本机验收包](releases/Qingxu-0.10.0-rc2-Local-Acceptance.zip)
-- [0.9.3 Windows x64 便携版](releases/Qingxu-0.9.3-Windows-x64.zip) · [MIT 许可](LICENSE) · [源码来源](work/qingxu/provenance.json)
+- [rc2 源码与本机验收包](https://github.com/Jovifei/Token_dishboard_codex/blob/main/releases/Qingxu-0.10.0-rc2-Local-Acceptance.zip)
+- [0.9.3 Windows x64 便携版](https://github.com/Jovifei/Token_dishboard_codex/blob/main/releases/Qingxu-0.9.3-Windows-x64.zip) · [MIT 许可](LICENSE) · [源码来源](work/qingxu/provenance.json)
