@@ -39,12 +39,82 @@ class WorkbenchTests(unittest.TestCase):
         self.app.load_config()
         return self.app
 
-    def test_three_pages_share_project_selection(self):
+    def test_navigation_shares_selection_and_statistics_is_independent(self):
         for page in ("usage", "handoff", "settings"):
             self.app.show_page(page)
             self.assertEqual(self.app.chat["chat_id"], self.normal["chat_id"])
             self.assertEqual(self.app.picker.winfo_manager(), "pack")
-        self.assertEqual(len(self.app.tabs.tabs()), 3)
+            self.assertEqual(self.app.manual_project_button.winfo_manager(), "pack")
+        self.assertEqual(len(self.app.tabs.tabs()), 4)
+        self.assertEqual(tuple(self.app.nav), ("handoff", "usage", "statistics", "settings"))
+        panel = self.app.usage_panel.billing_panel
+        with patch.object(panel, "activate") as activate:
+            self.app.show_page("statistics")
+        activate.assert_called_once_with()
+        self.assertEqual(self.app.chat["chat_id"], self.normal["chat_id"])
+        self.assertFalse(self.app.picker.winfo_manager())
+        self.assertFalse(self.app.manual_project_button.winfo_manager())
+        self.assertEqual(str(panel.master), str(self.app.frames[3]))
+        self.assertIsNone(self.app.usage_panel.billing_tab)
+        self.app.show_page("handoff")
+        self.assertEqual(self.app.picker.winfo_manager(), "pack")
+        self.assertEqual(self.app.manual_project_button.winfo_manager(), "pack")
+
+    def test_today_cost_and_cached_startup(self):
+        panel = self.app.usage_panel.billing_panel
+        self.assertEqual(self.app.today_cost.get(), "今日 —")
+        self.app.set_today_cost("今日 $12.34")
+        self.assertEqual(str(self.app.today_label.cget("textvariable")), str(self.app.today_cost))
+        self.assertEqual(self.app.today_cost.get(), "今日 $12.34")
+        home, _ = panel._source()
+        cache = panel._index_directory(home) / "requests.sqlite3"
+        with patch.object(panel, "activate") as activate:
+            self.app._activate_cached_statistics()
+            activate.assert_not_called()
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.touch()
+            self.app._activate_cached_statistics()
+            activate.assert_called_once_with()
+        self.app.set_today_cost(None)
+        self.assertEqual(self.app.today_cost.get(), "今日 —")
+
+    def test_existing_statistics_cache_activates_on_startup(self):
+        panel = self.app.usage_panel.billing_panel
+        home, _ = panel._source()
+        cache = panel._index_directory(home) / "requests.sqlite3"
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.touch()
+        other = tk.Tk()
+        other.withdraw()
+        ui = None
+        try:
+            with patch.object(type(panel), "activate", autospec=True) as activate:
+                ui = Workbench(other, Relay(self.fixture["settings"]), self.fixture["prefs"])
+            activate.assert_called_once_with(ui.usage_panel.billing_panel)
+        finally:
+            if ui is not None:
+                ui.closed = True
+                ui.metric_worker.shutdown(wait=True, cancel_futures=True)
+            other.destroy()
+
+    def test_sidebar_controls_fit_at_minimum_window(self):
+        self.tk.geometry("980x680+0+0")
+        self.tk.deiconify()
+        self.app.set_today_cost("今日 $123,456,789.12")
+        with patch.object(self.app.usage_panel.billing_panel, "activate"):
+            self.app.show_page("statistics")
+        self.tk.update()
+        statistics = self.app.nav["statistics"]
+        self.assertGreaterEqual(statistics.winfo_width(), statistics.winfo_reqwidth())
+        self.assertGreaterEqual(self.app.today_label.winfo_width(), self.app.today_label.winfo_reqwidth())
+        for control in (*self.app.nav.values(), self.app.today_label, self.app.floating_button):
+            with self.subTest(control=str(control)):
+                self.assertGreater(control.winfo_width(), 0)
+                self.assertGreaterEqual(control.winfo_rootx(), self.tk.winfo_rootx())
+                self.assertLessEqual(control.winfo_rootx() + control.winfo_width(),
+                                     self.tk.winfo_rootx() + self.app.sidebar.winfo_width())
+                self.assertLessEqual(control.winfo_rooty() + control.winfo_height(),
+                                     self.tk.winfo_rooty() + self.tk.winfo_height())
 
     def test_main_model_write_is_previewed_applied_and_recoverable(self):
         ui = self.config()

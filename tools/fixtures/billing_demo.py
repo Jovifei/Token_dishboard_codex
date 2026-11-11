@@ -6,11 +6,20 @@ from pathlib import Path
 
 def requests(now=None, cwd='/demo/qingxu', second_cwd='/demo/photography'):
     now=now or datetime.now(timezone.utc)
+    local_now=now.astimezone()
+    utc_now=now.astimezone(timezone.utc)
     rows=[]
     for day in range(7):
+        local_day=local_now.date()-timedelta(days=6-day)
+        midnight=datetime.combine(local_day,datetime.min.time()).astimezone().astimezone(timezone.utc)
         for m,model in enumerate(('gpt-6.1-sol','gpt-6.1-terra','gpt-6-astra')):
             for i in range(4):
-                stamp=(now-timedelta(days=6-day)).replace(hour=1+i,minute=5*m,second=0,microsecond=0)
+                if day<6:
+                    stamp=midnight+timedelta(hours=12+i,minutes=5*m)
+                else:
+                    elapsed=(utc_now-midnight).total_seconds()
+                    stamp=(midnight+timedelta(seconds=elapsed*(m*4+i+1)/13)
+                           if elapsed>0 else utc_now-timedelta(microseconds=12-m*4-i))
                 amount=18000+(day+1)*(m+1)*12000+(i+1)*1500
                 cached=int(amount*(.94 if m==0 else .87))
                 written=int(amount*.02)

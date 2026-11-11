@@ -155,7 +155,7 @@ class _ChatRow(ttk.Frame):
 
 
 class UsagePanel(ttk.Frame):
-    def __init__(self, parent, app):
+    def __init__(self, parent, app, billing_parent=None):
         super().__init__(parent, style="App.TFrame", padding=(4, 0))
         self.app, self.record, self.rows = app, None, []
         self._refresh_timer = None
@@ -164,15 +164,20 @@ class UsagePanel(ttk.Frame):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill="both", expand=True)
         overview = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
-        billing = ttk.Frame(self.tabs, style="App.TFrame")
+        billing = billing_parent if billing_parent is not None else ttk.Frame(self.tabs, style="App.TFrame")
         detail = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
         snapshot = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
-        for panel, label in ((overview, "上下文概览"), (billing, "计费统计"), (detail, "详细记录"), (snapshot, "ccusage 快照")):
+        views = [(overview, "上下文概览")]
+        if billing_parent is None:
+            views.append((billing, "计费统计"))
+        views.extend(((detail, "详细记录"), (snapshot, "ccusage 快照")))
+        for panel, label in views:
             self.tabs.add(panel, text=label)
         self.billing_panel = BillingPanel(billing, app)
         self.billing_panel.pack(fill="both", expand=True)
-        self.billing_tab = billing
-        self.tabs.bind("<<NotebookTabChanged>>", self._billing_selected, add="+")
+        self.billing_tab = billing if billing_parent is None else None
+        if self.billing_tab is not None:
+            self.tabs.bind("<<NotebookTabChanged>>", self._billing_selected, add="+")
         self.overview_canvas, body = self._scroll_page(overview)
         self.overview_body = body
         self.overview_columns = ttk.Frame(body, style="App.TFrame")

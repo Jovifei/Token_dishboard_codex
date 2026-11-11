@@ -381,20 +381,61 @@ def local_date(req: Request, tz_label: str) -> date:
     return timestamp(req.time).astimezone(fixed_timezone(tz_label)).date()
 
 
-def filter_requests(rows, *, start: date, end: date, tz_label='本机时区', provider='', model='',
-                    cwd='', thread_id='', app_project_id='', unassigned_only=False):
-    if start > end or (end-start).days > 3660:
-        raise ValueError('日期范围需按先后排列且不超过十年')
+def period_bounds(kind, now=None, tz_label='本机时区'):
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError('当前时间必须带时区')
+    now = now.astimezone(timezone.utc)
+    if kind == '全部':
+        return None, None
+    if kind == '近 24 小时':
+        return now - timedelta(hours=24), now
+    offsets = {'今天': 0, '近 7 天': 6, '近 30 天': 29}
+    if kind not in offsets:
+        raise ValueError('未识别的时间范围')
     tz = fixed_timezone(tz_label)
-    return [r for r in rows if start <= timestamp(r.time).astimezone(tz).date() <= end
-            and (not provider or r.provider == provider) and (not model or r.model == model)
-            and (not cwd or path_key(r.cwd) == path_key(cwd)) and (not thread_id or r.thread_id == thread_id)
-            and (not app_project_id or r.app_project_id == app_project_id)
-            and (not unassigned_only or not r.app_project_id)]
+    first = now.astimezone(tz).date() - timedelta(days=offsets[kind])
+    # For the OS local timezone, astimezone() resolves historical DST at midnight.
+    midnight = datetime.combine(first, datetime.min.time(), tzinfo=tz)
+    return midnight.astimezone(timezone.utc), now
 
 
-def summary(rows: list[Request], prices: dict, *, mode='estimate') -> dict:
-    quotes = [quote(r, prices) for r in rows]
+def filter_requests(rows, *, start: date | None = None, end: date | None = None,
+                    start_at: datetime | None = None, end_at: datetime | None = None,
+                    tz_label='本机时区', provider='', model='', cwd='', thread_id='',
+                    app_project_id='', unassigned_only=False):
+    if start is not None and end is not None and (start > end or (end-start).days > 3660):
+        raise ValueError('日期范围需按先后排列且不超过十年')
+    for boundary in (start_at, end_at):
+        if boundary is not None and (boundary.tzinfo is None or boundary.utcoffset() is None):
+            raise ValueError('时间范围必须带时区')
+    if start_at is not None and end_at is not None and start_at > end_at:
+        raise ValueError('时间范围需按先后排列')
+    tz = fixed_timezone(tz_label)
+    selected = []
+    for r in rows:
+        t = timestamp(r.time)
+        day = t.astimezone(tz).date() if start is not None or end is not None else None
+        if ((start is None or day >= start) and (end is None or day <= end)
+                and (start_at is None or t >= start_at) and (end_at is None or t < end_at)
+                and (not provider or r.provider == provider) and (not model or r.model == model)
+                and (not cwd or path_key(r.cwd) == path_key(cwd)) and (not thread_id or r.thread_id == thread_id)
+                and (not app_project_id or r.app_project_id == app_project_id)
+                and (not unassigned_only or not r.app_project_id)):
+            selected.append(r)
+    return selected
+
+
+def summary(rows: list[Request], prices: dict, *, mode='estimate', quote_cache=None) -> dict:
+    if quote_cache is None:
+        quotes = [quote(r, prices) for r in rows]
+    else:
+        quotes = []
+        for r in rows:
+            key = id(r)
+            if key not in quote_cache:
+                quote_cache[key] = quote(r, prices)
+            quotes.append(quote_cache[key])
     costs = [q.amount for q in quotes] if mode == 'estimate' else [decimal(r.reported_cost_usd) if r.reported_cost_usd is not None else None for r in rows]
     usages = [r.usage for r in rows if r.usage is not None]
     known = [v for v in costs if v is not None]
@@ -424,7 +465,7 @@ def project_identity(req):
     return 'unassigned'
 
 
-def group_requests(rows, key, prices, mode='estimate'):
+def group_requests(rows, key, prices, mode='estimate', quote_cache=None):
     groups = defaultdict(list)
     for r in rows:
         if key == 'model':
@@ -442,11 +483,11 @@ def group_requests(rows, key, prices, mode='estimate'):
             first = items[0]
             label = first.project if identity != 'unassigned' else '未归类'
             identity = (identity, label)
-        result.append((identity, summary(items, prices, mode=mode)))
+        result.append((identity, summary(items, prices, mode=mode, quote_cache=quote_cache)))
     return result
 
 
-def daily(rows, start, end, tz_label, prices, mode='estimate'):
+def daily(rows, start, end, tz_label, prices, mode='estimate', quote_cache=None):
     groups = defaultdict(list)
     tz = fixed_timezone(tz_label)
     for r in rows:
@@ -459,7 +500,36 @@ def daily(rows, start, end, tz_label, prices, mode='estimate'):
         key = d if period == 'day' else d-timedelta(days=d.weekday()) if period == 'week' else d.replace(day=1)
         bins[key].extend(groups[d])
         d += timedelta(days=1)
-    return [(key.isoformat(), summary(items, prices, mode=mode)) for key, items in sorted(bins.items())], period
+    return [(key.isoformat(), summary(items, prices, mode=mode, quote_cache=quote_cache)) for key, items in sorted(bins.items())], period
+
+
+def period_buckets(rows, kind, now, tz_label, prices, mode='estimate', quote_cache=None):
+    """Aggregate pre-filtered requests; hour keys retain their local UTC offset."""
+    start, end = period_bounds(kind, now, tz_label)
+    tz = fixed_timezone(tz_label)
+    if kind in ('今天', '近 24 小时'):
+        bins = defaultdict(list)
+        for r in rows:
+            seconds = (timestamp(r.time) - start).total_seconds()
+            if seconds >= 0:
+                bins[int(seconds // 3600)].append(r)
+        count = max(0, math.ceil((end - start).total_seconds() / 3600))
+        result = []
+        for i in range(count):
+            key = (start + timedelta(hours=i)).astimezone(tz).isoformat()
+            result.append((key, summary(bins[i], prices, mode=mode, quote_cache=quote_cache)))
+        return result, 'hour'
+    bins = defaultdict(list)
+    for r in rows:
+        bins[local_date(r, tz_label)].append(r)
+    if kind != '全部':
+        first = start.astimezone(tz).date()
+        last = end.astimezone(tz).date()
+        while first <= last:
+            bins[first]
+            first += timedelta(days=1)
+    return [(day.isoformat(), summary(items, prices, mode=mode, quote_cache=quote_cache))
+            for day, items in sorted(bins.items())], 'day'
 
 
 def money(value, decimals=2):

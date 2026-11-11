@@ -25,8 +25,7 @@ def make(root_dir):
     panel.set_result({'requests':[Request.from_dict(r) for r in billing_demo.requests()],
                       'issues':{},'synthetic':True,'mapping_note':''})
     panel.sync_text.set('合成演示 · 无真实账户读取 · 84 条请求')
-    ui.show_page('usage')
-    ui.usage_panel.tabs.select(ui.usage_panel.billing_tab)
+    ui.show_page('statistics')
     return root,ui,panel
 
 

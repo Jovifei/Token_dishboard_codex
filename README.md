@@ -2,17 +2,17 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前版本** 0.11.0-billing-rc4 · 计费统计支持读取压缩归档，并自动分批同步。
+**当前版本** 0.11.1-rc1 · 独立用量统计、日期柱状图与全部历史热力图。
 
 **本轮 Windows x64 便携包** 已由本源码构建，安装说明见 `install/README.md`。
 
-计费入口：**用量概览 → 计费统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [图文验收](docs/billing/SCREENSHOTS.md)。
+计费入口：左侧 **用量统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [参考图与验收](docs/verification/0.11.1-rc1/README.md)。
 
 本地 Token 成本估算与来源报告金额分开；不等于订阅或供应商实际账单。
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.0-billing-rc4-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.0-billing-rc4/README.md)
+[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.1-rc1-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.1-rc1/README.md)
 
 ![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 
@@ -21,8 +21,9 @@
 1. 下载便携 ZIP 并完整解压，运行 `轻续.exe`。在 GitHub 文件页面可用 **Download raw file**。
 2. 正常启动会列出本机 Codex 项目和聊天。使用自定义数据位置时，可在「设置 → 目录与提醒」调整。无知识库时可以直接接续。
 3. 在顶部选择项目和聊天。「用量概览」显示最近请求参考、来源和四条最近活动。按需打开悬浮窗。
-4. 在「会话接续」把旧聊指令发给所选会话，粘贴或导入摘要。默认可直接复制带摘要的指令，发送给同项目的新聊。需要留档或用文件引用时，保存为 Markdown。
-5. 在「Codex 配置」确认目标文件并选择数值方案，再调整压缩、输出及主/子 Agent。勾选后先预览，再备份并应用。轻续提醒与 Codex 自动压缩参数分别保存。
+4. 在「用量统计」同步本机记录，选择时间和范围；「全部」显示逐日热力图，其他时间使用柱状图。
+5. 在「会话接续」把旧聊指令发给所选会话，粘贴或导入摘要。默认可直接复制带摘要的指令，发送给同项目的新聊。需要留档或用文件引用时，保存为 Markdown。
+6. 在「Codex 配置」确认目标文件并选择数值方案，再调整压缩、输出及主/子 Agent。勾选后先预览，再备份并应用。轻续提醒与 Codex 自动压缩参数分别保存。
 
 ## 数据与边界
 
@@ -48,7 +49,7 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 ## 项目资料
 
 - [使用指南](docs/USER-GUIDE.md) · [计费使用指南](docs/BILLING-USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
-- [rc3 Windows 验收](docs/verification/0.11.0-billing-rc3/README.md) · [rc4 Windows 验收](docs/verification/0.11.0-billing-rc4/README.md)
+- [rc4 Windows 验收](docs/verification/0.11.0-billing-rc4/README.md) · [0.11.1 Windows 验收](docs/verification/0.11.1-rc1/README.md)
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
 - [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) · [rc3 本机复验](docs/verification/0.10.0-rc3/README.md)
 - [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)

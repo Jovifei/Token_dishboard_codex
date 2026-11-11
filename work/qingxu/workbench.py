@@ -1,4 +1,4 @@
-"""Qingxu 0.10: three task-oriented workspaces around the conservative 0.9 core.
+"""Qingxu: task-oriented workspaces around the conservative 0.9 core.
 
 The GUI does not send messages to Codex or assume its focused conversation.
 I/O runs on one bounded worker; its results are discarded after a source switch.
@@ -91,6 +91,7 @@ class Workbench(App):
         self.root.bind("<Control-1>", lambda _: self.show_page("usage"))
         self.root.bind("<Control-2>", lambda _: self.show_page("handoff"))
         self.root.bind("<Control-3>", lambda _: self.show_page("settings"))
+        self.root.bind("<Control-4>", lambda _: self.show_page("statistics"))
         self.show_page("usage")
         # Keep ttk commands, focus and geometry. Motion decorates colors only.
         attach_motion_tree(self.root)
@@ -103,6 +104,7 @@ class Workbench(App):
             self.set_status("尚未连接 Codex 数据。可在设置选择目录，或手动选择项目目录接续。" + str(exc))
         if self.preferences_error:
             self.set_status("偏好读取失败；已保留原文件。" + self.preferences_error)
+        self._activate_cached_statistics()
         self.schedule_metrics()
 
     def configure_theme(self):
@@ -137,6 +139,10 @@ class Workbench(App):
         style.configure("Selected.Nav.TButton", anchor="w", background=SURFACE, foreground=BLUE,
                         font=(self.font_family, 11, "bold"), relief="flat", shiftrelief=0)
         style.map("Selected.Nav.TButton", background=[("active", "#FFFFFF"), ("!active", "#FFFFFF")])
+        style.configure("Compact.Nav.TButton", padding=(6, 13))
+        style.configure("Selected.Compact.Nav.TButton", anchor="w", padding=(6, 13), background=SURFACE,
+                        foreground=BLUE, font=(self.font_family, 11, "bold"), relief="flat", shiftrelief=0)
+        style.map("Selected.Compact.Nav.TButton", background=[("active", "#FFFFFF"), ("!active", "#FFFFFF")])
         style.configure("TCombobox", padding=(7, 5), fieldbackground=SURFACE, arrowsize=13, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
         style.map("TCombobox", fieldbackground=[("readonly", SURFACE)], foreground=[("readonly", INK)])
         style.configure("TEntry", padding=(7, 5), fieldbackground=SURFACE, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
@@ -168,6 +174,7 @@ class Workbench(App):
         side = ttk.Frame(shell, style="Side.TFrame", width=190, padding=(16, 24))
         side.pack(side="left", fill="y")
         side.pack_propagate(False)
+        self.sidebar = side
         brand_row = ttk.Frame(side, style="Side.TFrame")
         brand_row.pack(fill="x", pady=(0, 5))
         BrandMark(brand_row, size=40, background="#EEF3F9").pack(side="left", padx=(0, 9))
@@ -176,17 +183,31 @@ class Workbench(App):
         ttk.Label(side, text="让工作持续向前", style="Side.TLabel").pack(anchor="w", pady=(0, 26))
         self.nav = {}
         self.nav_indicator = {}
-        for key, label in (("usage", "用量概览"), ("handoff", "会话接续"), ("settings", "设置")):
+        self.today_cost = tk.StringVar(self.root, value="今日 —")
+
+        def add_navigation(key, label, side_mode="top"):
             slot = ttk.Frame(side, style="Side.TFrame")
-            slot.pack(fill="x", pady=4)
+            slot.pack(side=side_mode, fill="x", pady=4)
             rail = tk.Frame(slot, bg="#EEF3F9", width=3, highlightthickness=0)
             rail.pack(side="left", fill="y", padx=(0, 5))
-            button = ttk.Button(slot, text=label, style="Nav.TButton", command=lambda k=key: self.show_page(k))
+            if key == "statistics":
+                self.today_label = tk.Label(slot, textvariable=self.today_cost, bg="#EEF3F9", fg=SECONDARY,
+                                            font=(self.font_family, 9), anchor="e", justify="right", wraplength=66)
+                self.today_label.pack(side="right", padx=(0, 4))
+                self.today_label.bind("<Button-1>", lambda _: self.show_page("statistics"))
+            options = {"width": 0} if key == "statistics" else {}
+            button = ttk.Button(slot, text=label, style="Compact.Nav.TButton" if key == "statistics" else "Nav.TButton",
+                                command=lambda k=key: self.show_page(k), **options)
             button.pack(side="left", fill="x", expand=True)
             self.nav[key] = button
             self.nav_indicator[key] = rail
+
+        for key, label in (("handoff", "会话接续"), ("usage", "用量概览"), ("statistics", "用量统计")):
+            add_navigation(key, label)
         ttk.Label(side, text=f"{VERSION}\n本地数据 · 按需读取", style="Side.TLabel", justify="left").pack(side="bottom", anchor="w", pady=6)
-        ttk.Button(side, text="打开悬浮监测", command=lambda: self.floating.show()).pack(side="bottom", fill="x", pady=14)
+        self.floating_button = ttk.Button(side, text="打开悬浮窗", command=lambda: self.floating.show())
+        self.floating_button.pack(side="bottom", fill="x", pady=(8, 14))
+        add_navigation("settings", "⚙ 设置", "bottom")
         main = ttk.Frame(shell, style="App.TFrame", padding=(22, 18, 22, 12))
         main.pack(side="left", fill="both", expand=True)
         titlebar = ttk.Frame(main)
@@ -195,7 +216,8 @@ class Workbench(App):
         heading.pack(side="left", fill="x", expand=True)
         ttk.Label(heading, textvariable=self.page_title, style="Title.TLabel").pack(anchor="w")
         ttk.Label(heading, textvariable=self.page_subtitle, style="Muted.TLabel").pack(anchor="w", pady=(3, 0))
-        self.button(titlebar, "手动选择项目目录…", self.choose_manual_project, feedback=self.status).pack(side="right")
+        self.manual_project_button = self.button(titlebar, "手动选择项目目录…", self.choose_manual_project, feedback=self.status)
+        self.manual_project_button.pack(side="right")
         self.picker = ttk.Frame(main, style="Card.TFrame", padding=12)
         self.picker.pack(fill="x", pady=(0, 10))
         self.source_kind = tk.StringVar(value="按项目选聊天")
@@ -253,12 +275,12 @@ class Workbench(App):
         footer.bind("<Configure>", lambda e: footer.configure(wraplength=max(300, e.width - 10)))
         self.tabs = ttk.Notebook(main, style="Shell.TNotebook")
         self.tabs.pack(fill="both", expand=True)
-        self.frames = [ttk.Frame(self.tabs) for _ in range(3)]
-        for frame, name in zip(self.frames, ("会话接续", "用量概览", "设置")):
+        self.frames = [ttk.Frame(self.tabs) for _ in range(4)]
+        for frame, name in zip(self.frames, ("会话接续", "用量概览", "设置", "用量统计")):
             self.tabs.add(frame, text=name)
         self.handoff_panel = HandoffPanel(self.frames[0], self)
         self.handoff_panel.pack(fill="both", expand=True)
-        self.usage_panel = UsagePanel(self.frames[1], self)
+        self.usage_panel = UsagePanel(self.frames[1], self, billing_parent=self.frames[3])
         self.usage_panel.pack(fill="both", expand=True)
         self.chat_usage = self.usage_panel.chat_usage
         self.settings_tabs = ttk.Notebook(self.frames[2])
@@ -272,16 +294,44 @@ class Workbench(App):
         self.settings_tabs.bind("<<NotebookTabChanged>>", self.config_tab_changed)
 
     def show_page(self, key):
-        index = {"handoff": 0, "usage": 1, "settings": 2}[key]
+        index = {"handoff": 0, "usage": 1, "settings": 2, "statistics": 3}[key]
         self.tabs.select(self.frames[index])
         self.page = key
-        captions = {"usage": ("用量概览", "知道何时收尾，让下一次对话更轻。"), "handoff": ("会话接续", "保留项目目标和当前断点，在新聊天继续。"), "settings": ("设置", "选择自己的目录、提醒方式和模型配置。")}
+        captions = {"usage": ("用量概览", "知道何时收尾，让下一次对话更轻。"), "handoff": ("会话接续", "保留项目目标和当前断点，在新聊天继续。"), "statistics": ("用量统计", "查看本机记录的 Token 用量与估算成本。"), "settings": ("设置", "选择自己的目录、提醒方式和模型配置。")}
         self.page_title.set(captions[key][0])
         self.page_subtitle.set(captions[key][1])
+        if key == "statistics":
+            self.picker.pack_forget()
+            self.manual_project_button.pack_forget()
+            self.usage_panel.billing_panel.activate()
+        else:
+            if not self.picker.winfo_manager():
+                before = self.context_banner if self.context_banner.winfo_manager() else self.tabs
+                self.picker.pack(fill="x", pady=(0, 10), before=before)
+            if not self.manual_project_button.winfo_manager():
+                self.manual_project_button.pack(side="right")
         for name, button in self.nav.items():
             selected = name == key
-            button.configure(style="Selected.Nav.TButton" if selected else "Nav.TButton")
+            base = "Compact.Nav.TButton" if name == "statistics" else "Nav.TButton"
+            button.configure(style="Selected." + base if selected else base)
             self.nav_indicator[name].configure(bg=BLUE if selected else "#EEF3F9")
+        self.today_label.configure(bg=SURFACE if key == "statistics" else "#EEF3F9")
+        self._fit_sidebar()
+
+    def set_today_cost(self, text):
+        self.today_cost.set(text or "今日 —")
+        self._fit_sidebar()
+
+    def _fit_sidebar(self):
+        required = 44 + self.nav["statistics"].winfo_reqwidth() + self.today_label.winfo_reqwidth()
+        self.sidebar.configure(width=max(190, required))
+
+    def _activate_cached_statistics(self):
+        panel = self.usage_panel.billing_panel
+        home, _ = panel._source()
+        cache = panel._index_directory(home) / "requests.sqlite3"
+        if cache.is_file() and not cache.is_symlink():
+            panel.activate()
 
     def set_status(self, text):
         self.status.set(text)
@@ -368,6 +418,7 @@ class Workbench(App):
             self.config_auto_read = False
         if source_changed:
             self.usage_panel.billing_panel.source_changed()
+            self._activate_cached_statistics()
             self.request_cache = {}
             self.pid, self.chat = None, None
             self.catalog = {"app_projects": [], "chats": [], "total": 0}

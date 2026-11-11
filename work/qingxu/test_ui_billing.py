@@ -51,6 +51,8 @@ class BillingGuiTests(unittest.TestCase):
     def test_default_summary_matches_rows(self):
         self.assertEqual(self.panel.stats['requests'],2)
         self.assertEqual(self.panel.stats['priced'],2)
+        self.assertEqual(self.panel.tables.select(),str(self.panel.tab_frames['request']))
+        self.panel.tables.select(self.panel.tab_frames['model']);self.root.update()
         self.assertEqual(len(self.panel.trees['model'].get_children()),2)
     def test_filter_reconciles_kpis_chart_and_tables(self):
         self.panel.model.set('gpt-6-astra');self.panel.apply_filters()
@@ -73,6 +75,7 @@ class BillingGuiTests(unittest.TestCase):
         self.assertEqual(self.panel.stats['requests'], 1)
         self.assertEqual(self.panel.filtered[0].response_id, 'unassigned')
         self.panel.scope.set('全部项目');self.panel.apply_filters()
+        self.panel.tables.select(self.panel.tab_frames['project']);self.root.update()
         tree = self.panel.trees['project']
         other_row = next(iid for iid, (ident, _) in self.panel.row_objects['project'].items()
                          if ident[0] == 'project:project-b')
@@ -96,6 +99,7 @@ class BillingGuiTests(unittest.TestCase):
         self.assertEqual(self.panel.start.get(),d);self.assertEqual(self.panel.end.get(),d)
         self.assertEqual(self.panel.tables.select(),str(self.panel.tab_frames['request']))
     def test_provider_model_double_click_drill(self):
+        self.panel.tables.select(self.panel.tab_frames['model']);self.root.update()
         tree=self.panel.trees['model'];iid=tree.get_children()[0]
         ident,_=self.panel.row_objects['model'][iid];tree.selection_set(iid)
         self.panel.drill('model')
@@ -110,6 +114,7 @@ class BillingGuiTests(unittest.TestCase):
         self.assertEqual(self.panel.stats['requests'],1)
     def test_missing_timing_status_displayed_unknown(self):
         self.panel.set_result({'requests':[request(time=self.now.isoformat())],'issues':{}})
+        self.panel.tables.select(self.panel.tab_frames['model']);self.root.update()
         vals=self.panel.trees['model'].item('model-0','values')
         self.assertEqual(vals[4:7],('—','—','—'))
     def test_all_export_not_only_page(self):
@@ -129,13 +134,14 @@ class BillingGuiTests(unittest.TestCase):
         self.assertGreaterEqual(b.winfo_width(),b.winfo_reqwidth())
 
     def test_filter_controls_fit_at_windows_dpi_scales(self):
+        self.panel.toggle_advanced(True)
         selectors = self.panel.refresh_button.master
         dates = self.panel.start_entry.master.master
         controls = list(selectors.winfo_children())
         controls.extend((self.panel.start_entry, self.panel.end_entry))
         controls.extend(widget for widget in dates.winfo_children()
                         if isinstance(widget, (ttk.Combobox, ttk.Button)))
-        self.assertEqual(len(controls), 11)
+        self.assertEqual(len(controls), 12)
 
         self.root.geometry('730x620')
         for dpi in (96, 144, 192):
@@ -162,6 +168,7 @@ class BillingGuiTests(unittest.TestCase):
         self.assertTrue(self.panel.end_entry.instate(['!readonly', '!disabled']))
 
     def test_short_panel_scrolls_focused_filters_into_view(self):
+        self.panel.toggle_advanced(True)
         self.root.tk.call('tk', 'scaling', 192 / 72)
         ttk.Style(self.root).configure('.', font=('Microsoft YaHei UI', 10))
         self.root.geometry('730x152')

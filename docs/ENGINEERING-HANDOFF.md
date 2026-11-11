@@ -4,13 +4,13 @@
 
 ## 基线与工程入口
 
-当前版本为 **0.11.0-billing-rc4**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动 Tk `Workbench`。开始工作前核对当前分支、源码与用户授权。[计费验收](verification/0.11.0-billing-rc4/README.md)
+当前版本为 **0.11.1-rc1**。`work/qingxu/` 是唯一维护的源码与测试目录，`launch.pyw` 通过 `app.main()` 启动 Tk `Workbench`。开始工作前核对当前分支、源码与用户授权。[统计页验收](verification/0.11.1-rc1/README.md)
 
 0.9.3 冻结包保留在 `docs/ui-handoff-0.9.3/`。外部 0.10.0-rc1 升级 ZIP 的 97 个清单文件已核对，当前代码以 rc1 接入的 `work/qingxu/` 为基础继续修改。`docs/ui-handoff-0.10.0-rc1/` 中的截图、设计和测试证据属于历史交接，应以当前源码与实际运行结果判断现状。
 
 | 位置 | 职责 |
 | --- | --- |
-| `work/qingxu/workbench.py`、`app.py` | 三页面工作台、项目与聊天选择、异步数据读取及沿用的配置逻辑。旧 `App` 保留兼容和复用实现及相关测试。 |
+| `work/qingxu/workbench.py`、`app.py` | 四页面工作台、项目与聊天选择、异步数据读取及沿用的配置逻辑。旧 `App` 保留兼容和复用实现及相关测试。 |
 | `handoff.py`、`ui_handoff.py` | 摘要保存和读回、文件型与内嵌型提示词、模板及三步交接。 |
 | `monitor.py`、`ui_monitor.py` | 当前用量、提醒、概览、详细记录、ccusage 快照及悬浮窗。 |
 | `ui_motion.py`、`ui_brand.py` | 原生 ttk 的色彩反馈、定时器清理、主窗与小窗图案及 Windows ICO 生成。 |

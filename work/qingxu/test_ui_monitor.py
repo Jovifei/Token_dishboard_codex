@@ -229,7 +229,7 @@ class TkControlTests(unittest.TestCase):
         records = [RECORD, OTHER, RECORD | {"chat_id": "third"}, RECORD | {"chat_id": "fourth"}]
         floating.render([row(record) for record in records])
         floating.show()
-        self.root.update_idletasks()
+        self.root.update()
         self.assertEqual(len(floating._shown()), 4)
         last = floating.row_widgets[3]
         self.assertTrue(last.winfo_ismapped())

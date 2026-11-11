@@ -1,0 +1,22 @@
+{
+  "version": "0.11.1-rc1",
+  "zip_sha256": "322b14393452ce9e4503704889ed464ed1f1176c584c7a7b642e2b068d0ffadc",
+  "exe_sha256": "99a8b7ec6f3caf86b2e677e9e5116994743ebeddd0c7c67748994ccba9b6a331",
+  "zip_crc_ok": true,
+  "exe_is_x64": true,
+  "exe_matches_zip": true,
+  "zstd_runtime_bundled": true,
+  "compiled_modules_match_source": [
+    "app",
+    "workbench",
+    "billing",
+    "billing_index",
+    "ui_billing",
+    "ui_monitor",
+    "chats",
+    "usage",
+    "handoff",
+    "knowledge",
+    "ui_preferences"
+  ]
+}
