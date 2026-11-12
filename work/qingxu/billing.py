@@ -128,6 +128,7 @@ class Request:
     cache_known: bool = True
     cache_write_30m: int | None = None
     cache_write_12h: int | None = None
+    app_project_id: str = ''
 
     @property
     def identity(self) -> str:
@@ -180,7 +181,8 @@ class Request:
                    duration, ttft, optional_number(raw.get('tokens_per_second')),
                    str(decimal(report)) if report is not None else None,
                    text(raw.get('origin'), 'import'), text(raw.get('model_source'), 'record'), cache_known,
-                   split[0] if split else None, split[1] if split else None)
+                   split[0] if split else None, split[1] if split else None,
+                   text(raw.get('app_project_id')))
 
 
 def default_prices() -> dict:

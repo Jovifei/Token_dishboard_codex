@@ -7,7 +7,7 @@
 | 本次任务 | 入口 |
 | --- | --- |
 | 安装、演示和构建 | [README](README.md) |
-| Windows 与真实 Codex 验收 | [UI2 本机复验](docs/verification/0.10.0-rc4-ui2/README.md) · [rc2 完整验收](docs/LOCAL-ACCEPTANCE.md) |
+| Windows 与真实 Codex 验收 | [计费 rc3 本机复验](docs/verification/0.11.0-billing-rc3/README.md) · [历史 UI2 复验](docs/verification/0.10.0-rc4-ui2/README.md) |
 | 代码入口及下一阶段 | [工程交接](docs/ENGINEERING-HANDOFF.md) · [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) |
 | 当前 UI 结构与历史截图 | [交互规范](docs/UX-SPEC.md) · [UI2 设计交接](docs/design/apple-ui-v2/README.md) · [rc1 远端界面](docs/ui-handoff-0.10.0-rc1/index.html) |
 | 用户目标与 0.9.3 来源 | [项目背景](docs/PROJECT-BACKGROUND.md) · [0.9.3 冻结报告](docs/ui-handoff-0.9.3/index.html) |

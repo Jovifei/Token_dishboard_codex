@@ -12,7 +12,7 @@
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](https://github.com/Jovifei/Token_dishboard_codex/tree/main/install) · [下载便携 ZIP](https://github.com/Jovifei/Token_dishboard_codex/blob/main/install/Qingxu-0.10.0-rc4-ui2-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc4-ui2/README.md)
+[Windows 安装包目录](https://github.com/Jovifei/Token_dishboard_codex/tree/main/install) · [下载便携 ZIP](https://github.com/Jovifei/Token_dishboard_codex/blob/codex/billing-statistics-0.11.0-20261111/install/Qingxu-0.11.0-billing-rc3-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.0-billing-rc3/README.md)
 
 ![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 
