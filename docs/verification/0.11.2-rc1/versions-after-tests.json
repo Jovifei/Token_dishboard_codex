@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-11-12T15:17:06.413391+00:00",
+  "checked_after_windows_tests": true,
+  "commit": "7394a8a46c4c8991f1f2f8970e079c617609c888",
+  "version": "0.11.2-rc1",
+  "installed_manifest_files_match": 31,
+  "installed_files_matching_repository": 30,
+  "installation_specific_files": [
+    "README.md"
+  ],
+  "zip_sha256": "162a65d638ac1e988d36029decdd7419a9b1eac4ad704d4e92039fa4bf16f241",
+  "zip_git_blob": "93cafef63be590a72db57685394f6e20afd94ad0",
+  "zip_crc_ok": true,
+  "exe_sha256": "f0e7ac74716350d348f500c70c4869664a373b73313866f4b433dac905f1d8d4",
+  "exe_modules_matching_desktop_source": 23,
+  "exe_launch_matching_desktop_source": true,
+  "desktop_and_exe_are_distinct_distribution_types": true
+}
