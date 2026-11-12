@@ -5,21 +5,21 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import json
 from pathlib import Path
-from queue import Empty, SimpleQueue
 import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import webbrowser
 
-from billing import (Request, PriceStore, default_prices, validate_prices, summary, quote, project_identity,
-                     filter_requests, group_requests, daily, money, short_number, export_csv, fixed_timezone, timestamp)
+from billing import (Request, PriceStore, default_prices, validate_prices, summary, quote,
+                     filter_requests, group_requests, daily, hourly, heatmap, money, short_number,
+                     export_csv, fixed_timezone, timestamp, local_date)
 from billing_index import BillingIndex
 from ui_motion import attach_motion_tree, reduced_motion
 from ui_brand import set_window_icon
 
 BG, CARD, INK, MUTED, BLUE = '#F5F5F7', '#FFFFFF', '#1D1D1F', '#6E6E73', '#007AFF'
 TEAL, LINE, ORANGE = '#0895B3', '#E4E7ED', '#A26010'
-PERIODS = ('近 7 天', '今天', '近 30 天', '本月', '自定义')
+PERIODS = ('今天', '近 7 天', '近 30 天', '全部')
 
 
 class DailyChart(tk.Canvas):
@@ -110,6 +110,81 @@ class DailyChart(tk.Canvas):
             self.on_day(target[2])
 
 
+class HeatmapChart(tk.Canvas):
+    """GitHub-style daily usage heatmap for the all-time view."""
+    def __init__(self, parent, on_day):
+        super().__init__(parent, height=190, background=CARD, highlightthickness=0, takefocus=True)
+        self.on_day=on_day
+        self.rows=[]
+        self.metric='tokens'
+        self.hitboxes=[]
+        self.hover=None
+        self.bind('<Configure>', self.draw)
+        self.bind('<Motion>', self.motion)
+        self.bind('<Leave>', lambda _: self._hide_tip())
+        self.bind('<ButtonRelease-1>', self.click)
+
+    def render(self, rows, metric='tokens'):
+        self.rows,self.metric=rows,metric
+        self.draw()
+
+    def draw(self, _event=None):
+        self.delete('all'); self.hitboxes=[]
+        width=max(500,self.winfo_width()); height=max(160,self.winfo_height())
+        left,top=42,38
+        gap,size=3,12
+        columns=53
+        values={day:stats for day,stats in self.rows}
+        numeric=[float(stats[self.metric]) for stats in values.values()
+                 if stats.get('requests') and stats.get(self.metric) is not None]
+        peak=max(numeric+[1.0])
+        if self.metric=='cache_hit':peak=100
+        palette=('#EEF0F3','#C7E6EE','#8FD0DE','#43AFC3','#0B8EAA','#006E8B')
+        self.create_text(left,12,text='少',anchor='w',fill=MUTED,font=('TkDefaultFont',9))
+        self.create_text(left+columns*(size+gap)-gap,12,text='多',anchor='e',fill=MUTED,font=('TkDefaultFont',9))
+        for row,label in enumerate(('一','三','五','日')):
+            self.create_text(left-10,top+row*2*(size+gap)+size/2,text='周'+label,anchor='e',fill=MUTED,font=('TkDefaultFont',9))
+        if not self.rows:
+            self.create_text(width/2,height/2,text='选择“全部”并同步本机用量',fill=MUTED)
+            return
+        first=date.fromisoformat(self.rows[0][0])
+        for col in range(columns):
+            day=first+timedelta(days=col*7)
+            if day.day <= 7 or col == 0:
+                self.create_text(left+col*(size+gap),top-16,text=f'{day.month}月',anchor='w',fill=MUTED,font=('TkDefaultFont',9))
+            for row in range(7):
+                current=day+timedelta(days=row)
+                key=current.isoformat(); stats=values.get(key,{'requests':0,self.metric:None})
+                value=stats.get(self.metric)
+                ratio=0 if value is None or not stats.get('requests') else max(0,min(1,float(value)/peak))
+                color=palette[min(len(palette)-1,int(ratio*len(palette)))]
+                x=left+col*(size+gap); y=top+row*(size+gap)
+                self.create_rectangle(x,y,x+size,y+size,fill=color,outline='',tags='cell')
+                self.hitboxes.append((x,x+size,y,y+size,key,stats))
+
+    def _hide_tip(self):
+        self.delete('tip'); self.hover=None; self.configure(cursor='')
+
+    def motion(self,event):
+        target=next((item for item in self.hitboxes if item[0]<=event.x<item[1] and item[2]<=event.y<item[3]),None)
+        if target==self.hover:return
+        self._hide_tip()
+        if not target:return
+        self.hover=target; self.configure(cursor='hand2')
+        _,_,_,_,day,stats=target
+        value=stats.get(self.metric)
+        current=money(value,2) if self.metric=='cost' else ('—' if value is None else short_number(value))
+        label={'cost':'成本','requests':'请求数','tokens':'Tokens','cache_hit':'缓存命中率'}[self.metric]
+        msg=f'{day} · {label} {current} · {stats.get("requests",0)} 条请求'
+        x=max(8,min(event.x-80,self.winfo_width()-300))
+        self.create_rectangle(x,2,x+292,24,fill='#EAF3FF',outline='',tags='tip')
+        self.create_text(x+8,13,text=msg,anchor='w',fill=INK,font=('TkDefaultFont',9),tags='tip')
+
+    def click(self,event):
+        target=next((item for item in self.hitboxes if item[0]<=event.x<item[1] and item[2]<=event.y<item[3]),None)
+        if target:self.on_day(target[4])
+
+
 class BillingPanel(ttk.Frame):
     def __init__(self,parent,app):
         super().__init__(parent,style='App.TFrame')
@@ -123,7 +198,6 @@ class BillingPanel(ttk.Frame):
         self.executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='qingxu-billing')
         self.stop=threading.Event()
         self.future=None
-        self.progress=SimpleQueue()
         self.poll_job=None
         self.closed=False
         self.source=None
@@ -133,14 +207,13 @@ class BillingPanel(ttk.Frame):
         self.sort_keys={}
         self.row_objects={}
         self.metric='cost'
-        self.period=tk.StringVar(self,value='近 7 天')
+        self.period=tk.StringVar(self,value='今天')
         self.provider=tk.StringVar(self,value='全部供应商')
         self.model=tk.StringVar(self,value='全部模型')
-        self.scope=tk.StringVar(self,value='全部项目')
         self.tz=tk.StringVar(self,value='本机时区')
         self.cost_mode=tk.StringVar(self,value='当前价表估算')
         today=date.today()
-        self.start=tk.StringVar(self,value=(today-timedelta(days=6)).isoformat())
+        self.start=tk.StringVar(self,value=today.isoformat())
         self.end=tk.StringVar(self,value=today.isoformat())
         self.sync_text=tk.StringVar(self,value='尚未同步')
         self.notice=tk.StringVar(self,value='首次打开会索引本机逐请求记录；不调用模型，不读取登录凭据。')
@@ -155,48 +228,40 @@ class BillingPanel(ttk.Frame):
         self._apply_period()
 
     def _build(self):
-        filters=ttk.Frame(self,padding=(2,7,2,8))
+        family=getattr(self.app,'font_family','TkDefaultFont')
+        header=ttk.Frame(self,padding=(18,8,18,2))
+        header.pack(fill='x')
+        ttk.Label(header,text='▥',style='Card.TLabel',font=(family,24,'bold')).pack(side='left',padx=(0,8))
+        ttk.Label(header,text='用量统计',style='Card.TLabel',font=(family,22,'bold')).pack(side='left')
+        self.header_status=ttk.Label(header,textvariable=self.sync_text,style='Muted.TLabel')
+        self.header_status.pack(side='right',padx=(8,0))
+        self.refresh_button=ttk.Button(header,text='↻  刚刚同步',command=self.refresh,style='Primary.TButton')
+        self.refresh_button.pack(side='right')
+
+        filters=ttk.Frame(self,padding=(18,7,18,8))
         filters.pack(fill='x')
-        self.filters=filters
-        self._filters_in_canvas=False
-        selectors=ttk.Frame(filters)
-        selectors.pack(fill='x')
-        selector_controls=[]
-        for var,values,width in ((self.period,PERIODS,8),
-                         (self.scope,('全部项目','当前项目','当前会话'),9),
-                         (self.provider,('全部供应商',),12),(self.model,('全部模型',),16)):
-            box=ttk.Combobox(selectors,textvariable=var,values=values,width=width,state='readonly')
-            selector_controls.append(box)
-            box.bind('<<ComboboxSelected>>',lambda e,v=var:self.changed(v))
-            if var is self.provider:self.provider_box=box
-            if var is self.model:self.model_box=box
-        self.refresh_button=ttk.Button(selectors,text='同步用量',width=8,command=self.refresh,style='Primary.TButton')
-        selector_controls.append(self.refresh_button)
-        dates=ttk.Frame(filters)
-        dates.pack(fill='x',pady=(5,0))
-        date_range=ttk.Frame(dates)
-        self.start_entry=ttk.Entry(date_range,textvariable=self.start,width=10)
-        self.start_entry.pack(side='left')
-        ttk.Label(date_range,text=' 至 ').pack(side='left')
-        self.end_entry=ttk.Entry(date_range,textvariable=self.end,width=10)
-        self.end_entry.pack(side='left')
-        zone=ttk.Combobox(dates,textvariable=self.tz,values=('本机时区','UTC+08:00','UTC+09:00','UTC'),state='readonly',width=9)
-        zone.bind('<<ComboboxSelected>>',lambda _:self.changed(self.period))
-        mode=ttk.Combobox(dates,textvariable=self.cost_mode,values=('当前价表估算','来源报告金额'),state='readonly',width=12)
-        mode.bind('<<ComboboxSelected>>',lambda _:self.apply_filters())
-        apply_button=ttk.Button(dates,text='应用',command=self.apply_filters)
-        price_button=ttk.Button(dates,text='单价设置',width=8,command=self.edit_prices)
-        date_controls=(date_range,zone,mode,apply_button,price_button)
-        for frame,controls in ((selectors,selector_controls),(dates,date_controls)):
-            for column,control in enumerate(controls):
-                control.grid(row=0,column=column,sticky='w',padx=(0,7),pady=3)
-            frame.bind('<Configure>',lambda event,items=controls:self._layout_filters(event,items))
-        for entry in (self.start_entry,self.end_entry):
-            entry.bind('<Return>',lambda _:self.apply_filters())
-        # A vertical canvas gives 980x680/DPI users all four KPIs and the full table.
+        filters.columnconfigure(3,weight=1)
+        self.period_button_text=tk.StringVar(self,value='今天  ▾')
+        self.period_button=ttk.Button(filters,textvariable=self.period_button_text,width=12,command=self._show_period_menu)
+        self.period_button.grid(row=0,column=0,sticky='w',padx=(0,9))
+        provider_label=ttk.Label(filters,text='供应商',style='Muted.TLabel')
+        provider_label.grid(row=0,column=1,sticky='e',padx=(0,4))
+        self.provider_box=ttk.Combobox(filters,textvariable=self.provider,values=('全部供应商',),width=14,state='readonly')
+        self.provider_box.grid(row=0,column=2,sticky='ew',padx=(0,8))
+        model_label=ttk.Label(filters,text='模型',style='Muted.TLabel')
+        model_label.grid(row=0,column=3,sticky='e',padx=(0,4))
+        self.model_box=ttk.Combobox(filters,textvariable=self.model,values=('全部模型',),width=18,state='readonly')
+        self.model_box.grid(row=0,column=4,sticky='ew',padx=(0,8))
+        ttk.Button(filters,text='单价设置',command=self.edit_prices).grid(row=0,column=5,sticky='e')
+        self.provider_box.bind('<<ComboboxSelected>>',lambda _:self.changed(self.provider))
+        self.model_box.bind('<<ComboboxSelected>>',lambda _:self.changed(self.model))
+
+        self.start_entry=None
+        self.end_entry=None
+        self.date_menu=None
+        # A vertical canvas keeps the header, KPI rows, chart, and tables usable at small heights.
         viewport=ttk.Frame(self)
         viewport.pack(fill='both',expand=True)
-        self.viewport=viewport
         self.canvas=tk.Canvas(viewport,background=BG,highlightthickness=0)
         scroll=ttk.Scrollbar(viewport,orient='vertical',command=self.canvas.yview)
         scroll.pack(side='right',fill='y')
@@ -206,11 +271,10 @@ class BillingPanel(ttk.Frame):
         window=self.canvas.create_window(0,0,anchor='nw',window=self.body)
         self.body.bind('<Configure>',lambda _:self.canvas.configure(scrollregion=self.canvas.bbox('all')))
         self.canvas.bind('<Configure>',lambda e:self.canvas.itemconfigure(window,width=e.width))
-        hero=ttk.Frame(self.body,style='Card.TFrame',padding=(16,12))
+        hero=ttk.Frame(self.body,style='Card.TFrame',padding=(18,14))
         hero.pack(fill='x')
-        self.hero=hero
         self.kpis={}
-        labels=(('cost','估算成本 · USD'),('requests','已记录请求'),('tokens','已记录 Tokens'),('cache_hit','缓存命中率'))
+        labels=(('cost','总成本'),('requests','总请求数'),('tokens','真实消耗 Tokens'),('cache_hit','缓存命中率'))
         for i,(key,caption) in enumerate(labels):
             cell=ttk.Frame(hero,style='Card.TFrame',padding=(2,4))
             cell.grid(row=0,column=i,sticky='nsew',padx=(0,8))
@@ -220,7 +284,7 @@ class BillingPanel(ttk.Frame):
             hero.columnconfigure(i,weight=1,uniform='kpi')
             title=ttk.Label(cell,text=caption,style='CardMuted.TLabel')
             title.pack(anchor='w')
-            value=ttk.Label(cell,text='—',style='Card.TLabel',font=(getattr(self.app,'font_family','TkDefaultFont'),22,'bold'))
+            value=ttk.Label(cell,text='—',style='Card.TLabel',font=(family,22,'bold'))
             value.pack(anchor='w',pady=(6,3))
             note=ttk.Label(cell,text='尚无数据',style='CardMuted.TLabel',wraplength=185)
             note.pack(anchor='w')
@@ -231,10 +295,23 @@ class BillingPanel(ttk.Frame):
                 w.bind('<Button-1>',lambda _,k=key:self.select_metric(k))
                 w.configure(cursor='hand2')
             self.kpis[key]=(title,value,note,bar)
-        self.chart_title=ttk.Label(hero,text='成本 · 按天',style='Card.TLabel')
-        self.chart_title.grid(row=1,column=0,columnspan=4,sticky='w',pady=(16,2))
-        self.chart=DailyChart(hero,self.select_day)
-        self.chart.grid(row=2,column=0,columnspan=4,sticky='ew')
+        secondary=ttk.Frame(hero,style='Card.TFrame')
+        secondary.grid(row=1,column=0,columnspan=4,sticky='ew',pady=(5,0))
+        self.secondary={}
+        for i,(key,caption) in enumerate((('new_input','新增输入'),('output','输出'),('cache_write','缓存写入'),('cached','缓存命中'))):
+            secondary.columnconfigure(i,weight=1,uniform='secondary')
+            cell=ttk.Frame(secondary,style='Card.TFrame',padding=(2,7))
+            cell.grid(row=0,column=i,sticky='nsew',padx=(0,8))
+            title=ttk.Label(cell,text=caption,style='CardMuted.TLabel'); title.pack(anchor='w')
+            value=ttk.Label(cell,text='—',style='Card.TLabel',font=(family,16,'bold')); value.pack(anchor='w',pady=(4,0))
+            self.secondary[key]=(title,value)
+        self.chart_title=ttk.Label(hero,text='成本 · 按小时',style='Card.TLabel')
+        self.chart_title.grid(row=2,column=0,columnspan=4,sticky='w',pady=(14,2))
+        self.chart_host=ttk.Frame(hero,style='Card.TFrame')
+        self.chart_host.grid(row=3,column=0,columnspan=4,sticky='ew')
+        self.chart=DailyChart(self.chart_host,self.select_day)
+        self.chart.pack(fill='x',expand=True)
+        self.heatmap=HeatmapChart(self.chart_host,self.select_day)
         self.caption=ttk.Label(self.body,textvariable=self.notice,style='Muted.TLabel',wraplength=900,justify='left')
         self.caption.pack(fill='x',pady=(9,12))
         self.body.bind('<Configure>',lambda e:self.caption.configure(wraplength=max(300,e.width-18)),add='+')
@@ -242,7 +319,7 @@ class BillingPanel(ttk.Frame):
         self.tables.pack(fill='both',expand=True)
         self.trees={}
         self.tab_frames={}
-        self.labels={'request':'请求日志','provider':'供应商','model':'模型','project':'项目','session':'会话'}
+        self.labels={'request':'请求日志','provider':'供应商','model':'模型'}
         columns={'name':('名称',200),'requests':('请求数',72),'cost':('成本 USD',102),'tokens':('Tokens',98),
                  'success':('成功率¹',86),'speed':('速度²',88),'ttft':('首字²',86),'coverage':('计价覆盖',92)}
         for key in self.labels:
@@ -277,59 +354,30 @@ class BillingPanel(ttk.Frame):
         ttk.Label(self.body,textvariable=self.detail_text,style='Muted.TLabel',wraplength=850).pack(fill='x',pady=(6,0))
         bottom=ttk.Frame(self,padding=(2,5))
         bottom.pack(side='bottom',fill='x',before=viewport)
-        ttk.Label(bottom,textvariable=self.sync_text,style='Muted.TLabel').pack(side='left')
+        ttk.Label(bottom,text='按时间统计 · 所有项目合并',style='Muted.TLabel').pack(side='left')
         ttk.Label(bottom,text='¹ 仅已知状态  ² 仅已记录耗时样本',style='Muted.TLabel').pack(side='right')
         self._wheel_bindings=[]
         for seq in ('<MouseWheel>','<Button-4>','<Button-5>'):
             self._wheel_bindings.append((seq,self.app.root.bind(seq,self._wheel,add='+')))
-        for control in (*selector_controls,self.start_entry,self.end_entry,zone,mode,apply_button,price_button):
-            control.bind('<FocusIn>',self._show_filter_focus,add='+')
-        self.bind('<Configure>',self._fit_filters,add='+')
-        filters.bind('<Configure>',self._fit_filters,add='+')
         attach_motion_tree(self)
 
-    def _layout_filters(self,event,controls):
-        frame=event.widget
-        width=max(1,event.width-4)
-        for columns in (len(controls),3,2,1):
-            widths=[max(control.winfo_reqwidth()+7 for control in controls[column::columns])
-                    for column in range(min(columns,len(controls)))]
-            if sum(widths)<=width:
-                break
-        if getattr(frame,'_filter_columns',None)==columns:
-            return
-        frame._filter_columns=columns
-        for index,control in enumerate(controls):
-            control.grid(row=index//columns,column=index%columns,sticky='w',padx=(0,7),pady=3)
+    def _show_period_menu(self):
+        if self.date_menu is None:
+            self.date_menu=tk.Menu(self,tearoff=0,background=CARD,foreground=INK,activebackground='#EAF3FF',activeforeground=INK)
+            for value in PERIODS:
+                self.date_menu.add_command(label=value,command=lambda v=value:self.set_period(v))
+        try:
+            self.date_menu.tk_popup(self.period_button.winfo_rootx(),self.period_button.winfo_rooty()+self.period_button.winfo_height())
+        finally:
+            self.date_menu.grab_release()
 
-    def _fit_filters(self,event):
-        if event.widget not in (self,self.filters):
-            return
-        reserve=60 if self._filters_in_canvas else 32
-        needs_scroll=self.winfo_height()<self.filters.winfo_reqheight()+reserve
-        if needs_scroll==self._filters_in_canvas:
-            return
-        self.filters.pack_forget()
-        if needs_scroll:
-            self.filters.pack(in_=self.body,fill='x',before=self.hero)
-        else:
-            self.filters.pack(in_=self,fill='x',before=self.viewport)
-        self._filters_in_canvas=needs_scroll
-
-    def _show_filter_focus(self,event):
-        if not self._filters_in_canvas:
-            return
-        offset=event.widget.winfo_rooty()-self.canvas.winfo_rooty()
-        bottom=offset+event.widget.winfo_height()
-        if offset<0 or bottom>self.canvas.winfo_height():
-            shift=offset if offset<0 else bottom-self.canvas.winfo_height()
-            position=self.canvas.canvasy(0)+shift
-            self.canvas.yview_moveto(position/max(1,self.body.winfo_height()))
+    def set_period(self,value):
+        self.period.set(value)
+        self.period_button_text.set(value+'  ▾')
+        self._apply_period(); self.page=0; self.apply_filters()
 
     def _wheel(self,event):
-        inside_body=str(event.widget).startswith(str(self.body))
-        inside_filters=self._filters_in_canvas and str(event.widget).startswith(str(self.filters))
-        if not (inside_body or inside_filters) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
+        if not str(event.widget).startswith(str(self.body)) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
             return
         if self.canvas.yview()==(0.0,1.0):return
         delta=getattr(event,'delta',0)
@@ -353,50 +401,31 @@ class BillingPanel(ttk.Frame):
         self.apply_filters()
 
     def selection_changed(self):
-        if self.scope.get()!='全部项目':
-            self.apply_filters()
+        # Billing totals are time based and always combine all projects.
+        return
 
     def _source(self):
         database=Path(self.app.relay.settings['chat_db'])
         home=Path(self.app.prefs.get('codex_home') or database.parent)
         return str(home.expanduser().absolute()),str(database)
 
-    def _index_directory(self,home):
+    def _index_for(self,home):
         import hashlib
-        return self.directory/('source-'+hashlib.sha256(home.encode()).hexdigest()[:16])
+        return BillingIndex(self.directory/('source-'+hashlib.sha256(home.encode()).hexdigest()[:16]))
 
     def refresh(self,import_path=None):
         if self.closed or self.future is not None:
             return
         home,db=self._source()
-        directory=self._index_directory(home)
-        index_factory=BillingIndex
         self.stop=threading.Event()
         stop=self.stop
-        progress=self.progress=SimpleQueue()
         self.refresh_button.configure(text='同步中…',state='disabled')
         self.sync_text.set('正在增量读取本机数值记录…')
         def work():
-            index=index_factory(directory)
+            index=self._index_for(home)
             imported=index.import_file(import_path) if import_path else None
-            total_bytes=batches=0
             try:
-                while True:
-                    if stop.is_set():raise InterruptedError('已停止索引')
-                    result=index.scan(home,db,stop=stop,include_requests=False)
-                    issues=dict(result['issues'])
-                    read=issues.get('bytes_read',0)
-                    total_bytes+=read
-                    batches+=1
-                    progress.put((batches,total_bytes))
-                    if not issues.get('resume_required'):break
-                    if not read:
-                        issues['continuation_stalled']=1
-                        break
-                if stop.is_set():raise InterruptedError('已停止索引')
-                issues['bytes_read']=total_bytes
-                issues['sync_batches']=batches
-                result=index.load(home,db,issues)
+                result=index.scan(home,db,stop=stop)
             except ValueError:
                 if import_path:
                     result=index.load(home,db,{'source_unavailable':1})
@@ -411,13 +440,6 @@ class BillingPanel(ttk.Frame):
     def _poll(self):
         self.poll_job=None
         if self.closed or self.future is None:return
-        latest=None
-        while True:
-            try:latest=self.progress.get_nowait()
-            except Empty:break
-        if latest and not self.stop.is_set():
-            batches,total_bytes=latest
-            self.sync_text.set(f'正在同步 · {batches} 批 / 已读取 {total_bytes/1048576:.1f} MiB…')
         if not self.future.done():
             self.poll_job=self.after(80,self._poll)
             return
@@ -425,14 +447,10 @@ class BillingPanel(ttk.Frame):
         self.refresh_button.configure(text='同步用量',state='normal')
         if self.stop.is_set() or self.source!=self._source()[0]:
             self.sync_text.set('已丢弃旧数据来源的读取结果，请重新同步')
-            if self.active:self.refresh()
             return
         try:
-            result=future.result()
-            self.set_result(result)
-            batches=result.get('issues',{}).get('sync_batches',0)
-            suffix=f' · {batches} 批' if batches else ''
-            self.sync_text.set('最后同步 '+datetime.now().strftime('%H:%M:%S')+suffix)
+            self.set_result(future.result())
+            self.sync_text.set('最后同步 '+datetime.now().strftime('%H:%M:%S')+' · 手动增量刷新')
         except Exception as exc:
             self.sync_text.set('同步失败；显示的仅为上次结果')
             self.notice.set('同步失败：'+str(exc)+'。不会用 0 代替未知费用。')
@@ -452,11 +470,12 @@ class BillingPanel(ttk.Frame):
     def _apply_period(self):
         now=datetime.now(timezone.utc).astimezone(fixed_timezone(self.tz.get())).date()
         kind=self.period.get()
-        if kind!='自定义':
-            start=now if kind=='今天' else now-timedelta(days=29 if kind=='近 30 天' else 6) if kind!='本月' else now.replace(day=1)
-            self.start.set(start.isoformat()); self.end.set(now.isoformat())
-        state='normal' if kind=='自定义' else 'readonly'
-        self.start_entry.configure(state=state);self.end_entry.configure(state=state)
+        if kind=='全部':
+            dates=[local_date(r,self.tz.get()) for r in self.requests]
+            start=min(dates,default=now)
+        else:
+            start=now if kind=='今天' else now-timedelta(days=29 if kind=='近 30 天' else 6)
+        self.start.set(start.isoformat()); self.end.set(now.isoformat())
 
     def changed(self,var):
         if var is self.period:self._apply_period()
@@ -466,23 +485,23 @@ class BillingPanel(ttk.Frame):
     def apply_filters(self):
         try:
             start,end=date.fromisoformat(self.start.get()),date.fromisoformat(self.end.get())
-            cwd=thread=project_id=''
-            if self.scope.get()!='全部项目':
-                record=getattr(self.app,'chat',None)
-                if not record:raise ValueError('先在顶部选择项目和聊天，或使用“全部项目”')
-                if self.scope.get()=='当前项目':
-                    project_id=str(record.get('app_project_id') or '')
-                    if not project_id:cwd=record.get('path','')
-                else:thread=record.get('chat_id','')
-                if not (cwd or thread or project_id):raise ValueError('当前选择缺少可核对的项目/会话身份')
             self.filtered=filter_requests(self.requests,start=start,end=end,tz_label=self.tz.get(),
                     provider='' if self.provider.get()=='全部供应商' else self.provider.get(),
-                    model='' if self.model.get()=='全部模型' else self.model.get(),cwd=cwd,thread_id=thread,
-                    app_project_id=project_id,unassigned_only=bool(cwd))
+                    model='' if self.model.get()=='全部模型' else self.model.get())
             mode=self.mode
             data=summary(self.filtered,self.prices,mode=mode)
             self.stats=data
-            self.date_rows,self.chart_period=daily(self.filtered,start,end,self.tz.get(),self.prices,mode=mode)
+            if self.period.get()=='今天':
+                self.date_rows=hourly(self.filtered,start,self.tz.get(),self.prices,mode=mode)
+                self.chart_period='hour'
+                self.heatmap_rows=[]
+            elif self.period.get()=='全部':
+                self.date_rows=[]
+                self.heatmap_rows=heatmap(self.filtered,end,self.tz.get(),self.prices,mode=mode)
+                self.chart_period='heatmap'
+            else:
+                self.date_rows,self.chart_period=daily(self.filtered,start,end,self.tz.get(),self.prices,mode=mode)
+                self.heatmap_rows=[]
         except (ValueError,TypeError) as exc:
             self.notice.set('筛选未应用：'+str(exc));return
         self.page=min(self.page,max(0,(len(self.filtered)-1)//self.page_size))
@@ -490,11 +509,7 @@ class BillingPanel(ttk.Frame):
         self.select_metric(self.metric)
         self.render_tables()
         issues=(self.result or {}).get('issues',{})
-        excluded_keys = ('conflicts_excluded', 'invalid_requests', 'invalid_records', 'unsafe_files',
-                         'oversize_requests', 'read_errors', 'pending_files', 'incomplete_files',
-                         'compressed_files_unsupported', 'compressed_read_errors', 'compressed_unavailable',
-                         'continuation_stalled', 'source_unavailable', 'file_limit_reached')
-        excluded=sum(issues.get(key, 0) for key in excluded_keys)
+        excluded=sum(issues.get(k,0) for k in ('conflicts_excluded','invalid_requests','invalid_records','unsafe_files','oversize_requests','read_errors','pending_files','incomplete_files','compressed_files_unsupported','source_unavailable'))
         detail=f"{data['priced']:,}/{data['requests']:,} 条可计价；{data['unpriced']:,} 条价格或用量未知。"
         if self.mode=='estimate':
             detail+='按本地价表重算的 Token 估算，不是订阅或供应商账单；不含工具、税费。'
@@ -504,14 +519,8 @@ class BillingPanel(ttk.Frame):
         if issues.get('duplicates'):detail+=f" 已去重 {issues['duplicates']} 条。"
         if issues.get('files_without_requests'):detail+=f" {issues['files_without_requests']} 个日志无逐请求记录，未以累计/快照代替。"
         if excluded:detail+=f' 索引有 {excluded} 项未纳入或待继续同步，范围可能不完整。'
-        if issues.get('compressed_unavailable'):
-            detail+=f" {issues['compressed_unavailable']} 个压缩归档无法读取：Python 3.11–3.13 需安装 backports.zstd 后重新同步。"
-        if issues.get('compressed_read_errors'):
-            detail+=f" {issues['compressed_read_errors']} 个压缩归档损坏或截断，未纳入统计。"
         if issues.get('files_seen') is not None:detail+=f" 本轮检查 {issues['files_seen']} 个日志 / 读取 {issues.get('bytes_read',0)/1048576:.1f} MiB。"
         if (self.result or {}).get('mapping_note'):detail+=' 项目映射受限。'
-        if project_id and any(not r.app_project_id for r in self.requests):detail+=' 项目归属未确认的记录未纳入当前项目。'
-        if cwd:detail+=' 当前项目按所选工作目录筛选未归属记录。'
         if (self.result or {}).get('synthetic'):detail='合成演示数据 · '+detail
         self.notice.set(detail)
 
@@ -520,7 +529,7 @@ class BillingPanel(ttk.Frame):
         return 'estimate' if self.cost_mode.get()=='当前价表估算' else 'reported'
 
     def _render_kpis(self,s):
-        self.kpis['cost'][0].configure(text=('部分估算 · USD' if s['unpriced'] else '估算成本 · USD') if self.mode=='estimate' else '已报告成本 · USD')
+        self.kpis['cost'][0].configure(text=('总成本（部分估算）' if s['unpriced'] else '总成本') if self.mode=='estimate' else '已报告成本')
         amounts={'cost':money(s['cost']), 'requests':f"{s['requests']:,}", 'tokens':short_number(s['tokens']),
                  'cache_hit':'—' if s['cache_hit'] is None else f"{s['cache_hit']:.1f}%"}
         notes={'cost':f"{s['priced']:,}/{s['requests']:,} 条已计价" + (' · 部分' if s['unpriced'] else ''),
@@ -528,17 +537,30 @@ class BillingPanel(ttk.Frame):
                'cache_hit':f"缓存读取 / 已知输入 · {s['cache_known']}条"}
         for key,(_,value,note,_) in self.kpis.items():
             value.configure(text=amounts[key]); note.configure(text=notes[key])
+        secondary={'new_input':short_number(s.get('new_input')),
+                   'output':short_number(s.get('output')),
+                   'cache_write':short_number(s.get('cache_write')),
+                   'cached':short_number(s.get('cached'))}
+        for key,(_,value) in self.secondary.items():value.configure(text=secondary[key])
 
     def select_metric(self,key):
         self.metric=key
         for k,(_,_,_,bar) in self.kpis.items():bar.configure(background=BLUE if k==key else CARD)
         labels={'cost':'成本','requests':'请求数','tokens':'Tokens','cache_hit':'缓存命中率'}
-        units={'day':'天','week':'周','month':'月'}
-        self.chart_title.configure(text=labels[key]+' · 按'+units.get(getattr(self,'chart_period','day'),'天')+('  （点击日期下钻）' if getattr(self,'chart_period','day')=='day' else '  （聚合视图）'))
-        self.chart.render(getattr(self,'date_rows',[]),key,getattr(self,'chart_period','day'))
+        period=getattr(self,'chart_period','day')
+        if period=='heatmap':
+            self.chart_title.configure(text='用量热力图')
+            self.chart.pack_forget(); self.heatmap.pack(fill='x',expand=True)
+            self.heatmap.render(getattr(self,'heatmap_rows',[]),key if key!='cost' else 'cost')
+            return
+        units={'hour':'小时','day':'天','week':'周','month':'月'}
+        self.chart_title.configure(text=labels[key]+' · 按'+units.get(period,'天'))
+        self.heatmap.pack_forget(); self.chart.pack(fill='x',expand=True)
+        self.chart.render(getattr(self,'date_rows',[]),key,period)
 
     def select_day(self,day):
-        self.period.set('自定义');self._apply_period()
+        day=day.split('T',1)[0]
+        self.period.set('今天');self.period_button_text.set('今天  ▾')
         self.start.set(day);self.end.set(day);self.page=0
         self.apply_filters();self.tables.select(self.tab_frames['request'])
 
@@ -604,7 +626,7 @@ class BillingPanel(ttk.Frame):
         if key=='model':self.provider.set(ident[0]);self.model.set(ident[1])
         elif key=='provider':self.provider.set(ident)
         elif key in ('project','session'):
-            rows=[r for r in self.filtered if (r.thread_id==ident[0] if key=='session' else project_identity(r)==ident[0])]
+            rows=[r for r in self.filtered if (r.thread_id==ident[0] if key=='session' else r.project==ident[1])]
             if rows:
                 self.detail_text.set(f"{ident[1]}：{len(rows)} 条请求；可在顶部选择对应项目，再用当前项目/会话筛选。")
             return
@@ -638,8 +660,8 @@ class BillingPanel(ttk.Frame):
         window.bind('<Escape>',lambda _:window.destroy());attach_motion_tree(window)
 
     def reset(self):
-        self.period.set('近 7 天');self.provider.set('全部供应商');self.model.set('全部模型');self.scope.set('全部项目')
-        self._apply_period();self.page=0;self.apply_filters()
+        self.period.set('今天');self.provider.set('全部供应商');self.model.set('全部模型')
+        self.period_button_text.set('今天  ▾');self._apply_period();self.page=0;self.apply_filters()
 
     def import_requests(self):
         if self.future is not None:return

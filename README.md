@@ -2,17 +2,17 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前版本** 0.11.0-billing-rc4 · 计费统计支持读取压缩归档，并自动分批同步。
+**本包源码候选** 0.11.0-billing-rc3 · 按时间范围展示用量统计。
 
 **本轮 Windows x64 便携包** 已由本源码构建，安装说明见 `install/README.md`。
 
-计费入口：**用量概览 → 计费统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [图文验收](docs/billing/SCREENSHOTS.md)。
+计费入口：**用量概览 → 计费统计**。用量按今天、近 7 天、近 30 天、全部统计，所有项目合并；先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [图文验收](docs/billing/SCREENSHOTS.md)。
 
 本地 Token 成本估算与来源报告金额分开；不等于订阅或供应商实际账单。
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.0-billing-rc4-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.0-billing-rc4/README.md)
+[Windows 安装包目录](https://github.com/Jovifei/Token_dishboard_codex/tree/main/install) · [下载便携 ZIP](https://github.com/Jovifei/Token_dishboard_codex/blob/main/install/Qingxu-0.10.0-rc4-ui2-Windows-x64.zip) · [本机验收结果](docs/verification/0.10.0-rc4-ui2/README.md)
 
 ![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 
@@ -35,8 +35,6 @@
 
 在仓库根目录使用带 Tk 的 Python 3.11 或以上版本。双击 `Preview-Demo.cmd` 可先体验标为「合成演示」的窗口，`Preview-Billing.cmd` 体验计费页，`Start-Qingxu.cmd` 启动真实数据入口。
 
-源码运行若使用 Python 3.11–3.13，先执行 `py -3 -m pip install -r .\tools\requirements-runtime.txt` 以支持 Zstandard 压缩日志；Python 3.14 和 Windows 便携 EXE 已自带解码支持。
-
 ```powershell
 $demoRoot = Join-Path $env:TEMP ('Qingxu-Demo-' + [guid]::NewGuid().ToString('N'))
 py -3 -B .\tools\demo-current.py --root $demoRoot --check
@@ -48,7 +46,7 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 ## 项目资料
 
 - [使用指南](docs/USER-GUIDE.md) · [计费使用指南](docs/BILLING-USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
-- [rc3 Windows 验收](docs/verification/0.11.0-billing-rc3/README.md) · [rc4 Windows 验收](docs/verification/0.11.0-billing-rc4/README.md)
+- [rc3 Windows 验收](docs/verification/0.11.0-billing-rc3/README.md)
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)
 - [UI2 增量交接](docs/UI-REVISION-HANDOFF.md) · [rc3 本机复验](docs/verification/0.10.0-rc3/README.md)
 - [rc1 远端 UI 截图与设计对照](docs/ui-handoff-0.10.0-rc1/index.html) · [0.9.3 冻结基线](docs/ui-handoff-0.9.3/index.html)

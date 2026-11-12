@@ -1,8 +1,8 @@
 {
-  "timestamp_utc": "2026-11-11T14:38:08.658663+00:00",
+  "timestamp_utc": "2026-11-12T10:56:50.273064+00:00",
   "platform": "Windows-11-10.0.22631-SP0",
-  "python": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
-  "tests": 391,
+  "python": "3.13.0 (tags/v3.13.0:60403a5, Oct  7 2024, 09:38:07) [MSC v.1941 64 bit (AMD64)]",
+  "tests": 386,
   "failures": 0,
   "errors": 0,
   "skipped": 4,

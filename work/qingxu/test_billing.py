@@ -1,6 +1,5 @@
 """Money/denominator/date tests use explicit synthetic requests, never a live bill."""
 from datetime import date
-from dataclasses import replace
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -22,34 +21,6 @@ def request(**updates):
 
 class BillingMathTests(unittest.TestCase):
     def setUp(self):self.prices=validate_prices(default_prices())
-
-    def test_project_identity_groups_worktrees_and_keeps_unrelated_names_separate(self):
-        first = replace(request(), app_project_id='p1')
-        worktree = replace(first, response_id='r2', cwd='/other/worktree', project='项目改名')
-        same_name = replace(first, response_id='r3', app_project_id='p2')
-        unassigned = replace(first, response_id='r4', app_project_id='')
-        rows = [first, worktree, same_name, unassigned]
-        period = dict(start=date(2026,11,1), end=date(2026,11,30), tz_label='UTC')
-        self.assertEqual(len(filter_requests(rows, **period, app_project_id='p1')), 2)
-        self.assertEqual(filter_requests(rows, **period, cwd=first.cwd, unassigned_only=True), [unassigned])
-        groups = group_requests(rows, 'project', self.prices)
-        self.assertEqual(sorted(s['requests'] for _, s in groups), [1, 1, 2])
-
-    def test_old_serialized_requests_stay_compatible(self):
-        original = request()
-        legacy = original.as_dict()
-        self.assertNotIn('app_project_id', legacy)
-        self.assertEqual(Request.from_dict(legacy, normalized=True), original)
-        self.assertEqual(request(app_project_id='untrusted').app_project_id, '')
-
-    def test_unknown_project_without_directory_is_not_named_after_first_import(self):
-        first = replace(request(), cwd='.', project='项目甲')
-        second = replace(first, response_id='r2', cwd='', project='项目乙')
-        third = replace(first, response_id='r3', cwd='relative/path', project='项目丙')
-        groups = group_requests([first, second, third], 'project', self.prices)
-        self.assertEqual(len(groups), 1)
-        self.assertEqual(groups[0][0][1], '未归类')
-        self.assertEqual(groups[0][1]['requests'], 3)
     def test_cost_components_and_reasoning_not_double_billed(self):
         r=request();q=quote(r,self.prices)
         self.assertEqual(q.amount,Decimal('0.0153'))
@@ -116,6 +87,14 @@ class BillingMathTests(unittest.TestCase):
         r2=request(response_id='r2',usage=dict(input_tokens=1000,cached_input_tokens=0,output_tokens=10000,total_tokens=11000))
         s=summary([request(),r2],self.prices)
         self.assertAlmostEqual(s['cache_hit'],8000/11000*100)
+
+    def test_summary_exposes_time_usage_components(self):
+        s=summary([request(project='项目 A'),request(response_id='r2',project='项目 B')],self.prices)
+        self.assertEqual(s['new_input'],2000)
+        self.assertEqual(s['output'],2000)
+        self.assertEqual(s['cache_write'],2000)
+        self.assertEqual(s['cached'],16000)
+        self.assertEqual(s['input_total'],20000)
     def test_missing_cache_split_excluded_from_cache_ratio(self):
         r=request(usage=dict(input_tokens=100,output_tokens=50,total_tokens=150))
         self.assertFalse(r.cache_known)
@@ -161,6 +140,14 @@ class BillingMathTests(unittest.TestCase):
         days,period=daily(rows,date(2026,11,5),date(2026,11,11),'UTC',self.prices)
         self.assertEqual(len(days),7);self.assertEqual(period,'day')
         self.assertEqual(sum((s['cost'] or Decimal(0)) for _,s in days),summary(rows,self.prices)['cost'])
+    def test_hourly_and_heatmap_keep_time_scope(self):
+        rows=[request(project='项目 A'),request(response_id='r2',project='项目 B')]
+        hours=hourly(rows,date(2026,11,11),'UTC',self.prices)
+        self.assertEqual(len(hours),24)
+        self.assertEqual(hours[1][1]['requests'],2)
+        grid=heatmap(rows,date(2026,11,11),'UTC',self.prices)
+        self.assertEqual(len(grid),371)
+        self.assertEqual(sum(s['requests'] for _,s in grid),2)
     def test_no_usage_is_not_zero(self):
         r=request(usage=None,status='error')
         self.assertIsNone(quote(r,self.prices).amount);self.assertEqual(summary([r],self.prices)['requests'],1)

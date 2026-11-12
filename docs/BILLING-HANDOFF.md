@@ -1,6 +1,4 @@
-# 轻续 0.11.0-billing-rc2 · 计费功能工程交接
-
-0.11.0-billing-rc4 支持压缩归档流式读取和自动分批同步；项目范围等修复来自 rc3。[本机验收](verification/0.11.0-billing-rc4/README.md)。下方 rc2 验证和接手清单保留为历史记录，当前结果以 rc4 验收为准。
+# 轻续 0.11.0-billing-rc3 · 计费功能工程交接
 
 ## 基线与本轮目标
 
@@ -8,7 +6,7 @@
 
 本轮取回 `Jovifei/Token_dishboard_codex` 主线 `2f53b196de01ccfb3d3d1170da3f511bab216389`（0.10.0-rc4-ui2，经用户 Windows 验收后发布）。来源为 GitHub Actions 运行 `42852267722` 的源码产物 `13780528035`，SHA-256 `8ba8dd29e7a40e5398abb378411a6d864cb850f3425d6c9992c13e03a6f22de8`。不是从 rc1 或此前未提交包覆盖。`SOURCE-COMMIT.txt` 标识取回基线，不意味着本包改动已提交到该 SHA。
 
-本轮源码版本 0.11.0-billing-rc2。基于计费分支进行 Windows 修复、版本提升和便携 EXE 构建；不改动用户真实配置或 Codex 数据。
+本轮源码版本 0.11.0-billing-rc3。基于计费分支进行时间范围统计界面、Windows 回归和便携 EXE 构建；不改动用户真实配置或 Codex 数据。
 
 ## 入口及实现
 
@@ -46,24 +44,24 @@ Responses 的 `input_tokens_details.cache_write_tokens_details` 如提供 `ttl_3
 
 ## 索引、完整性及安全
 
-- 扫描配置的 Codex home 下 `sessions`、`archived_sessions` 的普通 `.jsonl` 和压缩 `.jsonl.zst`，只信任 `token_usage_record`；`token_count` 可能是上下文/累计/压缩后合成快照，不计为请求。
+- 扫描配置的 Codex home 下 `sessions`、`archived_sessions` 的普通 `.jsonl`，只信任 `token_usage_record`；`token_count` 可能是上下文/累计/压缩后合成快照，不计为请求。
 - 请求的显式模型优先，其次匹配 turn_id 的 turn_context；不拿 SQLite 的最新模型或当前配置推断过去的模型。缺失保留 unknown。
 - 活跃/归档副本以 provider + response_id 去重；影响金额的字段冲突则排除，并报告覆盖不全。fork 中来源线程不属于当前 session 的历史记录不计入子会话；来源原件存在时由原件统计。子 Agent 独立真实请求可统计，但不叠加父线程的累计值。
 - 记录文件 inode/size/mtime、字节偏移、边界哈希；完整未变文件不重读正文。改写会重索引；未写完行等待下一次；超过 1 MiB 的行跨读取预算排空而不缓存原文。
-- 每批处理正文预算约 128 MiB 展开数据，界面在线程中自动连续批次并显示进度。压缩文件恢复时从帧头重放至已记录的解压偏移，不保存原始正文；文件变更会重新索引。解码异常、缺解码器、文件数上限约 30000 或其他读取限制均提示不完整。当前表格分页，数据聚合仍在内存完成。
+- 默认每次扫描正文预算约 128 MiB，文件数上限约 30000，达到限制或 `.jsonl.zst` 未支持会警示未完整。未实现大规模数百万请求的 SQLite 分页聚合性能验收；当前表格显示分页、数据聚合仍在内存完成。
 - 初次打开计费页/手动刷新使用独立单 worker；不在 15 秒上下文监测循环里全量扫描。改筛选不重新读日志、不调用模型。源切换和窗口销毁停止或丢弃旧 worker 结果。
 - 缓存在轻续私有 data_root 的 `billing/source-<来源目录哈希>/requests.sqlite3`。只留数值与项目/请求身份字段，不读 auth.json、密钥、Cookie，也不保存聊天正文；路径和会话标题仍属本机隐私，不应将整个缓存提交仓库。
 - 单价 `billing/prices.json` 有项目既有锁、并发指纹检查、旧版本备份、原子写入和读回。自动备份只在已有价格文件时发生；首次保存创建新文件。
 - 标准 JSON/JSONL 整体验证后事务导入，同一来源同 ID 相同内容幂等；冲突拒绝而非覆盖。CSV 防公式注入，金额保留完整精度，导出全部筛选结果而非当前 100 条页面。
 - 不与既有 ccusage 快照混加。其它供应商可标准导入并配置价表，但尚未实现 Claude/DeepSeek/各类网关的原生采集和 API 账单连接。
 
-## rc2 验证（历史）
+## 本轮验证
 
-Windows 11 + Tk + Python 3.13.0，使用隔离合成数据。完整回归 **382 项：378 通过，0 失败，0 异常，4 跳过**。跳过项均为当前用户未启用符号链接权限；UTF-8 测试入口已固定，CSV 和 CRLF 增量字节计数已在 Windows 复验。最终证据在 `docs/verification/0.11.0-billing-rc2/`；计费界面截图沿用并核对 rc1 的 9 张原生 Tk 截图。
+Windows 11 + Tk + Python 3.13.0，使用隔离合成数据。完整回归 **386 项：382 通过，0 失败，0 异常，4 跳过**。跳过项均为当前用户未启用符号链接权限；时间范围、小时柱状图、53 周热力图和跨项目合并均有专项测试。最终证据在 `docs/verification/0.11.0-billing-rc3/`。
 
 Windows 缩放的更多 DPI 档位、真实账户账单对账、用户本机历史日志覆盖率未验证。费用示例、截图数值和测试均非用户真实消费。
 
-## rc2 接手清单（历史）
+## 本机接手
 
 1. 新目录解压，查看 `docs/billing/SCREENSHOTS.md`；运行 `Preview-Billing.cmd` 先看合成页，不覆盖现有数据。
 2. 对已有 Git 仓库先 `git status`，检查本机用户改动；基线为上面的 2f53b196。合并本包 `CODE-CHANGES.patch` 前执行 `git apply --check`，基线有变化则三方比较，不做强制覆盖。
