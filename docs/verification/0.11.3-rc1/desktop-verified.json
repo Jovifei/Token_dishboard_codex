@@ -1,0 +1,16 @@
+{
+  "version": "0.11.3-rc1",
+  "manifest_files_verified": 33,
+  "original_data_files": 11,
+  "non_cache_data_hashes_unchanged": true,
+  "real_project_entries_read": 18,
+  "real_named_chats_read": 92,
+  "billing_cache_integrity_ok": true,
+  "has_real_indexed_requests": true,
+  "original_program_and_shortcut_backed_up": true,
+  "all_data_hashes_unchanged_before_launch": true,
+  "data_files": 11,
+  "shortcut_sha256": "356657ca2bf56ad980ad06ab8c50ae48976db9b890dad82545309db9ae100d31",
+  "launched_original_shortcut": true,
+  "window_title": "轻续 · Token 工作台 0.11.3-rc1"
+}

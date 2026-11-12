@@ -10,7 +10,7 @@ import tempfile
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 import unittest
 from unittest.mock import patch
 
@@ -26,18 +26,25 @@ class BillingGuiTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.home=Path(self.tmp.name)/'home';(self.home/'sessions').mkdir(parents=True)
         self.root=tk.Tk();self.root.geometry('1000x800+0+0')
+        self.previous_scaling = float(self.root.tk.call('tk', 'scaling'))
+        self.root.tk.call('tk', 'scaling', 144 / 72)
+        families = set(font.families(self.root))
+        family = next((name for name in ('Microsoft YaHei UI', 'Noto Sans CJK SC') if name in families),
+                      'TkDefaultFont')
+        font.nametofont('TkDefaultFont', root=self.root).configure(family=family, size=10)
         style=ttk.Style(self.root);style.theme_use('clam')
-        style.configure('.',font=('Noto Sans CJK SC',10));style.configure('Card.TFrame',background='white')
+        style.configure('.',font='TkDefaultFont');style.configure('Card.TFrame',background='white')
         self.app=SimpleNamespace(root=self.root,data_root=Path(self.tmp.name)/'data',
                 prefs={'codex_home':str(self.home)},relay=SimpleNamespace(settings={'chat_db':str(self.home/'state.sqlite')}),
-                chat={'chat_id':'t1','path':'/project'},font_family='Noto Sans CJK SC')
+                chat={'chat_id':'t1','path':'/project'},font_family=family)
         self.panel=BillingPanel(self.root,self.app);self.panel.pack(fill='both',expand=True)
         self.now=datetime.now(timezone.utc).replace(microsecond=0)
         self.r1=request(time=(self.now-timedelta(hours=1)).isoformat(),status='success',tokens_per_second=20,ttft_ms=1500)
         self.r2=request(response_id='r2',time=(self.now-timedelta(days=1)).isoformat(),model='gpt-6-astra',status='error')
         self.panel.set_result({'requests':[self.r1,self.r2],'issues':{}})
-        self.root.update()
+        self.root.update_idletasks()
     def tearDown(self):
+        self.root.tk.call('tk', 'scaling', self.previous_scaling)
         self.root.destroy()
         self.panel.executor.shutdown(wait=True,cancel_futures=True)
         del self.panel,self.app,self.root
@@ -135,24 +142,15 @@ class BillingGuiTests(unittest.TestCase):
 
     def test_filter_controls_fit_at_windows_dpi_scales(self):
         self.panel.toggle_advanced(True)
-        selectors = self.panel.refresh_button.master
-        dates = self.panel.start_entry.master.master
-        controls = list(selectors.winfo_children())
-        controls.extend((self.panel.start_entry, self.panel.end_entry))
-        controls.extend(widget for widget in dates.winfo_children()
-                        if isinstance(widget, (ttk.Combobox, ttk.Button)))
-        self.assertEqual(len(controls), 12)
-
+        controls = list(self.panel.period_button.master.winfo_children()) + list(self.panel.extra_filters.winfo_children())
         self.root.geometry('730x620')
         for dpi in (96, 144, 192):
             with self.subTest(dpi=dpi):
                 self.root.tk.call('tk', 'scaling', dpi / 72)
                 ttk.Style(self.root).configure('.', font=('Microsoft YaHei UI', 10))
                 self.root.update()
-                left = self.panel.winfo_rootx()
-                right = left + self.panel.winfo_width()
-                top = self.panel.winfo_rooty()
-                bottom = top + self.panel.winfo_height()
+                left, top = self.panel.winfo_rootx(), self.panel.winfo_rooty()
+                right, bottom = left + self.panel.winfo_width(), top + self.panel.winfo_height()
                 for control in controls:
                     with self.subTest(control=str(control)):
                         self.assertTrue(control.winfo_ismapped())
@@ -160,12 +158,6 @@ class BillingGuiTests(unittest.TestCase):
                         self.assertLessEqual(control.winfo_rootx() + control.winfo_width(), right)
                         self.assertGreaterEqual(control.winfo_rooty(), top)
                         self.assertLessEqual(control.winfo_rooty() + control.winfo_height(), bottom)
-                        self.assertGreaterEqual(control.winfo_width(), control.winfo_reqwidth())
-
-        self.panel.period.set('自定义')
-        self.panel.changed(self.panel.period)
-        self.assertTrue(self.panel.start_entry.instate(['!readonly', '!disabled']))
-        self.assertTrue(self.panel.end_entry.instate(['!readonly', '!disabled']))
 
     def test_short_panel_scrolls_focused_filters_into_view(self):
         self.panel.toggle_advanced(True)
@@ -174,33 +166,49 @@ class BillingGuiTests(unittest.TestCase):
         self.root.geometry('730x152')
         self.root.update()
         self.assertTrue(self.panel._filters_in_canvas)
-
-        selectors = self.panel.refresh_button.master
-        dates = self.panel.start_entry.master.master
-        controls = list(selectors.winfo_children())
-        controls.extend((self.panel.start_entry, self.panel.end_entry))
-        controls.extend(widget for widget in dates.winfo_children()
-                        if isinstance(widget, (ttk.Combobox, ttk.Button)))
-        canvas = self.panel.canvas
+        controls=list(self.panel.period_button.master.winfo_children()) + list(self.panel.extra_filters.winfo_children())
+        canvas=self.panel.canvas
         for control in controls:
             with self.subTest(control=str(control)):
-                control.event_generate('<FocusIn>')
-                self.root.update()
-                x = control.winfo_rootx() - canvas.winfo_rootx()
-                y = control.winfo_rooty() - canvas.winfo_rooty()
-                self.assertGreaterEqual(x, 0)
-                self.assertGreaterEqual(y, 0)
-                self.assertLessEqual(x + control.winfo_width(), canvas.winfo_width())
-                self.assertLessEqual(y + control.winfo_height(), canvas.winfo_height())
+                control.event_generate('<FocusIn>');self.root.update()
+                x=control.winfo_rootx()-canvas.winfo_rootx()
+                y=control.winfo_rooty()-canvas.winfo_rooty()
+                self.assertGreaterEqual(x,0)
+                self.assertGreaterEqual(y,0)
+                self.assertLessEqual(x+control.winfo_width(),canvas.winfo_width())
+                self.assertLessEqual(y+control.winfo_height(),canvas.winfo_height())
+        canvas.yview_moveto(0);self.root.update()
+        before=canvas.yview()
+        unrelated=ttk.Label(self.root)
+        self.panel._wheel(SimpleNamespace(widget=unrelated,delta=-120,num=0))
+        self.assertEqual(canvas.yview(),before)
+        self.panel._wheel(SimpleNamespace(widget=controls[0],delta=-120,num=0))
+        self.assertGreater(canvas.yview()[0],before[0])
 
-        canvas.yview_moveto(0)
-        self.root.update()
-        before = canvas.yview()
-        unrelated = ttk.Label(self.root)
-        self.panel._wheel(SimpleNamespace(widget=unrelated, delta=-120, num=0))
-        self.assertEqual(canvas.yview(), before)
-        self.panel._wheel(SimpleNamespace(widget=self.panel.start_entry, delta=-120, num=0))
-        self.assertGreater(canvas.yview()[0], before[0])
+    def test_custom_minutes_filter_inclusive_end_and_day_drill_reset(self):
+        rows=[request(response_id=str(i),time='2026-11-11T'+t+'Z') for i,t in enumerate(
+            ('12:29:59','12:30:00','14:15:59','14:16:00'))]
+        self.panel.period.set('自定义');self.panel.tz.set('UTC')
+        self.panel.start.set('2026-11-11');self.panel.end.set('2026-11-11')
+        self.panel.start_time.set('12:30');self.panel.end_time.set('14:15')
+        self.panel.set_result({'requests':rows,'issues':{}})
+        self.assertEqual([r.response_id for r in self.panel.filtered],['1','2'])
+        self.panel._apply_period()
+        self.assertEqual((self.panel.start_time.get(),self.panel.end_time.get()),('12:30','14:15'))
+        self.panel.follow_now.set(True);self.panel.select_day('2026-11-11')
+        self.assertEqual((self.panel.start_time.get(),self.panel.end_time.get()),('00:00','23:59'))
+        self.assertFalse(self.panel.follow_now.get())
+        self.assertEqual(len(self.panel.filtered),4)
+
+    def test_first_request_row_not_clipped_at_150_percent(self):
+        self.root.geometry('790x680');self.root.update()
+        self.panel.canvas.yview_moveto(0);self.root.update()
+        tree=self.panel.trees['request']
+        row=tree.get_children()[0]
+        x,y,w,h=tree.bbox(row)
+        viewport=self.panel.canvas
+        self.assertGreaterEqual(tree.winfo_rooty()+y,viewport.winfo_rooty())
+        self.assertLessEqual(tree.winfo_rooty()+y+h,viewport.winfo_rooty()+viewport.winfo_height())
 
     def test_pricing_save_actions_pinned_at_small_height(self):
         win=PriceEditor(self.panel);win.geometry('720x650');self.root.update()

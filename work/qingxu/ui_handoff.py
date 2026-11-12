@@ -16,6 +16,7 @@ BORDER = "#D9D9DE"
 
 
 from ui_brand import BrandMark, set_window_icon
+from ui_controls import ChoiceButton
 from ui_motion import attach_motion_tree
 
 
@@ -39,6 +40,7 @@ class HandoffPanel(ttk.Frame):
         self._template_original = None
         self._templates = default_templates()
         self._responsive_rows = []
+        self._responsive_modes = {}
         self._narrow_mode = None
         self.step = tk.IntVar(self, value=1)
         self.mode = tk.StringVar(self, value="inline")
@@ -64,32 +66,48 @@ class HandoffPanel(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.canvas = tk.Canvas(self, background=BG, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview,
+                                  style="Slim.Vertical.TScrollbar")
         self.canvas.configure(yscrollcommand=scrollbar.set)
         self.canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
-        self.body = ttk.Frame(self.canvas, style="App.TFrame", padding=(8, 4, 12, 12))
+        self.body = ttk.Frame(self.canvas, style="App.TFrame", padding=(2, 2, 8, 8))
         self.window_id = self.canvas.create_window((0, 0), window=self.body, anchor="nw")
         self.body.bind("<Configure>", lambda _: self.canvas.configure(
             scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", self._resize)
-        steps = ttk.Frame(self.body, style="App.TFrame")
-        steps.pack(fill="x", pady=(0, 10))
+        steps = ttk.Frame(self.body, style="Card.TFrame")
+        steps.pack(fill="x", pady=(0, 8))
+        style = ttk.Style(self)
+        style.configure("HandoffStep.TButton", background="white", foreground=MUTED,
+                        borderwidth=0, relief="flat", shiftrelief=0, padding=(8, 7))
+        style.map("HandoffStep.TButton", background=[("active", "#F5F5F7")],
+                  relief=[("pressed", "flat")])
+        style.configure("Selected.HandoffStep.TButton", background="white", foreground=INK,
+                        borderwidth=0, relief="flat", shiftrelief=0, padding=(8, 7),
+                        font=(getattr(self.app, "font_family", "TkDefaultFont"), 10, "bold"))
+        style.map("Selected.HandoffStep.TButton", background=[("active", "#F5F5F7")],
+                  relief=[("pressed", "flat")])
         self.step_buttons = []
+        self.step_lines = []
         for i in range(3):
             steps.columnconfigure(i, weight=1, uniform="step")
             button = ttk.Button(steps, textvariable=self.step_captions[i],
+                                style="HandoffStep.TButton",
                                 command=lambda n=i + 1: self.show_step(n))
-            button.grid(row=0, column=i, sticky="ew", padx=(0 if i == 0 else 5, 0))
+            button.grid(row=0, column=i, sticky="ew")
             self.step_buttons.append(button)
+            line = tk.Frame(steps, background=BORDER, height=2)
+            line.grid(row=1, column=i, sticky="ew")
+            self.step_lines.append(line)
 
         self.pages = []
         for _ in range(3):
-            card = ttk.Frame(self.body, style="Card.TFrame", padding=16)
+            card = ttk.Frame(self.body, style="Card.TFrame", padding=(14, 10))
             self.pages.append(card)
         # The shell already shows project identity and the page title. Keep
         # primary actions outside the scrollable body, visible at any height.
-        self.footer = ttk.Frame(self, style="Card.TFrame", padding=(18, 10, 18, 8))
+        self.footer = ttk.Frame(self, style="Card.TFrame", padding=(14, 8, 14, 6))
         self.footer.grid(row=1, column=0, columnspan=2, sticky="ew")
         self.footer_pages = [ttk.Frame(self.footer, style="Card.TFrame") for _ in range(3)]
         self._build_old(self.pages[0])
@@ -110,10 +128,11 @@ class HandoffPanel(ttk.Frame):
                 wrap(child)
         wrap(self.body)
         self.footer_feedback.configure(wraplength=max(240, event.width - 40))
-        narrow = event.width < 820
-        if narrow != self._narrow_mode:
-            self._narrow_mode = narrow
-            for frame, buttons in self._responsive_rows:
+        self._narrow_mode = event.width < 820
+        for frame, buttons in self._responsive_rows:
+            narrow = sum(button.winfo_reqwidth() + 8 for button in buttons) > event.width - 40
+            if self._responsive_modes.get(frame) != narrow:
+                self._responsive_modes[frame] = narrow
                 for button in buttons:
                     button.pack_forget()
                     button.grid_forget()
@@ -143,13 +162,14 @@ class HandoffPanel(ttk.Frame):
     @staticmethod
     def _text(parent, height=8):
         frame = ttk.Frame(parent, style="Card.TFrame")
-        frame.pack(fill="both", expand=True, pady=(8, 10))
+        frame.pack(fill="both", expand=True, pady=(6, 6))
         box = tk.Text(frame, height=height, wrap="word", undo=True, borderwidth=0,
                       relief="flat", highlightthickness=1, highlightbackground=BORDER,
                       highlightcolor=BLUE, background="white", foreground=INK,
-                      insertbackground=INK, padx=12, pady=10, font="TkTextFont",
+                      insertbackground=INK, padx=10, pady=8, font="TkTextFont",
                       selectbackground="#CCE5FF", selectforeground=INK)
-        scroll = ttk.Scrollbar(frame, orient="vertical", command=box.yview)
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=box.yview,
+                               style="Slim.Vertical.TScrollbar")
         box.configure(yscrollcommand=scroll.set)
         box.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
@@ -157,20 +177,23 @@ class HandoffPanel(ttk.Frame):
         return box
 
     def _build_old(self, card):
-        ttk.Label(card, text="1 · 给旧聊发指令",
+        ttk.Label(card, text="给旧聊发指令",
                   style="Heading.TLabel").pack(anchor="w")
-        ttk.Label(card, text="复制下方指令，由你粘贴发送给选中的旧聊。旧聊会回复摘要或保存 Markdown 文件。",
-                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(5, 12))
+        ttk.Label(card, text="复制指令并发给旧聊，让它回复摘要或保存 Markdown 文件。",
+                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 2))
+        self.old_text = self._text(card, 8)
         self.old_options_visible = tk.BooleanVar(self, value=False)
-        ttk.Checkbutton(card, text="知识处理与模板（可选）", variable=self.old_options_visible,
-                        command=self._toggle_old_options).pack(anchor="w")
+        self.old_options_toggle = ttk.Checkbutton(card, text="知识处理与模板（可选）",
+                                                 variable=self.old_options_visible,
+                                                 command=self._toggle_old_options)
+        self.old_options_toggle.pack(anchor="w")
         self.old_options = ttk.Frame(card, style="Card.TFrame")
         controls = ttk.Frame(self.old_options, style="Card.TFrame")
         controls.pack(fill="x")
         ttk.Label(controls, text="本次长期知识处理", style="Card.TLabel").pack(side="left")
-        self.policy_box = ttk.Combobox(controls, textvariable=self.policy_label,
-                                      values=tuple(POLICY_LABELS.values()),
-                                      state="readonly", width=22)
+        self.policy_box = ChoiceButton(controls, textvariable=self.policy_label,
+                                       values=tuple(POLICY_LABELS.values()),
+                                       state="readonly", width=22)
         self.policy_box.pack(side="left", padx=10)
         self.policy_box.bind("<<ComboboxSelected>>", self._policy_changed)
         ttk.Button(controls, text="知识目录设置",
@@ -187,7 +210,6 @@ class HandoffPanel(ttk.Frame):
         self.generate_old_button.pack(side="left")
         ttk.Button(options, text="编辑模板", command=lambda: self._guard(
             self.edit_templates)).pack(side="left", padx=8)
-        self.old_text = self._text(card, 8)
         actions = self.footer_pages[0]
         self.copy_old_button = ttk.Button(actions, text="复制旧聊指令",
                                           style="Primary.TButton",
@@ -198,11 +220,10 @@ class HandoffPanel(ttk.Frame):
         self._responsive_rows.append((actions, list(actions.winfo_children())))
 
     def _build_summary(self, card):
-        ttk.Label(card, text="2 · 接收旧聊摘要",
+        ttk.Label(card, text="接收旧聊摘要",
                   style="Heading.TLabel").pack(anchor="w")
-        ttk.Label(card, text="粘贴旧聊回复的摘要，或读取、导入旧聊保存的 Markdown 文件。"
-                  "可将摘要保存为带项目标记的 Markdown，并自动读回核对。",
-                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(5, 10))
+        ttk.Label(card, text="粘贴摘要，或读取旧聊保存的 Markdown 文件。",
+                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 5))
         bar = ttk.Frame(card, style="Card.TFrame")
         bar.pack(fill="x")
         self.paste_button = ttk.Button(bar, text="粘贴摘要",
@@ -215,20 +236,22 @@ class HandoffPanel(ttk.Frame):
                                          command=lambda: self._guard(self.read_old_file))
         self.read_old_button.pack(side="left", padx=(0, 8))
         self._responsive_rows.append((bar, list(bar.winfo_children())))
+        self.summary_text = self._text(card, 8)
+        self.summary_text.bind("<<Modified>>", self._summary_edited)
         self.summary_options_visible = tk.BooleanVar(self, value=False)
-        ttk.Checkbutton(card, text="更多摘要选项", variable=self.summary_options_visible,
-                        command=self._toggle_summary_options).pack(anchor="w", pady=(5, 0))
+        self.summary_options_toggle = ttk.Checkbutton(card, text="更多摘要选项",
+                                                     variable=self.summary_options_visible,
+                                                     command=self._toggle_summary_options)
+        self.summary_options_toggle.pack(anchor="w", pady=(3, 0))
         self.summary_options = ttk.Frame(card, style="Card.TFrame")
         self.recent_button = ttk.Button(self.summary_options, text="读取最近交接",
                                        command=lambda: self._guard(self.restore_latest))
         self.recent_button.pack(side="left")
         ttk.Button(self.summary_options, text="打开保存目录", command=lambda: self._guard(
             self.open_directory)).pack(side="left", padx=8)
-        self.summary_text = self._text(card, 8)
-        self.summary_text.bind("<<Modified>>", self._summary_edited)
         ttk.Label(card, textvariable=self.summary_state, style="Card.TLabel").pack(anchor="w")
         ttk.Label(card, textvariable=self.saved_caption, style="CardMuted.TLabel",
-                  wraplength=830).pack(anchor="w", pady=(5, 12))
+                  wraplength=830).pack(anchor="w", pady=(3, 2))
         actions = self.footer_pages[1]
         self.save_button = ttk.Button(actions, text="保存为 Markdown",
                                       command=lambda: self._guard(self.save_summary))
@@ -238,19 +261,20 @@ class HandoffPanel(ttk.Frame):
         self._responsive_rows.append((actions, list(actions.winfo_children())))
 
     def _build_new(self, card):
-        ttk.Label(card, text="3 · 给新聊发指令",
+        ttk.Label(card, text="给新聊发指令",
                   style="Heading.TLabel").pack(anchor="w")
-        ttk.Label(card, text="在同项目新建聊天，由你粘贴发送下方指令，让新聊核对摘要并继续。",
-                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(5, 12))
+        ttk.Label(card, text="在同项目新建聊天，粘贴指令后继续任务。",
+                  style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 5))
         modes = ttk.Frame(card, style="Card.TFrame")
         modes.pack(fill="x")
         ttk.Radiobutton(modes, text="携带摘要 · 可直接粘贴", variable=self.mode,
                         value="inline").pack(side="left")
         ttk.Radiobutton(modes, text="读取已保存的 Markdown", variable=self.mode,
                         value="file").pack(side="left", padx=(18, 0))
+        self.new_text = self._text(card, 8)
         self.goal_visible = tk.BooleanVar(self, value=False)
         ttk.Checkbutton(card, text="指定下一阶段目标（可选，收起后保留）",
-                        variable=self.goal_visible, command=self._toggle_goal).pack(anchor="w", pady=(10, 0))
+                        variable=self.goal_visible, command=self._toggle_goal).pack(anchor="w", pady=(3, 0))
         self.goal_options = ttk.Frame(card, style="Card.TFrame")
         ttk.Label(self.goal_options, text="下一阶段目标", style="Card.TLabel").pack(side="left", padx=(0, 10))
         ttk.Entry(self.goal_options, textvariable=self.goal).pack(side="left", fill="x", expand=True)
@@ -259,7 +283,6 @@ class HandoffPanel(ttk.Frame):
         self.goal_hint.pack(anchor="w", pady=(4, 0))
         ttk.Label(card, textvariable=self.restore_state, style="CardMuted.TLabel",
                   wraplength=830).pack(anchor="w", pady=(8, 0))
-        self.new_text = self._text(card, 8)
         actions = self.footer_pages[2]
         self.copy_new_button = ttk.Button(actions, text="复制新聊指令",
                                           style="Primary.TButton",
@@ -274,13 +297,13 @@ class HandoffPanel(ttk.Frame):
 
     def _toggle_old_options(self):
         if self.old_options_visible.get():
-            self.old_options.pack(fill="x", pady=(6, 0), before=self.old_text.master)
+            self.old_options.pack(fill="x", pady=(6, 0), after=self.old_options_toggle)
         else:
             self.old_options.pack_forget()
 
     def _toggle_summary_options(self):
         if self.summary_options_visible.get():
-            self.summary_options.pack(fill="x", pady=(5, 0), before=self.summary_text.master)
+            self.summary_options.pack(fill="x", pady=(5, 0), after=self.summary_options_toggle)
         else:
             self.summary_options.pack_forget()
 
@@ -328,7 +351,8 @@ class HandoffPanel(ttk.Frame):
             page.pack_forget()
             self.footer_pages[i - 1].pack_forget()
             self.step_buttons[i - 1].configure(
-                style="Primary.TButton" if i == value else "TButton")
+                style="Selected.HandoffStep.TButton" if i == value else "HandoffStep.TButton")
+            self.step_lines[i - 1].configure(background=INK if i == value else BORDER)
         self.pages[value - 1].pack(fill="both", expand=True)
         self.footer_pages[value - 1].pack(fill="x", before=self.footer_feedback)
         self.canvas.yview_moveto(0)

@@ -216,7 +216,10 @@ class _Motion:
 
 def attach_soft_motion(button):
     if isinstance(button, ttk.Button) and not hasattr(button, '_qingxu_motion'):
-        button._qingxu_motion = _Motion(button)
+        style = button.cget('style')
+        # These controls paint hover, press and focus with fixed-size images.
+        if not style.endswith(('Outline.TButton', 'Ghost.TButton', 'Soft.TButton', 'Drop.TButton')):
+            button._qingxu_motion = _Motion(button)
     return button
 
 

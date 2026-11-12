@@ -1,0 +1,23 @@
+{
+  "timestamp_utc": "2026-11-12T17:12:12.153672+00:00",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "python": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
+  "base_commit": "9346e02c0804b5fc8b8f18cbec0495ba64b67657",
+  "tests_expected": [
+    "test_core.CoreTests.test_symlink_rejected",
+    "test_core.ExportTests.test_backup_symlink",
+    "test_handoff.HandoffTests.test_symlink_source_rejected",
+    "test_billing_index.IndexTests.test_symlink_not_followed",
+    "test_billing_zstd.CompressedIndexTests.test_compressed_symlink_is_not_followed"
+  ],
+  "is_elevated_administrator": true,
+  "symlink_privilege_listed": true,
+  "real_windows_file_symlink_created": true,
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "successful": true,
+  "source_hashes_unchanged": true,
+  "passed_without_skips": true
+}

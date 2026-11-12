@@ -1,0 +1,146 @@
+[
+  {
+    "tk_dpi_target": 96,
+    "tk_scaling": 1.3339898243886428,
+    "window": [
+      980,
+      680
+    ],
+    "request_rows_visible": 7,
+    "context_banner_in_statistics": false,
+    "stats_layout": {
+      "filters": [
+        194,
+        117,
+        999,
+        170
+      ],
+      "cards": [
+        196,
+        170,
+        882,
+        262
+      ],
+      "chart": [
+        196,
+        266,
+        983,
+        463
+      ],
+      "log": [
+        196,
+        499,
+        975,
+        858
+      ],
+      "viewport": [
+        194,
+        170,
+        991,
+        733
+      ]
+    },
+    "date_popup_bounds": [
+      279,
+      168,
+      899,
+      496
+    ]
+  },
+  {
+    "tk_dpi_target": 144,
+    "tk_scaling": 1.9980334316617503,
+    "window": [
+      980,
+      680
+    ],
+    "request_rows_visible": 4,
+    "context_banner_in_statistics": false,
+    "stats_layout": {
+      "filters": [
+        210,
+        125,
+        999,
+        186
+      ],
+      "cards": [
+        212,
+        186,
+        854,
+        299
+      ],
+      "chart": [
+        212,
+        303,
+        983,
+        508
+      ],
+      "log": [
+        212,
+        552,
+        975,
+        1015
+      ],
+      "viewport": [
+        210,
+        186,
+        991,
+        733
+      ]
+    },
+    "date_popup_bounds": [
+      4,
+      184,
+      933,
+      676
+    ]
+  },
+  {
+    "tk_dpi_target": 192,
+    "tk_scaling": 2.664044575549,
+    "window": [
+      980,
+      680
+    ],
+    "request_rows_visible": 0,
+    "context_banner_in_statistics": false,
+    "stats_layout": {
+      "filters": [
+        245,
+        133,
+        999,
+        265
+      ],
+      "cards": [
+        247,
+        265,
+        880,
+        535
+      ],
+      "chart": [
+        247,
+        539,
+        983,
+        752
+      ],
+      "log": [
+        247,
+        804,
+        975,
+        1371
+      ],
+      "viewport": [
+        245,
+        265,
+        991,
+        733
+      ]
+    },
+    "date_popup_bounds": [
+      4,
+      263,
+      960,
+      918
+    ]
+  }
+]

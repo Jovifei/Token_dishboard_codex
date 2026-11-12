@@ -31,7 +31,7 @@ class UsageStatisticsUiTests(unittest.TestCase):
         self.now=datetime.now(timezone.utc)
         self.recent=request(response_id='recent',time=(self.now-timedelta(seconds=3)).isoformat())
         self.panel.set_result({'requests':[self.recent],'issues':{}})
-        self.root.update()
+        self.root.update_idletasks()
 
     def tearDown(self):
         self.root.destroy()
@@ -68,23 +68,22 @@ class UsageStatisticsUiTests(unittest.TestCase):
                     self.assertEqual(self.panel.chart.metric,metric)
                     self.assertEqual(self.panel.metric_choice.get(),metric)
 
-    def test_period_menu_keeps_choices_callbacks_and_keyboard(self):
-        self.root.deiconify();self.root.update()
-        menu=self.panel.period_menu
-        self.assertEqual(tuple(menu.entrycget(i,'label') for i in range(len(PERIODS))),PERIODS)
-        for index,period in enumerate(PERIODS):
-            with self.subTest(period=period):
-                menu.invoke(index);self.root.update()
-                self.assertEqual(self.panel.period.get(),period)
-                self.assertEqual(str(self.panel.period_button.cget('textvariable')),str(self.panel.period))
-                self.assertEqual(self.panel.chart.period,'heatmap' if period=='全部' else
-                                 'hour' if period in ('今天','近 24 小时') else 'day')
-        self.assertTrue(self.panel.advanced_visible)
-        self.assertTrue(self.panel.start_entry.instate(['!readonly','!disabled']))
-        self.panel.period_button.focus_force();self.root.update()
-        self.assertEqual(self.root.focus_get(),self.panel.period_button)
-        self.assertIn('ttk::menubutton::Popdown',
-                      self.panel.period_button.bind_class('TMenubutton','<Key-space>'))
+    def test_period_popup_custom_draft_survives_refresh(self):
+        self.root.deiconify();self.root.update_idletasks()
+        button=self.panel.period_button
+        button.open();self.root.update_idletasks()
+        popup=button.popup
+        popup.choose_preset('近 30 天')
+        self.assertEqual(popup.draft_period.get(),'近 30 天')
+        popup.draft_period.set('自定义')
+        popup.draft_start.set('2026-11-10');popup.draft_end.set('2026-11-11')
+        popup.draft_start_time.set('08:15');popup.draft_end_time.set('17:42')
+        self.panel.apply_filters();self.root.update_idletasks()
+        self.assertEqual((popup.draft_start_time.get(),popup.draft_end_time.get()),('08:15','17:42'))
+        popup.apply();self.root.update_idletasks()
+        self.assertEqual((self.panel.start_time.get(),self.panel.end_time.get()),('08:15','17:42'))
+        self.panel._apply_period();self.panel.apply_filters()
+        self.assertEqual((self.panel.start_time.get(),self.panel.end_time.get()),('08:15','17:42'))
 
     def test_more_metrics_fold_and_show_sample_coverage(self):
         panel=self.panel
@@ -169,7 +168,7 @@ class UsageStatisticsUiTests(unittest.TestCase):
         self.assertEqual(unknown_values[3],short_number(unknown.usage['outputTokens']))
         self.assertEqual(unknown_values[4:6],('—','—'))
         self.panel.cost_mode.set('来源报告金额');self.panel.apply_filters()
-        self.assertEqual(tree.heading('cost','text'),'来源金额 USD')
+        self.assertEqual(tree.heading('cost','text'),'来源金额')
 
     def test_request_sort_compares_instants_across_offsets(self):
         older=request(response_id='older',time='2026-11-11T23:00:00+08:00')
@@ -185,6 +184,12 @@ class UsageStatisticsUiTests(unittest.TestCase):
         self.panel.set_result({'requests':history,'issues':{}})
         self.panel.tz.set('UTC')
         self.choose_period('全部')
+        self.assertTrue(self.panel.history_button.winfo_manager())
+        self.assertLessEqual(int(float(self.panel.chart.cget('height'))),204)
+        cells={hit[2] for hit in self.panel.chart.hitboxes}
+        self.assertIn(self.recent.time[:10],cells)
+        self.assertNotIn(history[0].time[:10],cells)
+        self.panel.history_button.invoke()
         cells={hit[2] for hit in self.panel.chart.hitboxes}
         self.assertTrue({r.time[:10] for r in history} <= cells)
         self.assertGreater(int(float(self.panel.chart.cget('height'))),188)

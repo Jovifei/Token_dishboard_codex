@@ -5,15 +5,16 @@ The panel edits application preferences, never Codex TOML or library contents.
 from copy import deepcopy
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, font, messagebox, ttk
 
 from app import KB_CATEGORIES
 from handoff import project_key
 from knowledge import create_templates, project_folder, validate_categories
 from monitor import DEFAULT_POLICY, validate_policy
 from preferences import PATH_ACCESS, validate_directory
+from ui_controls import ChoiceButton, install_controls
 
-BG = "#F5F5F7"
+BG = "#FFFFFF"
 WHITE = "#FFFFFF"
 TEXT = "#1D1D1F"
 MUTED = "#6E6E73"
@@ -103,7 +104,7 @@ class PreferencesPanel(ttk.Frame):
         self._loading = False
         self._baseline = {}
         self._original = {}
-        self._wrap_labels = []
+        install_controls(self)
         self.vars = {key: tk.StringVar(self) for key in PATH_LABELS}
         self.vars.update({
             "knowledge_mode": tk.StringVar(self),
@@ -121,17 +122,15 @@ class PreferencesPanel(ttk.Frame):
         self.state_var = tk.StringVar(self, value="saved")
         style = ttk.Style(self)
         style.configure("Preferences.TCheckbutton", background=WHITE, foreground=TEXT)
-        style.configure("Preferences.TRadiobutton", background=WHITE, foreground=TEXT)
         style.map("Preferences.TCheckbutton", background=[("active", WHITE)])
-        style.map("Preferences.TRadiobutton", background=[("active", WHITE)])
 
-        footer = ttk.Frame(self, style="Card.TFrame", padding=(16, 12))
+        footer = ttk.Frame(self, style="Card.TFrame", padding=(8, 6))
         footer.pack(side="bottom", fill="x")
         self.save_button = ttk.Button(
             footer, text="保存设置", style="Primary.TButton", command=self.save)
         self.save_button.pack(side="right")
         self.undo_button = ttk.Button(
-            footer, text="撤销未保存", command=self.refresh)
+            footer, text="撤销未保存", style="Ghost.TButton", command=self.refresh)
         self.undo_button.pack(side="right", padx=(0, 10))
         self.status_label = ttk.Label(
             footer, textvariable=self.status_var, style="CardMuted.TLabel",
@@ -141,46 +140,53 @@ class PreferencesPanel(ttk.Frame):
         scroll = ttk.Frame(self, style="App.TFrame")
         scroll.pack(fill="both", expand=True)
         self.canvas = tk.Canvas(scroll, bg=BG, highlightthickness=0, borderwidth=0)
-        scrollbar = ttk.Scrollbar(scroll, orient="vertical", command=self.canvas.yview)
+        scrollbar = ttk.Scrollbar(scroll, orient="vertical", command=self.canvas.yview,
+                                  style="Slim.Vertical.TScrollbar")
         scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=scrollbar.set)
-        self.content = ttk.Frame(self.canvas, style="App.TFrame", padding=(0, 4, 12, 14))
+        self.content = ttk.Frame(self.canvas, style="App.TFrame", padding=(0, 6, 8, 8))
         self._window = self.canvas.create_window((0, 0), window=self.content, anchor="nw")
         self.content.bind("<Configure>", self._content_resized)
         self.canvas.bind("<Configure>", self._canvas_resized)
         footer.bind("<Configure>", lambda event: self.status_label.configure(
             wraplength=max(150, event.width - self.save_button.winfo_reqwidth()
-                           - self.undo_button.winfo_reqwidth() - 84)))
+                           - self.undo_button.winfo_reqwidth() - 44)))
 
-        self._build_monitor()
+        self.top = ttk.Frame(self.content, style="Card.TFrame")
+        self.top.pack(fill="x")
+        self.locations_column = ttk.Frame(self.top, style="Card.TFrame")
+        self.monitor_column = ttk.Frame(self.top, style="Card.TFrame")
+        self.locations_column.grid(row=0, column=0, sticky="nsew")
+        self.monitor_column.grid(row=1, column=0, sticky="nsew")
+        self.top.columnconfigure(0, weight=1)
+        self._columns = 1
         locations = self._card(
             "数据与保存位置",
-            "更换位置只切换读取和保存目标，不迁移原有文件。缺少的交接或导出目录可在保存时明确创建。")
+            "更换位置会切换读取和保存目标。", parent=self.locations_column)
         self._path_row(locations, "codex_home", "只读本机项目、会话和用量记录；可留空稍后连接。")
         self._path_row(locations, "handoff_dir", "保存简短交接文件；新会话按需读取。")
         self._path_row(locations, "export_dir", "用于交接导出和诊断材料。")
+        self._build_monitor(self.monitor_column)
 
-        knowledge = self._card("项目知识库（可选）", "没有知识库也能完整交接。选择普通文件夹即可使用 Markdown 资料。")
+        knowledge = self._card("项目知识库（可选）", "可选择普通 Markdown 文件夹或 Obsidian Vault。")
         self.knowledge_card = knowledge
         kinds = ttk.Frame(knowledge, style="Card.TFrame")
-        kinds.pack(fill="x", pady=(0, 10))
+        kinds.pack(fill="x", pady=(0, 7))
         ttk.Label(kinds, text="知识库类型", style="Card.TLabel").pack(side="left", padx=(0, 12))
-        self.knowledge_combo = ttk.Combobox(
+        self.knowledge_combo = ChoiceButton(
             kinds, state="readonly", textvariable=self.vars["knowledge_mode"],
-            values=tuple(KNOWLEDGE_LABELS), width=26)
+            values=tuple(KNOWLEDGE_LABELS), width=22)
         self.knowledge_combo.pack(side="left")
         self._path_row(knowledge, "knowledge_dir", "选择当前项目的知识文件夹；确认后保存项目绑定。")
         policy = ttk.Frame(knowledge, style="Card.TFrame")
         policy.pack(fill="x", pady=(4, 0))
         ttk.Label(policy, text="知识更新方式", style="Card.TLabel").pack(side="left", padx=(0, 12))
-        self.policy_combo = ttk.Combobox(
+        self.policy_combo = ChoiceButton(
             policy, state="readonly", textvariable=self.vars["knowledge_policy"],
-            values=tuple(POLICY_LABELS), width=28)
+            values=tuple(POLICY_LABELS), width=22)
         self.policy_combo.pack(side="left")
-        self._description(
-            knowledge, "这里控制交接提示词的知识更新要求。实际更新仍由旧会话按目标范围执行，轻续不会在保存设置时写知识库。")
-        self._description(knowledge, "勾选本项目需要的分类。同一范围用于创建缺失模板和旧会话知识更新。")
+        self._description(knowledge, "勾选用于模板和旧会话更新的分类。保存设置只写入项目绑定。")
         categories = ttk.Frame(knowledge, style="Card.TFrame")
         categories.pack(fill="x", pady=(5, 0))
         self.knowledge_category_controls = []
@@ -189,7 +195,7 @@ class PreferencesPanel(ttk.Frame):
                                       style="Preferences.TCheckbutton")
             control.grid(row=index // 2, column=index % 2, sticky="w", padx=(0, 18), pady=3)
             self.knowledge_category_controls.append(control)
-        self.knowledge_init_button = ttk.Button(knowledge, text="创建缺失的分类模板",
+        self.knowledge_init_button = ttk.Button(knowledge, text="创建缺失的分类模板", style="Outline.TButton",
                                                 command=self.initialize_knowledge)
         self.knowledge_init_button.pack(anchor="w", pady=(10, 0))
 
@@ -208,67 +214,75 @@ class PreferencesPanel(ttk.Frame):
     def _description(self, parent, text):
         label = ttk.Label(
             parent, text=text, style="CardMuted.TLabel", wraplength=720, justify="left")
-        label.pack(anchor="w", fill="x", pady=(7, 0))
-        self._wrap_labels.append(label)
+        label.pack(anchor="w", fill="x", pady=(4, 0))
+        self._wrap_to_width(label)
         return label
 
-    def _card(self, title, description):
-        card = ttk.Frame(self.content, style="Card.TFrame", padding=(20, 17))
-        card.pack(fill="x", pady=(0, 12))
+    @staticmethod
+    def _wrap_to_width(label):
+        def resize(event):
+            width = max(120, event.width)
+            if int(float(label.cget("wraplength"))) != width:
+                label.configure(wraplength=width)
+        label.bind("<Configure>", resize, add="+")
+
+    def _card(self, title, description, *, parent=None):
+        card = ttk.Frame(parent if parent is not None else self.content,
+                         style="Card.TFrame", padding=(9, 8))
+        card.pack(fill="x", pady=(0, 7))
         ttk.Label(card, text=title, style="Heading.TLabel",
                   background=WHITE).pack(anchor="w")
         intro = self._description(card, description)
-        intro.pack_configure(pady=(5, 12))
+        intro.pack_configure(pady=(3, 8))
         return card
 
-    def _build_monitor(self):
+    def _build_monitor(self, parent):
         card = self._card(
-            "提醒策略", "提醒用于提前安排收尾与续聊。Codex 的实际压缩参数在旁边的“Codex 配置”中单独修改。")
+            "上下文提醒", "Codex 压缩参数在「Codex 配置」中修改。", parent=parent)
         ttk.Checkbutton(
             card, text="启用上下文提醒", variable=self.vars["enabled"],
-            style="Preferences.TCheckbutton").pack(anchor="w", pady=(0, 9))
+            style="Preferences.TCheckbutton").pack(anchor="w", pady=(0, 5))
         choices = ttk.Frame(card, style="Card.TFrame")
-        choices.pack(fill="x", pady=(0, 9))
-        for label, value in (("官方参考", "official"), ("轻续推荐", "recommended"), ("自定义", "custom")):
+        choices.pack(fill="x", pady=(0, 7))
+        for label, value in (("官方", "official"), ("推荐", "recommended"), ("自定义", "custom")):
             ttk.Radiobutton(
                 choices, text=label, value=value, variable=self.vars["monitor_mode"],
-                style="Preferences.TRadiobutton").pack(side="left", padx=(0, 26))
+                style="Toolbutton").pack(side="left", padx=(0, 3))
+        self.unit_var = tk.StringVar(self)
+        ttk.Label(card, textvariable=self.unit_var, style="CardMuted.TLabel").pack(anchor="w", pady=(0, 3))
         custom = ttk.Frame(card, style="Card.TFrame")
         custom.pack(fill="x")
-        ttk.Label(custom, text="自定义提醒线", style="Card.TLabel").pack(side="left", padx=(0, 12))
-        self.kind_combo = ttk.Combobox(
+        self.kind_combo = ChoiceButton(
             custom, textvariable=self.vars["custom_kind"], values=tuple(KIND_LABELS),
-            state="readonly", width=19)
-        self.kind_combo.pack(side="left", padx=(0, 8))
-        self.value_entry = ttk.Entry(custom, textvariable=self.vars["custom_value"], width=12)
+            state="readonly")
+        self.kind_combo.pack(side="left", padx=(0, 6))
+        self.value_entry = ttk.Entry(custom, textvariable=self.vars["custom_value"], width=6)
         self.value_entry.pack(side="left")
-        self.unit_var = tk.StringVar(self)
-        ttk.Label(custom, textvariable=self.unit_var, style="CardMuted.TLabel").pack(side="left", padx=8)
         self.policy_note_var = tk.StringVar(self)
         note = ttk.Label(card, textvariable=self.policy_note_var, style="CardMuted.TLabel",
                          wraplength=720, justify="left")
-        note.pack(anchor="w", fill="x", pady=(10, 0))
-        self._wrap_labels.append(note)
+        note.pack(anchor="w", fill="x", pady=(7, 0))
+        self._wrap_to_width(note)
 
     def _path_row(self, parent, key, note):
         row = ttk.Frame(parent, style="Card.TFrame")
-        row.pack(fill="x", pady=(0, 13))
+        row.pack(fill="x", pady=(0, 7))
         ttk.Label(row, text=PATH_LABELS[key], style="Card.TLabel").pack(anchor="w")
         input_row = ttk.Frame(row, style="Card.TFrame")
-        input_row.pack(fill="x", pady=(5, 0))
-        entry = ttk.Entry(input_row, textvariable=self.vars[key])
+        input_row.pack(fill="x", pady=(3, 0))
+        entry = ttk.Entry(input_row, textvariable=self.vars[key], width=15)
         entry.pack(side="left", fill="x", expand=True)
-        browse = ttk.Button(input_row, text="浏览…", command=lambda: self.browse_path(key))
-        browse.pack(side="left", padx=(7, 0))
-        validate = ttk.Button(input_row, text="检查", command=lambda: self.validate_path(key))
-        validate.pack(side="left", padx=(7, 0))
-        open_button = ttk.Button(input_row, text="打开", command=lambda: self.open_path(key))
-        open_button.pack(side="left", padx=(7, 0))
+        browse = ttk.Button(input_row, text="浏览…", style="Outline.TButton", command=lambda: self.browse_path(key))
+        browse.pack(side="left", padx=(4, 0))
+        validate = ttk.Button(input_row, text="检查", style="Ghost.TButton", command=lambda: self.validate_path(key))
+        validate.pack(side="left", padx=(2, 0))
+        open_button = ttk.Button(input_row, text="打开", style="Ghost.TButton", command=lambda: self.open_path(key))
+        open_button.pack(side="left", padx=(2, 0))
         feedback = tk.StringVar(self, value=note)
         label = ttk.Label(row, textvariable=feedback, style="CardMuted.TLabel",
                           wraplength=720, justify="left")
         label.pack(anchor="w", fill="x", pady=(4, 0))
-        self._wrap_labels.append(label)
+        self._wrap_to_width(label)
         self.path_feedback[key] = feedback
         self.path_controls[key] = (entry, browse, validate, open_button)
         return row
@@ -278,8 +292,13 @@ class PreferencesPanel(ttk.Frame):
 
     def _canvas_resized(self, event):
         self.canvas.itemconfigure(self._window, width=max(1, event.width))
-        for label in self._wrap_labels:
-            label.configure(wraplength=max(210, event.width - 68))
+        face = font.nametofont("TkDefaultFont", root=self)
+        columns = 2 if event.width >= face.measure("中" * 36) else 1
+        if columns != self._columns:
+            self._columns = columns
+            self.top.columnconfigure(0, weight=3 if columns == 2 else 1, uniform="top" if columns == 2 else "")
+            self.top.columnconfigure(1, weight=2 if columns == 2 else 0, uniform="top" if columns == 2 else "")
+            self.monitor_column.grid_configure(row=0 if columns == 2 else 1, column=columns - 1)
 
     def _bind_wheel(self, widget):
         # Local bindings work while focus is on an entry too, without taking over
@@ -325,7 +344,8 @@ class PreferencesPanel(ttk.Frame):
         self.kind_combo.configure(state="readonly" if custom else "disabled")
         self.value_entry.configure(state="normal" if custom else "disabled")
         kind = self.vars["custom_kind"].get()
-        self.unit_var.set("%" if KIND_LABELS.get(kind, kind) == "percent" else "tokens")
+        unit = "%" if KIND_LABELS.get(kind, kind) == "percent" else "Tokens"
+        self.unit_var.set("自定义提醒线 · " + unit)
         self.policy_note_var.set(POLICY_NOTES.get(
             self.vars["monitor_mode"].get(), "请选择一种提醒策略。"))
         mode = KNOWLEDGE_LABELS.get(self.vars["knowledge_mode"].get(), self.vars["knowledge_mode"].get())

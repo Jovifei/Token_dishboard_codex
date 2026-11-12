@@ -1,0 +1,26 @@
+{
+  "timestamp_utc": "2026-11-12T17:07:46.168796+00:00",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "python": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
+  "tests": 442,
+  "failures": 1,
+  "errors": 0,
+  "skipped": 5,
+  "success": false,
+  "failure_details": [
+    [
+      "test_first_request_row_not_clipped_at_150_percent (test_ui_billing.BillingGuiTests.test_first_request_row_not_clipped_at_150_percent)",
+      "Traceback (most recent call last):\n  File \"work/qingxu/test_ui_billing.py\", line 205, in test_first_request_row_not_clipped_at_150_percent\n    self.assertLessEqual(tree.winfo_rooty()+y+h,viewport.winfo_rooty()+viewport.winfo_height())\n    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 735 not less than or equal to 711\n"
+    ]
+  ],
+  "synthetic_data_only": true,
+  "not_verified": [
+    "Windows taskbar and packaging",
+    "real Codex new-chat continuation",
+    "Codex runtime adopts edited settings",
+    "real knowledge-base writes",
+    "collector lifecycle",
+    "real billing reconciliation",
+    "unsupported or legacy request log coverage"
+  ]
+}

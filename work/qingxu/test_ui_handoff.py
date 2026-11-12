@@ -12,7 +12,7 @@ from tkinter import ttk
 import unittest
 from unittest import mock
 
-from handoff import HandoffStore, TemplateStore, HandoffError, project_key
+from handoff import HandoffStore, TemplateStore, HandoffError, POLICY_LABELS, project_key
 from ui_handoff import HandoffPanel
 
 
@@ -236,6 +236,33 @@ class HandoffPanelTests(unittest.TestCase):
         self.assertEqual(self.panel.policy.get(), "none")
         self.assertNotIn(str(notes), self.panel.generate_old())
 
+    def test_knowledge_dropdown_keyboard_updates_the_prompt_policy(self):
+        self.select()
+        notes = self.base / "notes"
+        notes.mkdir()
+        self.app.prefs.update(knowledge_mode="folder", knowledge_dir=str(notes),
+                              knowledge_categories=["PLAN"],
+                              knowledge_project_key=project_key(self.record))
+        self.panel.refresh_preferences()
+        self.panel.old_options_visible.set(True)
+        self.panel._toggle_old_options()
+        self.root.update()
+        box = self.panel.policy_box
+        box.focus_force()
+        box.event_generate("<Down>")
+        self.root.update()
+        popup = box.popup
+        self.assertTrue(popup.winfo_viewable())
+        rows = next(child for child in popup.winfo_children() if isinstance(child, tk.Listbox))
+        rows.selection_clear(0, "end")
+        rows.selection_set(0)
+        rows.focus_force()
+        rows.event_generate("<Return>")
+        self.root.update()
+        self.assertEqual(self.panel.policy_label.get(), POLICY_LABELS["none"])
+        self.assertEqual(self.panel.policy.get(), "none")
+        self.assertFalse(popup.winfo_exists())
+
     def test_template_editor_saves_guidance_and_preserves_identity(self):
         self.select()
         self.panel.edit_templates()
@@ -299,6 +326,29 @@ class HandoffPanelTests(unittest.TestCase):
                 self.assertLessEqual(button.winfo_rootx() + button.winfo_width(),
                                      self.root.winfo_rootx() + self.root.winfo_width())
                 self.assertEqual(button.master.master, self.panel.footer)
+
+    def test_each_step_shows_editor_and_primary_action_at_desktop_scales(self):
+        self.select()
+        self.enter_summary()
+        self.root.geometry("760x430")
+        for dpi in (96, 144, 192):
+            self.root.tk.call("tk", "scaling", dpi / 72)
+            for step, editor, button in ((1, self.panel.old_text, self.panel.copy_old_button),
+                                         (2, self.panel.summary_text, self.panel.save_button),
+                                         (3, self.panel.new_text, self.panel.copy_new_button)):
+                with self.subTest(dpi=dpi, step=step):
+                    self.panel.show_step(step)
+                    self.root.update()
+                    canvas_top = self.panel.canvas.winfo_rooty()
+                    canvas_bottom = canvas_top + self.panel.canvas.winfo_height()
+                    editor_top = editor.winfo_rooty()
+                    self.assertTrue(editor.winfo_ismapped())
+                    self.assertGreaterEqual(editor_top, canvas_top)
+                    self.assertLess(editor_top + 24, canvas_bottom)
+                    self.assertTrue(button.winfo_ismapped())
+                    self.assertGreaterEqual(button.winfo_rooty(), self.root.winfo_rooty())
+                    self.assertLessEqual(button.winfo_rooty() + button.winfo_height(),
+                                         self.root.winfo_rooty() + self.root.winfo_height())
 
 
 if __name__ == "__main__":

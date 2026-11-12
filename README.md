@@ -2,17 +2,17 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前版本** 0.11.2-rc1 · 独立用量统计、时间菜单和按需展开的输入/输出及缓存分项。
+**当前版本** 0.11.3-rc1 · 四页重排、分钟级时间筛选、统计首屏请求日志。
 
 **本轮 Windows x64 便携包** 已由本源码构建，安装说明见 `install/README.md`。
 
-计费入口：左侧 **用量统计**。先运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [参考图与验收](docs/verification/0.11.2-rc1/README.md)。
+左侧「用量统计」汇总本机请求。可运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [界面验收](docs/verification/0.11.3-rc1/README.md)
 
 本地 Token 成本估算与来源报告金额分开；不等于订阅或供应商实际账单。
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.2-rc1-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.2-rc1/README.md)
+[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.3-rc1-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.3-rc1/README.md)
 
 ![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
 

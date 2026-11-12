@@ -148,7 +148,9 @@ class TkControlTests(unittest.TestCase):
 
     def test_wide_overview_shows_four_rows_and_reflows_when_narrow(self):
         original = self.root.geometry()
+        scaling = float(self.root.tk.call("tk", "scaling"))
         try:
+            self.root.tk.call("tk", "scaling", 96 / 72)
             self.root.geometry("1024x560+20+20")
             records = [RECORD, OTHER, RECORD | {"chat_id": "third"}, RECORD | {"chat_id": "fourth"}]
             self.panel.set_record(RECORD)
@@ -178,7 +180,35 @@ class TkControlTests(unittest.TestCase):
                                  + self.panel.recent_rows[-1].winfo_height(),
                                  canvas.winfo_rooty() + canvas.winfo_height())
         finally:
+            self.root.tk.call("tk", "scaling", scaling)
             self.root.geometry(original)
+            self.root.update()
+
+    def test_overview_actions_and_measurement_fit_at_windows_scaling(self):
+        geometry = self.root.geometry()
+        scaling = float(self.root.tk.call("tk", "scaling"))
+        records = [RECORD, OTHER]
+        try:
+            self.root.geometry("760x560+20+20")
+            self.panel.set_record(RECORD)
+            self.panel.render([row(record) for record in records])
+            for dpi in (96, 144, 192):
+                with self.subTest(dpi=dpi):
+                    self.root.tk.call("tk", "scaling", dpi / 72)
+                    self.root.update()
+                    canvas = self.panel.overview_canvas
+                    left, top = canvas.winfo_rootx(), canvas.winfo_rooty()
+                    right, bottom = left + canvas.winfo_width(), top + canvas.winfo_height()
+                    for widget in (self.panel.hero_percent, *self.panel.action_buttons):
+                        with self.subTest(control=str(widget)):
+                            self.assertTrue(widget.winfo_ismapped())
+                            self.assertGreaterEqual(widget.winfo_rootx(), left)
+                            self.assertLessEqual(widget.winfo_rootx() + widget.winfo_width(), right)
+                            self.assertGreaterEqual(widget.winfo_rooty(), top)
+                            self.assertLessEqual(widget.winfo_rooty() + widget.winfo_height(), bottom)
+        finally:
+            self.root.tk.call("tk", "scaling", scaling)
+            self.root.geometry(geometry)
             self.root.update()
 
     def test_float_selection_recent_mode_and_declined_switch(self):

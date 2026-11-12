@@ -27,9 +27,9 @@ from ui_handoff import HandoffPanel
 from ui_monitor import UsagePanel, FloatingMonitor
 from ui_preferences import PreferencesPanel
 from ui_brand import BrandMark, set_window_icon
-from ui_motion import attach_motion_tree
+from ui_controls import ChoiceButton, install_controls
 
-BG, SURFACE, INK, SECONDARY, BLUE, BORDER = "#F5F5F7", "#FFFFFF", "#1D1D1F", "#6E6E73", "#007AFF", "#D9DCE2"
+BG, SURFACE, INK, SECONDARY, BLUE, BORDER = "#FFFFFF", "#FFFFFF", "#191B20", "#565A65", "#176BC0", "#DFE1E7"
 
 
 def final_models(parsed, selection):
@@ -69,7 +69,7 @@ class Workbench(App):
         self.context_notice = tk.StringVar(root, value="监测跟随轻续所选聊天；可打开悬浮窗查看最近活动。")
         self.selection_info = tk.StringVar(root)
         self.page_title = tk.StringVar(root)
-        self.page_subtitle = tk.StringVar(root)
+        self.context_attention = False
         self.configure_theme()
         root.title(f"{TITLE} {VERSION}")
         root.geometry("1240x840")
@@ -93,8 +93,6 @@ class Workbench(App):
         self.root.bind("<Control-3>", lambda _: self.show_page("settings"))
         self.root.bind("<Control-4>", lambda _: self.show_page("statistics"))
         self.show_page("usage")
-        # Keep ttk commands, focus and geometry. Motion decorates colors only.
-        attach_motion_tree(self.root)
         try:
             self.reload_choices()
             self.recall_chat()
@@ -116,110 +114,80 @@ class Workbench(App):
         style.theme_use("clam")
         style.configure(".", font=(self.font_family, 10), background=BG, foreground=INK)
         style.configure("App.TFrame", background=BG)
-        style.configure("Side.TFrame", background="#EEF3F9")
+        style.configure("Side.TFrame", background=SURFACE)
         style.configure("Card.TFrame", background=SURFACE, relief="flat")
         for name, background, foreground, size, weight in (
-            ("TLabel", BG, INK, 10, "normal"), ("Title.TLabel", BG, INK, 22, "bold"),
-            ("Heading.TLabel", SURFACE, INK, 13, "bold"), ("Section.TLabel", BG, INK, 13, "bold"),
+            ("TLabel", BG, INK, 10, "normal"), ("Title.TLabel", BG, INK, 14, "bold"),
+            ("Heading.TLabel", SURFACE, INK, 12, "bold"), ("Section.TLabel", BG, INK, 12, "bold"),
             ("CardTitle.TLabel", SURFACE, INK, 12, "bold"), ("Card.TLabel", SURFACE, INK, 10, "normal"),
             ("Muted.TLabel", BG, SECONDARY, 9, "normal"), ("CardMuted.TLabel", SURFACE, SECONDARY, 9, "normal"),
-            ("Number.TLabel", SURFACE, INK, 25, "bold"), ("Side.TLabel", "#EEF3F9", SECONDARY, 9, "normal")):
+            ("Number.TLabel", SURFACE, INK, 19, "bold"), ("Side.TLabel", SURFACE, SECONDARY, 9, "normal")):
             style.configure(name, background=background, foreground=foreground, font=(self.font_family, size, weight))
         # Pressed never shifts, scales or appears recessed: only a soft light tint.
-        style.configure("TButton", padding=(12, 7), background="#E9EEF5", relief="flat", borderwidth=0,
+        style.configure("TButton", padding=(10, 5), background="#F0F1F4", relief="flat", borderwidth=0, width=0,
                         shiftrelief=0, focusthickness=2, focuscolor=BLUE)
         style.map("TButton", background=[("disabled", "#EFF0F2"), ("pressed", "#EAF4FF"), ("active", "#E2EEFB")],
                   relief=[("pressed", "flat"), ("!disabled", "flat")], foreground=[("disabled", "#9A9CA1")])
         style.configure("Primary.TButton", background=BLUE, foreground="white", font=(self.font_family, 10, "bold"), shiftrelief=0)
         style.map("Primary.TButton", background=[("disabled", "#BDD9F5"), ("pressed", "#3B9BFF"), ("active", "#238CFF")],
                   relief=[("pressed", "flat"), ("!disabled", "flat")], foreground=[("disabled", "#F7FAFF"), ("!disabled", "white")])
-        style.configure("Nav.TButton", anchor="w", padding=(16, 13), background="#EEF3F9",
-                        foreground="#3B485C", font=(self.font_family, 11), relief="flat", shiftrelief=0)
-        style.map("Nav.TButton", background=[("pressed", "#DAEBFF"), ("active", "#E3EDFB")], relief=[("pressed", "flat")])
-        style.configure("Selected.Nav.TButton", anchor="w", background=SURFACE, foreground=BLUE,
-                        font=(self.font_family, 11, "bold"), relief="flat", shiftrelief=0)
-        style.map("Selected.Nav.TButton", background=[("active", "#FFFFFF"), ("!active", "#FFFFFF")])
-        style.configure("Compact.Nav.TButton", padding=(6, 13))
-        style.configure("Selected.Compact.Nav.TButton", anchor="w", padding=(6, 13), background=SURFACE,
-                        foreground=BLUE, font=(self.font_family, 11, "bold"), relief="flat", shiftrelief=0)
-        style.map("Selected.Compact.Nav.TButton", background=[("active", "#FFFFFF"), ("!active", "#FFFFFF")])
-        style.configure("TCombobox", padding=(7, 5), fieldbackground=SURFACE, arrowsize=13, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
-        style.map("TCombobox", fieldbackground=[("readonly", SURFACE)], foreground=[("readonly", INK)])
-        style.configure("TEntry", padding=(7, 5), fieldbackground=SURFACE, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
-        style.configure("TNotebook", background=BG, borderwidth=0, bordercolor=BG, lightcolor=BG, darkcolor=BG, tabmargins=(0, 5, 0, 10))
-        style.configure("TNotebook.Tab", padding=(15, 7), borderwidth=0, bordercolor=BG, lightcolor=BG, darkcolor=BG)
-        style.map("TNotebook.Tab", background=[("selected", SURFACE), ("!selected", "#E8EAEE")], foreground=[("selected", BLUE), ("!selected", SECONDARY)])
+        style.configure("Sidebar.Ghost.TButton", anchor="w", padding=(9, 7), font=(self.font_family, 10))
+        style.configure("Sidebar.Soft.TButton", anchor="w", padding=(9, 7), font=(self.font_family, 10))
+        style.configure("TEntry", padding=(7, 4), fieldbackground=SURFACE, bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
         style.layout("Shell.TNotebook.Tab", [])
         style.configure("Shell.TNotebook", tabmargins=0, borderwidth=0, background=BG)
         style.configure("Horizontal.TProgressbar", troughcolor="#E7EBF1", background=BLUE, thickness=9, borderwidth=0)
         style.configure("Treeview", rowheight=30, fieldbackground=SURFACE, background=SURFACE, borderwidth=0)
         style.configure("Treeview.Heading", font=(self.font_family, 10, "bold"), background="#EDF0F4", relief="flat")
         style.configure("Metrics.Treeview", rowheight=25)
-        style.configure("Notice.TLabel", background="#E8F2FF", foreground="#245078", padding=(12, 8))
-        style.configure("Alert.TLabel", background="#FFF0D7", foreground="#8F5100", padding=(12, 8))
-        # The project-mode segmented controls must not inherit clam's sunken
-        # selected/pressed border. Selection is a surface + text change only.
-        style.configure("Toolbutton", padding=(9, 6), background="#E7EAEE",
-                        relief="flat", borderwidth=0, shiftrelief=0)
-        flat_surfaces = [("selected", SURFACE), ("active", "#E2EEFB"), ("!selected", "#E7EAEE")]
-        style.map("Toolbutton", background=flat_surfaces, lightcolor=flat_surfaces,
-                  darkcolor=flat_surfaces, bordercolor=flat_surfaces,
-                  relief=[("pressed", "flat"), ("selected", "flat"), ("!selected", "flat")],
-                  foreground=[("selected", BLUE)])
+        style.configure("Notice.TLabel", background="#EDF4FA", foreground="#245078", padding=(9, 4))
+        style.configure("Alert.TLabel", background="#FFF4E4", foreground="#794705", padding=(9, 4))
+        install_controls(self.root)
         self.configure_checks(style)
 
     def build_shell(self):
         shell = ttk.Frame(self.root, style="App.TFrame")
         shell.pack(fill="both", expand=True)
-        side = ttk.Frame(shell, style="Side.TFrame", width=190, padding=(16, 24))
+        side = ttk.Frame(shell, style="Side.TFrame", width=146, padding=(9, 12))
         side.pack(side="left", fill="y")
         side.pack_propagate(False)
         self.sidebar = side
+        tk.Frame(shell, background=BORDER, width=1).pack(side="left", fill="y")
         brand_row = ttk.Frame(side, style="Side.TFrame")
-        brand_row.pack(fill="x", pady=(0, 5))
-        BrandMark(brand_row, size=40, background="#EEF3F9").pack(side="left", padx=(0, 9))
-        tk.Label(brand_row, text="轻续", bg="#EEF3F9", fg=INK,
-                 font=(self.font_family, 22, "bold"), anchor="w").pack(side="left")
-        ttk.Label(side, text="让工作持续向前", style="Side.TLabel").pack(anchor="w", pady=(0, 26))
+        brand_row.pack(fill="x", padx=6, pady=(2, 15))
+        BrandMark(brand_row, size=23, background=SURFACE).pack(side="left", padx=(0, 7))
+        tk.Label(brand_row, text="轻续", bg=SURFACE, fg=INK,
+                 font=(self.font_family, 12, "bold"), anchor="w").pack(side="left")
         self.nav = {}
-        self.nav_indicator = {}
         self.today_cost = tk.StringVar(self.root, value="今日 —")
 
         def add_navigation(key, label, side_mode="top"):
-            slot = ttk.Frame(side, style="Side.TFrame")
-            slot.pack(side=side_mode, fill="x", pady=4)
-            rail = tk.Frame(slot, bg="#EEF3F9", width=3, highlightthickness=0)
-            rail.pack(side="left", fill="y", padx=(0, 5))
-            if key == "statistics":
-                self.today_label = tk.Label(slot, textvariable=self.today_cost, bg="#EEF3F9", fg=SECONDARY,
-                                            font=(self.font_family, 9), anchor="e", justify="right", wraplength=66)
-                self.today_label.pack(side="right", padx=(0, 4))
-                self.today_label.bind("<Button-1>", lambda _: self.show_page("statistics"))
-            options = {"width": 0} if key == "statistics" else {}
-            button = ttk.Button(slot, text=label, style="Compact.Nav.TButton" if key == "statistics" else "Nav.TButton",
-                                command=lambda k=key: self.show_page(k), **options)
-            button.pack(side="left", fill="x", expand=True)
+            button = ttk.Button(side, text=label, style="Sidebar.Ghost.TButton",
+                                command=lambda k=key: self.show_page(k))
+            button.pack(side=side_mode, fill="x", pady=2)
             self.nav[key] = button
-            self.nav_indicator[key] = rail
 
         for key, label in (("handoff", "会话接续"), ("usage", "用量概览"), ("statistics", "用量统计")):
             add_navigation(key, label)
-        ttk.Label(side, text=f"{VERSION}\n本地数据 · 按需读取", style="Side.TLabel", justify="left").pack(side="bottom", anchor="w", pady=6)
-        self.floating_button = ttk.Button(side, text="打开悬浮窗", command=lambda: self.floating.show())
-        self.floating_button.pack(side="bottom", fill="x", pady=(8, 14))
+        self.floating_button = ttk.Button(side, text="打开悬浮窗", style="Sidebar.Ghost.TButton",
+                                          command=lambda: self.floating.show())
+        self.floating_button.pack(side="bottom", fill="x", pady=2)
         add_navigation("settings", "⚙ 设置", "bottom")
-        main = ttk.Frame(shell, style="App.TFrame", padding=(22, 18, 22, 12))
+        ttk.Separator(side).pack(side="bottom", fill="x", pady=5)
+        self.today_label = tk.Label(side, textvariable=self.today_cost, bg=SURFACE, fg=SECONDARY,
+                                    font=(self.font_family, 9), anchor="w", justify="left", wraplength=122)
+        self.today_label.pack(side="bottom", fill="x", padx=6, pady=(0, 2))
+        self.today_label.bind("<Button-1>", lambda _: self.show_page("statistics"))
+        main = ttk.Frame(shell, style="App.TFrame", padding=(14, 9, 14, 8))
         main.pack(side="left", fill="both", expand=True)
-        titlebar = ttk.Frame(main)
-        titlebar.pack(fill="x", pady=(0, 12))
-        heading = ttk.Frame(titlebar)
-        heading.pack(side="left", fill="x", expand=True)
-        ttk.Label(heading, textvariable=self.page_title, style="Title.TLabel").pack(anchor="w")
-        ttk.Label(heading, textvariable=self.page_subtitle, style="Muted.TLabel").pack(anchor="w", pady=(3, 0))
-        self.manual_project_button = self.button(titlebar, "手动选择项目目录…", self.choose_manual_project, feedback=self.status)
+        self.titlebar = ttk.Frame(main)
+        self.titlebar.pack(fill="x", pady=(0, 6))
+        ttk.Label(self.titlebar, textvariable=self.page_title, style="Title.TLabel").pack(side="left")
+        self.manual_project_button = self.button(self.titlebar, "选择项目目录…", self.choose_manual_project,
+                                                 style="Outline.TButton", feedback=self.status)
         self.manual_project_button.pack(side="right")
-        self.picker = ttk.Frame(main, style="Card.TFrame", padding=12)
-        self.picker.pack(fill="x", pady=(0, 10))
+        self.picker = ttk.Frame(main, style="Card.TFrame", padding=(0, 3, 0, 5))
+        self.picker.pack(fill="x", pady=(0, 5))
         self.source_kind = tk.StringVar(value="按项目选聊天")
         modes = ttk.Frame(self.picker, style="Card.TFrame")
         modes.grid(row=0, column=0, padx=(0, 12))
@@ -227,41 +195,45 @@ class Workbench(App):
             ttk.Radiobutton(modes, text=label, value=mode, variable=self.source_kind, style="Toolbutton", command=lambda: self.guarded(self.reload_choices, self.status)).pack(side="left", padx=2)
         self.project_label = ttk.Label(self.picker, text="项目", style="Card.TLabel")
         self.project_label.grid(row=0, column=1)
-        self.category_choice = ttk.Combobox(self.picker, state="readonly", width=18)
+        self.category_choice = ChoiceButton(self.picker, state="readonly", width=15)
         self.category_choice.grid(row=0, column=2, sticky="ew", padx=(7, 12))
         self.category_choice.bind("<<ComboboxSelected>>", lambda _: self.guarded(self.filter_chats, self.status))
         chat_label = ttk.Label(self.picker, text="聊天", style="Card.TLabel")
         chat_label.grid(row=0, column=3)
-        self.project_choice = ttk.Combobox(self.picker, state="disabled", width=30)
+        self.project_choice = ChoiceButton(self.picker, state="disabled", width=21)
         self.project_choice.grid(row=0, column=4, sticky="ew", padx=(7, 10))
         self.project_choice.bind("<<ComboboxSelected>>", lambda _: self.guarded(self.select_project, self.status))
-        refresh = self.button(self.picker, "刷新", self.refresh_catalog, feedback=self.status)
+        refresh = self.button(self.picker, "刷新", self.refresh_catalog, style="Ghost.TButton", feedback=self.status)
         refresh.grid(row=0, column=5)
-        self.picker.columnconfigure(4, weight=1)
-        detail = ttk.Label(self.picker, textvariable=self.selection_info, style="CardMuted.TLabel", wraplength=870)
-        detail.grid(row=1, column=0, columnspan=6, sticky="w", pady=(8, 0))
-        compact = False
+        self.picker.columnconfigure(2, weight=1)
+        self.picker.columnconfigure(4, weight=2)
+        detail = self.picker_detail = ttk.Label(self.picker, textvariable=self.selection_info,
+                                               style="CardMuted.TLabel", wraplength=870)
+        detail.grid(row=1, column=0, columnspan=6, sticky="w", pady=(4, 0))
+        self._compact_picker = False
 
         def fit_picker(event):
-            nonlocal compact
-            detail.configure(wraplength=max(250, event.width - 30))
-            controls = (modes, self.project_label, self.category_choice,
-                        chat_label, self.project_choice, refresh)
-            required = sum(control.winfo_reqwidth() for control in controls) + 72
+            wrap = max(250, event.width - 4)
+            if int(float(detail.cget("wraplength"))) != wrap:
+                detail.configure(wraplength=wrap)
+            controls = (modes, self.project_label, chat_label, refresh)
+            face = font.nametofont("TkDefaultFont", root=self.root)
+            minimum_choices = max(120, face.measure("中" * 6)) + max(150, face.measure("中" * 8))
+            required = sum(control.winfo_reqwidth() for control in controls) + minimum_choices + 46
             narrow = event.width < required
-            if narrow == compact:
+            if narrow == self._compact_picker:
                 return
-            compact = narrow
-            if compact:
+            self._compact_picker = narrow
+            if narrow:
                 chat_label.grid_configure(row=1, column=0, sticky="w", pady=(6, 0))
                 self.project_choice.grid_configure(row=1, column=1, columnspan=4, pady=(6, 0))
                 refresh.grid_configure(row=1, pady=(6, 0))
-                detail.grid_configure(row=2)
             else:
                 chat_label.grid_configure(row=0, column=3, sticky="", pady=0)
                 self.project_choice.grid_configure(row=0, column=4, columnspan=1, pady=0)
                 refresh.grid_configure(row=0, pady=0)
-                detail.grid_configure(row=1)
+            if detail.winfo_manager():
+                detail.grid_configure(row=2 if narrow else 1)
 
         self.picker.bind("<Configure>", fit_picker)
         self.choice_records, self.category_map, self.loaded_category = {}, {}, ""
@@ -270,9 +242,9 @@ class Workbench(App):
         # Normal progress belongs in the overview card; global banner appears
         # only when there is an actionable warning or a read failure.
         self.context_banner.bind("<Configure>", lambda e: self.context_banner.configure(wraplength=max(300, e.width - 30)))
-        footer = ttk.Label(main, textvariable=self.status, style="Muted.TLabel", wraplength=950)
-        footer.pack(side="bottom", fill="x", pady=(8, 0))
-        footer.bind("<Configure>", lambda e: footer.configure(wraplength=max(300, e.width - 10)))
+        self.footer = ttk.Label(main, textvariable=self.status, style="Muted.TLabel", wraplength=950)
+        self.footer.pack(side="bottom", fill="x", pady=(4, 0))
+        self.footer.bind("<Configure>", lambda e: self.footer.configure(wraplength=max(300, e.width - 10)))
         self.tabs = ttk.Notebook(main, style="Shell.TNotebook")
         self.tabs.pack(fill="both", expand=True)
         self.frames = [ttk.Frame(self.tabs) for _ in range(4)]
@@ -283,7 +255,8 @@ class Workbench(App):
         self.usage_panel = UsagePanel(self.frames[1], self, billing_parent=self.frames[3])
         self.usage_panel.pack(fill="both", expand=True)
         self.chat_usage = self.usage_panel.chat_usage
-        self.settings_tabs = ttk.Notebook(self.frames[2])
+        self.settings_tabs = ttk.Notebook(self.frames[2], style="Line.TNotebook")
+        self.settings_tabs.enable_traversal()
         self.settings_tabs.pack(fill="both", expand=True)
         self.preferences_page, self.config_page = ttk.Frame(self.settings_tabs), ttk.Frame(self.settings_tabs)
         self.settings_tabs.add(self.preferences_page, text="目录与提醒")
@@ -297,34 +270,46 @@ class Workbench(App):
         index = {"handoff": 0, "usage": 1, "settings": 2, "statistics": 3}[key]
         self.tabs.select(self.frames[index])
         self.page = key
-        captions = {"usage": ("用量概览", "知道何时收尾，让下一次对话更轻。"), "handoff": ("会话接续", "保留项目目标和当前断点，在新聊天继续。"), "statistics": ("用量统计", "查看本机记录的 Token 用量与估算成本。"), "settings": ("设置", "选择自己的目录、提醒方式和模型配置。")}
-        self.page_title.set(captions[key][0])
-        self.page_subtitle.set(captions[key][1])
+        self.page_title.set(self.nav[key].cget("text").removeprefix("⚙ "))
+        if key == "settings":
+            self.picker_detail.grid_remove()
+        else:
+            self.picker_detail.grid(row=2 if self._compact_picker else 1)
         if key == "statistics":
             self.picker.pack_forget()
             self.manual_project_button.pack_forget()
+            self.titlebar.pack_forget()
+            self.footer.pack_forget()
             self.usage_panel.billing_panel.activate()
         else:
+            if not self.titlebar.winfo_manager():
+                self.titlebar.pack(fill="x", pady=(0, 6), before=self.tabs)
             if not self.picker.winfo_manager():
                 before = self.context_banner if self.context_banner.winfo_manager() else self.tabs
-                self.picker.pack(fill="x", pady=(0, 10), before=before)
+                self.picker.pack(fill="x", pady=(0, 5), before=before)
             if not self.manual_project_button.winfo_manager():
                 self.manual_project_button.pack(side="right")
+            if not self.footer.winfo_manager():
+                self.footer.pack(side="bottom", fill="x", pady=(4, 0), before=self.tabs)
+        self.sync_context_banner()
         for name, button in self.nav.items():
-            selected = name == key
-            base = "Compact.Nav.TButton" if name == "statistics" else "Nav.TButton"
-            button.configure(style="Selected." + base if selected else base)
-            self.nav_indicator[name].configure(bg=BLUE if selected else "#EEF3F9")
-        self.today_label.configure(bg=SURFACE if key == "statistics" else "#EEF3F9")
+            button.configure(style="Sidebar.Soft.TButton" if name == key else "Sidebar.Ghost.TButton")
         self._fit_sidebar()
+
+    def sync_context_banner(self):
+        if self.context_attention and self.page in ("usage", "handoff"):
+            self.context_banner.pack(fill="x", pady=(0, 5), before=self.tabs)
+        else:
+            self.context_banner.pack_forget()
 
     def set_today_cost(self, text):
         self.today_cost.set(text or "今日 —")
         self._fit_sidebar()
 
     def _fit_sidebar(self):
-        required = 44 + self.nav["statistics"].winfo_reqwidth() + self.today_label.winfo_reqwidth()
-        self.sidebar.configure(width=max(190, required))
+        required = 30 + max(self.floating_button.winfo_reqwidth(), self.today_label.winfo_reqwidth(),
+                            *(button.winfo_reqwidth() for button in self.nav.values()))
+        self.sidebar.configure(width=max(146, required))
 
     def _activate_cached_statistics(self):
         panel = self.usage_panel.billing_panel
@@ -446,7 +431,8 @@ class Workbench(App):
         self.rows = []
         self.context_notice.set("正在读取所选聊天…" if self.chat else "选择聊天后显示上下文参考；没有 Codex 数据也可手动接续。")
         self.context_banner.configure(style="Notice.TLabel")
-        self.context_banner.pack_forget()
+        self.context_attention = False
+        self.sync_context_banner()
         if hasattr(self, "floating"):
             self.floating.render([])
         self.schedule_metrics()
@@ -496,7 +482,9 @@ class Workbench(App):
                     self.render_metrics(rows, detail, catalog)
                 except Exception as exc:
                     self.context_notice.set("监测暂不可读 · " + str(exc))
-                    self.context_banner.pack(fill="x", pady=(0, 8), before=self.tabs)
+                    self.context_banner.configure(style="Notice.TLabel")
+                    self.context_attention = True
+                    self.sync_context_banner()
                     self.usage_panel.render([])
                     self.floating.render([])
                 self.schedule_metrics(15000)
@@ -532,13 +520,10 @@ class Workbench(App):
         self.usage_panel.render(rows)
         self.floating.render(rows)
         selected = next((row for row in rows if row.get("selected")), None)
+        self.context_attention = bool(selected and selected["level"] in ("warning", "alert"))
         if selected:
             self.context_notice.set(selected["message"])
-            self.context_banner.configure(style="Alert.TLabel" if selected["level"] in ("warning", "alert") else "Notice.TLabel")
-            if selected["level"] in ("warning", "alert"):
-                self.context_banner.pack(fill="x", pady=(0, 8), before=self.tabs)
-            else:
-                self.context_banner.pack_forget()
+            self.context_banner.configure(style="Alert.TLabel" if self.context_attention else "Notice.TLabel")
         elif not self.chat:
             self.context_notice.set("可选择一个聊天，或打开悬浮窗查看最近活动。")
         else:
@@ -546,8 +531,9 @@ class Workbench(App):
         if identity_warning:
             self.context_notice.set(identity_warning)
             self.context_banner.configure(style="Alert.TLabel")
-            self.context_banner.pack(fill="x", pady=(0, 8), before=self.tabs)
+            self.context_attention = True
             self.handoff_panel.feedback.set(identity_warning)
+        self.sync_context_banner()
         if detail:
             self.chat_usage.show_sample(detail.get("sample"), (selected or {}).get("message"))
             self.chat_usage.show_requests(detail.get("requests"), detail.get("requests_error"))
@@ -594,85 +580,99 @@ class Workbench(App):
         self.config_source, self.config_scope, self.agent_effort_note = tk.StringVar(), tk.StringVar(), tk.StringVar()
         self.config_path = tk.StringVar(value=self.relay.settings["config"])
         self.model_view, self.preset = tk.StringVar(value=FILE_MODEL), tk.StringVar(value=PRESETS[2])
-        footer = ttk.Frame(frame, style="Card.TFrame", padding=12)
-        footer.pack(side="bottom", fill="x", pady=(8, 0))
+        footer = ttk.Frame(frame, style="Card.TFrame", padding=(8, 6))
+        footer.pack(side="bottom", fill="x", pady=(4, 0))
         actions = ttk.Frame(footer, style="Card.TFrame")
         actions.pack(fill="x")
-        self.button(actions, "预览修改", self.preview_config, feedback=self.config_status).pack(side="left")
+        self.button(actions, "预览修改", self.preview_config, style="Outline.TButton",
+                    feedback=self.config_status).pack(side="left")
         self.config_apply = self.button(actions, "备份并应用", self.apply_config, style="Primary.TButton", feedback=self.config_status)
         self.config_apply.pack(side="left", padx=8)
         self.config_apply.configure(state="disabled")
-        self.button(actions, "恢复配置备份…", self.restore_config, feedback=self.config_status).pack(side="right")
+        self.button(actions, "恢复配置备份…", self.restore_config, style="Ghost.TButton",
+                    feedback=self.config_status).pack(side="right")
         feedback = ttk.Label(footer, textvariable=self.config_status, style="CardMuted.TLabel", wraplength=900)
         feedback.pack(anchor="w", pady=(6, 0))
         footer.bind("<Configure>", lambda event: feedback.configure(wraplength=max(140, event.width - 24)))
         self.config_canvas, body = self.scroll_page(frame)
         notes = []
-        source = ttk.Frame(body, style="Card.TFrame", padding=14)
-        source.pack(fill="x", pady=(5, 9))
+        source = ttk.Frame(body, style="Card.TFrame", padding=(8, 6))
+        source.pack(fill="x", pady=(4, 3))
         ttk.Label(source, text="目标配置文件", style="Heading.TLabel").pack(anchor="w")
         row = ttk.Frame(source, style="Card.TFrame")
-        row.pack(fill="x", pady=8)
+        row.pack(fill="x", pady=4)
         ttk.Entry(row, textvariable=self.config_path).pack(side="left", fill="x", expand=True)
-        self.button(row, "选择…", self.choose_config, feedback=self.config_status).pack(side="left", padx=7)
-        self.button(row, "读取", self.load_config, feedback=self.config_status).pack(side="left")
+        self.button(row, "选择…", self.choose_config, style="Outline.TButton",
+                    feedback=self.config_status).pack(side="left", padx=5)
+        self.button(row, "读取", self.load_config, style="Ghost.TButton",
+                    feedback=self.config_status).pack(side="left")
         scope = ttk.Label(source, textvariable=self.config_scope, style="CardMuted.TLabel", wraplength=880)
         scope.pack(anchor="w")
         notes.append(scope)
         self.config_items, self.config_entries, self.config_cells = {}, {}, {}
 
-        schemes = ttk.Frame(body, style="Card.TFrame", padding=(14, 9))
-        schemes.pack(fill="x", pady=(0, 9))
-        ttk.Label(schemes, text="数值方案", style="Heading.TLabel").pack(anchor="w")
-        row = ttk.Frame(schemes, style="Card.TFrame")
-        row.pack(fill="x", pady=(5, 0))
-        for mode, label in ((PRESETS[1], "推荐 · 模型默认"), (PRESETS[2], "自定义")):
-            ttk.Radiobutton(row, text=label, value=mode, variable=self.preset, style="Toolbutton",
-                            command=lambda: self.guarded(self.select_preset, self.config_status)).pack(side="left", padx=(0, 7))
-        self.save_custom_button = self.button(row, "记住数值", lambda: self.save_custom(core.TOKEN_KEYS),
-                                              feedback=self.config_status)
-        self.save_custom_button.pack(side="left")
-
-        def section(title, keys, hint):
-            card = ttk.Frame(body, style="Card.TFrame", padding=14)
-            card.pack(fill="x", pady=(0, 9))
-            ttk.Label(card, text=title, style="Heading.TLabel").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 6))
-            for col, text in enumerate(("勾选要修改的项", "本机目录参考", "文件当前值", "准备写入")):
-                ttk.Label(card, text=text, style="CardMuted.TLabel").grid(row=1, column=col, sticky="w", padx=(0, 12), pady=(0, 5))
-            for i, key in enumerate(keys, 2):
+        def section(title, keys, hint, *, numeric_scheme=False):
+            ttk.Separator(body).pack(fill="x", padx=8, pady=(2, 0))
+            card = ttk.Frame(body, style="Card.TFrame", padding=(8, 7))
+            card.pack(fill="x", pady=(0, 4))
+            ttk.Label(card, text=title, style="Heading.TLabel").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 5))
+            if numeric_scheme:
+                modes = ttk.Frame(card, style="Card.TFrame")
+                modes.grid(row=1, column=0, columnspan=4, sticky="w", pady=(0, 6))
+                ttk.Label(modes, text="数值方案", style="CardMuted.TLabel").pack(side="left", padx=(0, 8))
+                for mode, label in ((PRESETS[1], "推荐 · 模型默认"), (PRESETS[2], "自定义")):
+                    ttk.Radiobutton(modes, text=label, value=mode, variable=self.preset, style="Toolbutton",
+                                    command=lambda: self.guarded(self.select_preset, self.config_status)).pack(side="left", padx=(0, 4))
+                self.save_custom_button = self.button(modes, "记住数值", lambda: self.save_custom(core.TOKEN_KEYS),
+                                                      style="Ghost.TButton", feedback=self.config_status)
+                self.save_custom_button.pack(side="left")
+            for col, text in enumerate(("勾选修改项", "模型参考", "文件值", "准备写入")):
+                ttk.Label(card, text=text, style="CardMuted.TLabel").grid(row=2, column=col, sticky="w", padx=(0, 8), pady=(0, 3))
+            for i, key in enumerate(keys, 3):
                 initial = "" if key in core.TOKEN_KEYS or key == "compact_prompt" else DEFAULT_CHOICE
                 enabled, value = tk.BooleanVar(value=False), tk.StringVar(value=initial)
                 self.config_items[key] = enabled, value
-                ttk.Checkbutton(card, text=CONFIG_FIELDS[key][0], variable=enabled, style="Clean.TCheckbutton").grid(row=i, column=0, sticky="w", padx=(0, 10), pady=4)
+                ttk.Checkbutton(card, text=CONFIG_FIELDS[key][0], variable=enabled,
+                                style="Clean.TCheckbutton").grid(row=i, column=0, sticky="w", padx=(0, 9), pady=3)
                 official, current = tk.StringVar(value="待读取"), tk.StringVar(value="待读取")
                 self.config_cells[key] = official, current
-                ttk.Label(card, textvariable=official, style="CardMuted.TLabel").grid(row=i, column=1, sticky="w", padx=(0, 12))
-                ttk.Label(card, textvariable=current, style="Card.TLabel").grid(row=i, column=2, sticky="w", padx=(0, 12))
+                reference = ttk.Label(card, textvariable=official, style="CardMuted.TLabel", wraplength=132)
+                reference.grid(row=i, column=1, sticky="w", padx=(0, 8))
+                file_value = ttk.Label(card, textvariable=current, style="Card.TLabel", wraplength=154)
+                file_value.grid(row=i, column=2, sticky="w", padx=(0, 8))
+                field = ttk.Frame(card, style="Card.TFrame")
+                field.grid(row=i, column=3, sticky="ew", pady=3)
                 if key in (core.MODEL, core.AGENT_MODEL):
-                    entry = ttk.Combobox(card, textvariable=value, values=(DEFAULT_CHOICE, *MODEL_CHOICES.values(), "gpt-6-luna"), width=24)
+                    entry = ttk.Entry(field, textvariable=value, width=15)
+                    entry.pack(side="left", fill="x", expand=True)
+                    options = ChoiceButton(field, caption="选项", values=(DEFAULT_CHOICE, *MODEL_CHOICES.values(), "gpt-6-luna"))
+                    options.bind("<<ComboboxSelected>>", lambda _, picker=options, var=value: var.set(picker.get()))
+                    options.pack(side="left", padx=(4, 0))
                 elif key in ("model_reasoning_effort", core.AGENT_EFFORT):
-                    entry = ttk.Combobox(card, textvariable=value, values=(DEFAULT_CHOICE, *core.EFFORTS), state="readonly", width=24)
+                    entry = ChoiceButton(field, textvariable=value, values=(DEFAULT_CHOICE, *core.EFFORTS), width=15)
+                    entry.pack(side="left")
                 else:
-                    entry = ttk.Entry(card, textvariable=value, width=13 if key in core.TOKEN_KEYS else 26)
+                    entry = ttk.Entry(field, textvariable=value, width=13 if key in core.TOKEN_KEYS else 18)
+                    entry.pack(side="left", fill="x", expand=key == "compact_prompt")
                 self.config_entries[key] = entry
-                entry.grid(row=i, column=3, sticky="w", pady=4)
                 value.trace_add("write", self.config_value_edited)
                 enabled.trace_add("write", self.config_selection_edited)
             card.columnconfigure(3, weight=1)
             note = ttk.Label(card, text=hint, style="CardMuted.TLabel", wraplength=850)
-            note.grid(row=len(keys) + 2, column=0, columnspan=4, sticky="w", pady=(8, 0))
+            note.grid(row=len(keys) + 3, column=0, columnspan=4, sticky="w", pady=(5, 0))
             notes.append(note)
             return card
 
         section("Codex 压缩与输出",
                 ("model_context_window", "model_auto_compact_token_limit", "tool_output_token_limit", "compact_prompt"),
-                "推荐显示模型参考值。应用后，勾选项采用模型默认。自定义可输入数字，勾选且留空时使用默认。轻续提醒另设。")
+                "推荐方案采用模型默认。自定义可输入数字，勾选后留空则恢复默认。",
+                numeric_scheme=True)
         self.config_advanced = section("主 Agent 与子 Agent",
                                        (core.MODEL, "model_reasoning_effort", core.AGENT_MODEL, core.AGENT_EFFORT),
                                        "选择模型和推理档位，勾选后预览。使用默认会清除所选文件的覆盖。")
         self.agent_panel = self.config_advanced
         agent_note = ttk.Label(self.config_advanced, textvariable=self.agent_effort_note, style="CardMuted.TLabel", wraplength=850)
-        agent_note.grid(row=7, column=0, columnspan=4, sticky="w", pady=(4, 0))
+        agent_note.grid(row=8, column=0, columnspan=4, sticky="w", pady=(4, 0))
         notes.append(agent_note)
         for key in (core.MODEL, core.AGENT_MODEL):
             for variable in self.config_items[key]:
@@ -818,6 +818,10 @@ class Workbench(App):
 
     def scroll_page(self, frame):
         canvas, form = super().scroll_page(frame)
+        canvas.configure(background=BG)
+        for child in frame.winfo_children():
+            if isinstance(child, ttk.Scrollbar):
+                child.configure(style="Slim.Vertical.TScrollbar")
         def wheel(event, direction):
             if event.widget is canvas or str(event.widget).startswith(str(form) + "."):
                 if not isinstance(event.widget, (tk.Text, ttk.Treeview, ttk.Combobox)):

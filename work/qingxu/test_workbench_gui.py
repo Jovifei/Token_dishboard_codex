@@ -10,8 +10,10 @@ from unittest.mock import patch
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "tools/fixtures"))
 import demo
+import billing_demo
 import core
 from app import PRESETS
+from billing import Request
 from relay import Relay
 from workbench import DEFAULT_CHOICE, Workbench
 
@@ -59,6 +61,38 @@ class WorkbenchTests(unittest.TestCase):
         self.app.show_page("handoff")
         self.assertEqual(self.app.picker.winfo_manager(), "pack")
         self.assertEqual(self.app.manual_project_button.winfo_manager(), "pack")
+
+    def test_statistics_first_rows_fit_at_150_percent_with_context_warning(self):
+        ui = self.app
+        panel = ui.usage_panel.billing_panel
+        self.tk.tk.call("tk", "scaling", 144 / 72)
+        ui.configure_theme()
+        self.tk.geometry("980x680+0+0")
+        self.tk.deiconify()
+        panel.active = True
+        panel.set_result({"requests": [Request.from_dict(row) for row in billing_demo.requests()],
+                          "issues": {}, "synthetic": True})
+        rows, detail, catalog = ui.collect_metrics(dict(ui.relay.settings), ui.monitor,
+                                                   ui.catalog["chats"], self.normal["chat_id"], {})
+        selected = next(row for row in rows if row.get("selected"))
+        selected.update(level="warning", message="测试提醒 · 当前聊天接近提醒线。")
+        with patch.object(ui.monitor, "should_notify", return_value=False):
+            ui.render_metrics(rows, detail, catalog)
+            self.assertEqual(ui.context_banner.winfo_manager(), "pack")
+            ui.show_page("statistics")
+            ui.render_metrics(rows, detail, catalog)
+        self.tk.update_idletasks()
+        self.assertFalse(ui.context_banner.winfo_manager())
+        self.assertFalse(ui.titlebar.winfo_manager())
+        self.assertEqual(panel.provider_box.winfo_y(), panel.period_button.winfo_y())
+        self.assertGreaterEqual(panel.more_button.winfo_width(), panel.more_button.winfo_reqwidth())
+        tree = panel.trees["request"]
+        row = tree.bbox(tree.get_children()[0])
+        self.assertTrue(row)
+        self.assertLessEqual(tree.winfo_rooty() + row[1] + row[3],
+                             panel.canvas.winfo_rooty() + panel.canvas.winfo_height())
+        ui.show_page("handoff")
+        self.assertEqual(ui.context_banner.winfo_manager(), "pack")
 
     def test_today_cost_and_cached_startup(self):
         panel = self.app.usage_panel.billing_panel
@@ -371,7 +405,7 @@ class WorkbenchTests(unittest.TestCase):
         rows, _, _ = ui.collect_metrics(dict(ui.relay.settings), ui.monitor, ui.catalog["chats"], self.normal["chat_id"], {})
         ui.floating.render(rows)
         ui.floating.show()
-        self.tk.update_idletasks()
+        self.tk.update()
         floating = ui.floating
         bottom = floating.window.winfo_rooty() + floating.window.winfo_height()
         for widget in (floating.prepare_button, floating.snooze_button, floating.row_widgets[3]):

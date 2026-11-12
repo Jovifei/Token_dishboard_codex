@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-11-12T17:15:28.839185+00:00",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "suite": "test_ui_billing",
+  "tests": 31,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "success": true,
+  "program_hashes_identical_to_full_run": true,
+  "changed_fixture": "Set Tk scaling before creating widgets and restore it at teardown.",
+  "failure_details": []
+}
