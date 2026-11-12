@@ -11,7 +11,7 @@ import unittest
 
 from billing import short_number
 from test_billing import request
-from ui_billing import BillingPanel, DailyChart, PriceEditor, TEAL
+from ui_billing import BillingPanel, DailyChart, PriceEditor, PERIODS, TEAL
 
 
 class UsageStatisticsUiTests(unittest.TestCase):
@@ -68,6 +68,72 @@ class UsageStatisticsUiTests(unittest.TestCase):
                     self.assertEqual(self.panel.chart.metric,metric)
                     self.assertEqual(self.panel.metric_choice.get(),metric)
 
+    def test_period_menu_keeps_choices_callbacks_and_keyboard(self):
+        self.root.deiconify();self.root.update()
+        menu=self.panel.period_menu
+        self.assertEqual(tuple(menu.entrycget(i,'label') for i in range(len(PERIODS))),PERIODS)
+        for index,period in enumerate(PERIODS):
+            with self.subTest(period=period):
+                menu.invoke(index);self.root.update()
+                self.assertEqual(self.panel.period.get(),period)
+                self.assertEqual(str(self.panel.period_button.cget('textvariable')),str(self.panel.period))
+                self.assertEqual(self.panel.chart.period,'heatmap' if period=='全部' else
+                                 'hour' if period in ('今天','近 24 小时') else 'day')
+        self.assertTrue(self.panel.advanced_visible)
+        self.assertTrue(self.panel.start_entry.instate(['!readonly','!disabled']))
+        self.panel.period_button.focus_force();self.root.update()
+        self.assertEqual(self.root.focus_get(),self.panel.period_button)
+        self.assertIn('ttk::menubutton::Popdown',
+                      self.panel.period_button.bind_class('TMenubutton','<Key-space>'))
+
+    def test_more_metrics_fold_and_show_sample_coverage(self):
+        panel=self.panel
+        self.assertFalse(panel.more_metrics_visible)
+        self.assertFalse(panel.more_metrics.winfo_manager())
+        panel.more_button.invoke()
+        self.assertTrue(panel.more_metrics_visible)
+        self.assertEqual(panel.more_metrics.winfo_manager(),'pack')
+        unknown=replace(self.recent,response_id='unknown-cache',cache_known=False)
+        missing=replace(self.recent,response_id='missing-usage',usage=None,cache_known=False)
+        panel.set_result({'requests':[self.recent,unknown,missing],'issues':{}})
+        displayed={k:(value.cget('text'),note.cget('text'))
+                   for k,(value,note) in panel.more_metric_values.items()}
+        self.assertEqual(displayed['new_input'],('1K','按已记录拆分，写入缺失可能计入输入 · 部分 1/3 条缓存读取可用'))
+        self.assertEqual(displayed['cache_read'],('8K','部分 1/3'))
+        self.assertEqual(displayed['output'],('2K','部分 2/3'))
+        self.assertEqual(displayed['cache_write'],('至少 2,000','可能缺失 · 部分 2/3 条用量可读'))
+        panel.set_result({'requests':[missing],'issues':{}})
+        for value,note in panel.more_metric_values.values():
+            self.assertEqual((value.cget('text'),note.cget('text')),('—','无可用样本 · 0/1'))
+        zero=request(response_id='zero',time=(self.now-timedelta(seconds=2)).isoformat(),
+                     usage={'input_tokens':0,'cached_input_tokens':0,'cache_write_input_tokens':0,
+                            'output_tokens':0,'total_tokens':0})
+        panel.set_result({'requests':[zero],'issues':{}})
+        for key,(value,note) in panel.more_metric_values.items():
+            self.assertEqual(value.cget('text'),'至少 0' if key=='cache_write' else '0')
+            self.assertIn('1/1',note.cget('text'))
+            if key=='new_input':self.assertIn('写入缺失可能计入输入',note.cget('text'))
+            if key=='cache_write':self.assertIn('条用量可读',note.cget('text'))
+        exact=request(response_id='exact-lower-bound',time=(self.now-timedelta(seconds=2)).isoformat(),
+                      usage={'input_tokens':10006,'cached_input_tokens':8000,'cache_write_input_tokens':1006,
+                             'output_tokens':1000,'total_tokens':11006})
+        panel.set_result({'requests':[exact],'issues':{}})
+        self.assertEqual(panel.more_metric_values['cache_write'][0].cget('text'),'至少 1,006')
+        panel.more_button.invoke()
+        self.assertFalse(panel.more_metrics_visible)
+        self.assertFalse(panel.more_metrics.winfo_manager())
+
+    def test_more_metrics_reflow_inside_narrow_window(self):
+        self.root.deiconify();self.root.geometry('500x650');self.root.update()
+        self.panel.more_button.invoke();self.root.update()
+        area=self.panel.more_metrics
+        self.assertIn(self.panel._more_metric_columns,(1,2))
+        for card in self.panel.more_metric_cards:
+            self.assertTrue(card.winfo_ismapped())
+            self.assertGreater(card.winfo_width(),0)
+            self.assertGreaterEqual(card.winfo_rootx(),area.winfo_rootx())
+            self.assertLessEqual(card.winfo_rootx()+card.winfo_width(),area.winfo_rootx()+area.winfo_width())
+
     def test_small_cost_bar_has_flat_base_and_nonzero_axis_labels(self):
         self.root.deiconify();self.root.update()
         chart=DailyChart(self.root,lambda _:None)
@@ -83,12 +149,12 @@ class UsageStatisticsUiTests(unittest.TestCase):
 
     def test_metric_keyboard_focus_scrolls_into_a_short_window(self):
         self.root.deiconify();self.root.geometry('730x220');self.root.update()
-        button=self.panel.metric_buttons['tokens']
-        button.event_generate('<FocusIn>');self.root.update()
         canvas=self.panel.canvas
-        top=button.winfo_rooty()-canvas.winfo_rooty()
-        self.assertGreaterEqual(top,0)
-        self.assertLessEqual(top+button.winfo_height(),canvas.winfo_height())
+        for button in (self.panel.more_button,self.panel.metric_buttons['tokens']):
+            button.event_generate('<FocusIn>');self.root.update()
+            top=button.winfo_rooty()-canvas.winfo_rooty()
+            self.assertGreaterEqual(top,0)
+            self.assertLessEqual(top+button.winfo_height(),canvas.winfo_height())
 
     def test_request_columns_and_unknown_values(self):
         unknown=replace(request(response_id='unknown',time=(self.now-timedelta(seconds=6)).isoformat(),

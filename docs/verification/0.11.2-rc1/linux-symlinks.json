@@ -1,0 +1,12 @@
+{
+  "python": "3.14.7",
+  "platform": "Linux isolated container",
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "success": true,
+  "read_only_source_mount": true,
+  "network_disabled": true,
+  "does_not_verify_windows_reparse_points": true
+}

@@ -445,10 +445,15 @@ def summary(rows: list[Request], prices: dict, *, mode='estimate', quote_cache=N
     statuses = [r.status for r in rows if r.status != 'unknown']
     speed = [r.tokens_per_second for r in rows if r.tokens_per_second is not None]
     ttft = [r.ttft_ms for r in rows if r.ttft_ms is not None]
+    # Missing cache-write fields normalize to zero, so their sum is a lower bound.
     return {'requests': len(rows), 'cost': sum(known, Decimal(0)) if known else None,
             'priced': len(known), 'unpriced': len(rows)-len(known),
             'tokens': sum(u['totalTokens'] for u in usages) if usages else None,
             'input': total_input, 'cached': cached, 'usage_known': len(usages),
+            'new_input': sum(u['inputTokens'] for u in cache_usages) if cache_usages else None,
+            'output': sum(u['outputTokens'] for u in usages) if usages else None,
+            'cache_write': sum(u['cacheCreationTokens'] for u in usages) if usages else None,
+            'cache_read': cached if cache_usages else None,
             'cache_hit': 100*cached/total_input if total_input else None, 'cache_known': len(cache_usages),
             'success': 100*statuses.count('success')/len(statuses) if statuses else None,
             'status_known': len(statuses), 'speed': sum(speed)/len(speed) if speed else None,

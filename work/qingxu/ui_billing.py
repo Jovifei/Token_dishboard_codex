@@ -267,13 +267,19 @@ class BillingPanel(ttk.Frame):
         selectors.pack(fill='x')
         selector_controls=[]
         for var,values,width in ((self.scope,('全部项目','当前项目','当前会话'),9),
-                         (self.provider,('全部供应商',),12),(self.model,('全部模型',),16),
-                         (self.period,PERIODS,10)):
+                         (self.provider,('全部供应商',),12),(self.model,('全部模型',),16)):
             box=ttk.Combobox(selectors,textvariable=var,values=values,width=width,state='readonly')
             selector_controls.append(box)
             box.bind('<<ComboboxSelected>>',lambda e,v=var:self.changed(v))
             if var is self.provider:self.provider_box=box
             if var is self.model:self.model_box=box
+        self.period_button=ttk.Menubutton(selectors,textvariable=self.period,direction='below',takefocus=True,width=10)
+        self.period_menu=tk.Menu(self.period_button,tearoff=False)
+        self.period_button.configure(menu=self.period_menu)
+        for period in PERIODS:
+            self.period_menu.add_radiobutton(label=period,variable=self.period,value=period,
+                                             command=lambda:self.changed(self.period))
+        selector_controls.append(self.period_button)
         self.refresh_button=ttk.Button(selectors,text='同步用量',width=8,command=self.refresh,style='Primary.TButton')
         selector_controls.append(self.refresh_button)
         self.advanced_button=ttk.Button(selectors,text='筛选设置',command=self.toggle_advanced)
@@ -350,8 +356,29 @@ class BillingPanel(ttk.Frame):
                     w.configure(cursor='hand2')
             self.kpis[key]=(title,value,note,bar)
         cards.bind('<Configure>',self._layout_kpis)
+        self.more_button=ttk.Button(hero,text='更多指标 ▾',command=self.toggle_more_metrics)
+        self.more_button.pack(anchor='e',pady=(0,4))
+        self.more_button.bind('<FocusIn>',self._show_body_focus,add='+')
+        self.more_metrics=ttk.Frame(hero,style='App.TFrame')
+        self.more_metrics_visible=False
+        self.more_metric_cards=[]
+        self.more_metric_values={}
+        self._more_metric_columns=None
+        for index,(key,caption) in enumerate((('new_input','新增输入'),('output','输出'),
+                                               ('cache_write','缓存写入'),('cache_read','缓存命中（读取）'))):
+            card=ttk.Frame(self.more_metrics,style='Card.TFrame',padding=(10,7))
+            card.grid(row=0,column=index,sticky='nsew',padx=(0,8),pady=(0,8))
+            ttk.Label(card,text=caption,style='CardMuted.TLabel').pack(anchor='w')
+            value=ttk.Label(card,text='—',style='Card.TLabel',font=(getattr(self.app,'font_family','TkDefaultFont'),15,'bold'))
+            value.pack(anchor='w',pady=(4,2))
+            note=ttk.Label(card,text='无可用样本',style='CardMuted.TLabel',wraplength=140,justify='left')
+            note.pack(anchor='w')
+            self.more_metric_cards.append(card)
+            self.more_metric_values[key]=(value,note)
+        self.more_metrics.bind('<Configure>',self._layout_more_metrics)
         chart_card=RoundedCard(hero,padding=(12,10))
         chart_card.pack(fill='x',pady=(4,0))
+        self.chart_card=chart_card
         chart_header=ttk.Frame(chart_card.content,style='Card.TFrame')
         chart_header.pack(fill='x')
         self.chart_title=ttk.Label(chart_header,text='使用趋势 · 近 7 天',style='Card.TLabel')
@@ -437,6 +464,23 @@ class BillingPanel(ttk.Frame):
         self.advanced_visible=visible
         if visible:self.extra_filters.pack(fill='x',pady=(5,0))
         else:self.extra_filters.pack_forget()
+
+    def toggle_more_metrics(self):
+        self.more_metrics_visible=not self.more_metrics_visible
+        self.more_button.configure(text='收起指标 ▴' if self.more_metrics_visible else '更多指标 ▾')
+        if self.more_metrics_visible:self.more_metrics.pack(fill='x',before=self.chart_card)
+        else:self.more_metrics.pack_forget()
+
+    def _layout_more_metrics(self,event):
+        required=max((card.winfo_reqwidth()+8 for card in self.more_metric_cards),default=140)
+        columns=4 if event.width>=required*4 else 2 if event.width>=required*2 else 1
+        if columns==self._more_metric_columns:return
+        self._more_metric_columns=columns
+        for col in range(4):
+            self.more_metrics.columnconfigure(col,weight=1 if col<columns else 0,
+                                              uniform='more' if col<columns else '')
+        for index,card in enumerate(self.more_metric_cards):
+            card.grid_configure(row=index//columns,column=index%columns)
 
     def _layout_filters(self,event,controls):
         frame=event.widget
@@ -717,6 +761,19 @@ class BillingPanel(ttk.Frame):
                'cache_hit':f"缓存读取 / 已知输入 · {s['cache_known']}条"}
         for key,(_,value,note,_) in self.kpis.items():
             value.configure(text=amounts[key]); note.configure(text=notes[key])
+        total=s['requests']
+        for key,(value,note) in self.more_metric_values.items():
+            count=s['cache_known'] if key in ('new_input','cache_read') else s['usage_known']
+            amount=s.get(key)
+            value.configure(text=('至少 '+f'{amount:,}' if key=='cache_write' and count and amount is not None
+                                  else short_number(amount) if count else '—'))
+            coverage=(f'无可用样本 · 0/{total}' if not count else
+                      (f'部分 {count}/{total}' if count<total else f'{count}/{total} 条已知'))
+            if key=='new_input' and count:
+                coverage='按已记录拆分，写入缺失可能计入输入 · '+('部分 ' if count<total else '')+f'{count}/{total} 条缓存读取可用'
+            if key=='cache_write' and count:
+                coverage='可能缺失 · '+('部分 ' if count<total else '')+f'{count}/{total} 条用量可读'
+            note.configure(text=coverage)
 
     def select_metric(self,key):
         self.metric=key

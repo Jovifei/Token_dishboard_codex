@@ -121,6 +121,29 @@ class BillingMathTests(unittest.TestCase):
         self.assertFalse(r.cache_known)
         self.assertIsNone(summary([r],self.prices)['cache_hit'])
         self.assertIn('缓存拆分缺失',quote(r,self.prices).notes[0])
+
+    def test_usage_component_totals_distinguish_unknown_zero_and_partial(self):
+        known=request()
+        unknown=request(response_id='unknown',usage=dict(input_tokens=100,output_tokens=50,total_tokens=150))
+        unknown_write=request(response_id='unknown-write',usage=dict(input_tokens=100,cache_write_input_tokens=30,output_tokens=50,total_tokens=150))
+        missing=request(response_id='missing',usage=None)
+        zero=request(response_id='zero',usage=dict(input_tokens=0,cached_input_tokens=0,output_tokens=0,total_tokens=0))
+        self.assertFalse(unknown_write.cache_known)
+        self.assertEqual(unknown_write.usage['cacheCreationTokens'],30)
+        cases=(('empty',[],(None,None,None,None),(0,0)),
+               ('missing',[missing],(None,None,None,None),(0,0)),
+               ('unknown cache',[unknown],(None,50,0,None),(1,0)),
+               ('unknown cache with writes',[unknown_write],(None,50,30,None),(1,0)),
+               ('known zero',[zero],(0,0,0,0),(1,1)),
+               ('known split',[known],(1000,1000,1000,8000),(1,1)),
+               ('mixed',[known,unknown_write,missing,zero],(1000,1050,1030,8000),(3,2)))
+        for name,rows,expected,coverage in cases:
+            with self.subTest(name=name):
+                result=summary(rows,self.prices)
+                self.assertEqual(tuple(result[k] for k in ('new_input','output','cache_write','cache_read')),expected)
+                self.assertEqual((result['usage_known'],result['cache_known']),coverage)
+        mixed=summary([known,unknown_write,missing,zero],self.prices)
+        self.assertEqual((mixed['input'],mixed['cached'],mixed['cache_hit']),(10000,8000,80.0))
     def test_no_status_or_timings_inferred(self):
         s=summary([request()],self.prices)
         self.assertIsNone(s['success']);self.assertIsNone(s['speed']);self.assertIsNone(s['ttft'])
