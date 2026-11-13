@@ -13,8 +13,7 @@ from ui_brand import BrandMark, set_window_icon
 from ui_motion import attach_motion_tree, reduced_motion, set_reduced_motion
 
 
-BG, CARD, INK, MUTED = "#f5f5f7", "#ffffff", "#1d1d1f", "#6e6e73"
-BLUE, GREEN, AMBER, RED = "#007aff", "#248a3d", "#b66a00", "#d70015"
+from ui_quiet import CANVAS as BG, SURFACE as CARD, INK, MUTED, BLUE, GREEN, AMBER, RED
 STATE_LABELS = {
     "ready": "可以继续", "approaching": "准备交接", "reached": "建议先交接",
     "stale": "最后已知值", "unknown": "等待数据", "compacted": "等待新测量",
@@ -25,6 +24,8 @@ STATE_COLORS = {"ready": GREEN, "approaching": AMBER, "reached": RED,
 
 
 def _styles(root, family):
+    if getattr(root, "_qingxu_quiet", False):
+        return
     style = ttk.Style(root)
     style.configure("MonitorLink.TButton", background=CARD, padding=(0, 1), anchor="w",
                     font=(family, 10), relief="flat")
@@ -163,7 +164,7 @@ class UsagePanel(ttk.Frame):
         _styles(app.root, family)
         self.tabs = ttk.Notebook(self, style="Line.TNotebook")
         self.tabs.pack(fill="both", expand=True)
-        overview = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 8, 0, 0))
+        overview = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 10, 0, 0))
         billing = billing_parent if billing_parent is not None else ttk.Frame(self.tabs, style="App.TFrame")
         detail = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 8, 0, 0))
         snapshot = ttk.Frame(self.tabs, style="App.TFrame", padding=(0, 8, 0, 0))
@@ -183,7 +184,7 @@ class UsagePanel(ttk.Frame):
         self.overview_columns = ttk.Frame(body, style="App.TFrame")
         self.overview_columns.pack(fill="x")
         self._overview_wide = None
-        self.hero = hero = ttk.Frame(self.overview_columns, style="Card.TFrame", padding=(14, 12))
+        self.hero = hero = ttk.Frame(self.overview_columns, style="Panel.TFrame", padding=(22, 22))
         top = ttk.Frame(hero, style="Card.TFrame")
         top.pack(fill="x")
         self.hero_title = tk.StringVar(value="选择一次聊天，了解当前余量")
@@ -192,19 +193,19 @@ class UsagePanel(ttk.Frame):
         self.hero_title_label = ttk.Label(top, textvariable=self.hero_title, style="Card.TLabel", justify="left")
         self.hero_title_label.pack(side="left", fill="x", expand=True)
         number_row = ttk.Frame(hero, style="Card.TFrame")
-        number_row.pack(fill="x", pady=(5, 1))
+        number_row.pack(fill="x", pady=(18, 10))
         self.hero_percent = ttk.Label(number_row, text="—", style="Card.TLabel",
-                                      font=(family, 21, "bold"))
+                                      font=(family, 36 if getattr(app.root, "_qingxu_quiet", False) else 21, "bold"))
         self.hero_percent.pack(side="left")
         self.hero_amount = tk.StringVar(value="尚无可用测量")
         self.hero_amount_label = ttk.Label(number_row, textvariable=self.hero_amount,
                                            style="CardMuted.TLabel", justify="left")
         self.hero_amount_label.pack(side="left", padx=(12, 0), anchor="s", pady=(0, 4))
-        self.hero_line = ProgressLine(hero, height=15)
+        self.hero_line = ProgressLine(hero, height=22)
         self.hero_line.pack(fill="x")
         self.actions = ttk.Frame(hero, style="Card.TFrame")
-        self.actions.pack(fill="x", pady=(7, 5))
-        self.prepare_button = ttk.Button(self.actions, text="准备交接", style="Primary.TButton",
+        self.actions.pack(fill="x", pady=(18, 14))
+        self.prepare_button = ttk.Button(self.actions, text="整理并接续", style="Primary.TButton",
                                          command=self._prepare, state="disabled")
         self.floating_button = ttk.Button(self.actions, text="打开悬浮窗", style="Outline.TButton",
                                           command=self._open_floating)
@@ -225,10 +226,10 @@ class UsagePanel(ttk.Frame):
             label.pack(anchor="w", pady=(2, 0))
             self.hero_labels.append(label)
         hero.bind("<Configure>", self._wrap_hero)
-        self.recent_section = ttk.Frame(self.overview_columns, style="Card.TFrame", padding=(14, 12))
+        self.recent_section = ttk.Frame(self.overview_columns, style="Panel.TFrame", padding=(20, 10))
         recent_header = ttk.Frame(self.recent_section, style="Card.TFrame")
-        recent_header.pack(fill="x", pady=(0, 3))
-        ttk.Label(recent_header, text="最近活动", style="CardTitle.TLabel").pack(side="left")
+        recent_header.pack(fill="x", pady=(0, 8))
+        ttk.Label(recent_header, text="其他会话", style="CardTitle.TLabel").pack(side="left")
         ttk.Label(recent_header, text="最近 4 条", style="CardMuted.TLabel").pack(side="right")
         self.recent_frame = ttk.Frame(self.recent_section, style="Card.TFrame")
         self.recent_frame.pack(fill="x")
@@ -266,13 +267,13 @@ class UsagePanel(ttk.Frame):
     def _layout_overview(self, event=None):
         width = event.width if event is not None else self.overview_body.winfo_width()
         scaling = float(self.tk.call("tk", "scaling"))
-        wide = width >= max(780, round(520 * scaling))
+        wide = width >= max(860, round(570 * scaling))
         self.overview_note.configure(wraplength=max(240, width - 12))
         if wide == self._overview_wide:
             return
         self._overview_wide = wide
         columns = self.overview_columns
-        columns.columnconfigure(0, weight=11 if wide else 1, uniform="overview" if wide else "")
+        columns.columnconfigure(0, weight=13 if wide else 1, uniform="overview" if wide else "")
         columns.columnconfigure(1, weight=9 if wide else 0, uniform="overview" if wide else "")
         self.hero.grid(row=0, column=0, sticky="new", padx=(0, 8) if wide else 0,
                        pady=0 if wide else (0, 8))
@@ -293,14 +294,14 @@ class UsagePanel(ttk.Frame):
             button.grid(row=index // columns, column=index % columns, sticky="w", padx=(0, 6), pady=(0, 4))
 
     def _wrap_hero(self, event):
-        available = max(180, event.width - 28)
+        available = max(120, event.width - 82)
         for label in self.hero_labels:
             label.configure(wraplength=available)
         self.hero_title_label.configure(wraplength=max(130, available - self.hero_status.winfo_reqwidth() - 12))
         self.hero_amount_label.configure(wraplength=max(110, available - self.hero_percent.winfo_reqwidth() - 12))
 
     def _wrap_recent(self, event):
-        width = max(180, event.width - 20)
+        width = max(120, event.width - 82)
         self.empty.configure(wraplength=width)
         for widget in self.recent_rows:
             widget.note.configure(wraplength=width)
@@ -455,7 +456,7 @@ class FloatingMonitor:
         top = ttk.Frame(self.normal, style="App.TFrame")
         top.pack(fill="x")
         BrandMark(top, size=28, background=BG).pack(side="left", padx=(0, 8))
-        ttk.Label(top, text="轻续 · 上下文", style="FloatingTitle.TLabel").pack(side="left")
+        ttk.Label(top, text="会话余量", style="Section.TLabel").pack(side="left")
         ttk.Button(top, text="隐藏", width=4, command=self.close,
                    style="Mini.Monitor.TButton").pack(side="right", padx=(5, 0))
         ttk.Button(top, text="收起", width=4, command=self.toggle_compact,
@@ -480,7 +481,7 @@ class FloatingMonitor:
         actions = ttk.Frame(self.normal, style="App.TFrame")
         # Reserve the action area before the expanding list takes its space.
         actions.pack(side="bottom", fill="x", before=self.feedback_label)
-        self.prepare_button = ttk.Button(actions, text="准备交接", style="Primary.TButton", command=self._prepare)
+        self.prepare_button = ttk.Button(actions, text="整理并接续", style="Primary.TButton", command=self._prepare)
         self.prepare_button.pack(side="left")
         self.snooze_button = ttk.Button(actions, text="稍后 10 分钟", command=self._snooze)
         self.snooze_button.pack(side="right")

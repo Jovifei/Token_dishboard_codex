@@ -2,11 +2,13 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前版本** 0.11.3-rc1 · 四页重排、分钟级时间筛选、统计首屏请求日志。
+**当前源码候选** 0.12.0-ui-rc1 · Quiet UI 全页面重排、统一原生控件、无凹陷点击反馈。
 
-**本轮 Windows x64 便携包** 已由本源码构建，安装说明见 `install/README.md`。
+[新版界面、交互规则与验收截图](docs/design/quiet/README.md)
 
-左侧「用量统计」汇总本机请求。可运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [界面验收](docs/verification/0.11.3-rc1/README.md)
+**Windows 安装包仍为此前版本。** 此 UI 候选尚未生成新的 Windows EXE；请先用源码或演示入口验证，不要把旧安装包当作新版。
+
+左侧「用量与费用」汇总本机请求。可运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [界面验收](docs/verification/0.11.3-rc1/README.md)
 
 本地 Token 成本估算与来源报告金额分开；不等于订阅或供应商实际账单。
 
@@ -14,14 +16,14 @@
 
 [Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.3-rc1-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.3-rc1/README.md)
 
-![用量概览的合成数据示例，来自 UI2 Linux Tk](docs/design/apple-ui-v2/screens-ui2/01-usage.png)
+![Quiet UI 实际 Tk 截图，合成数据](docs/design/quiet/screens/01-statistics.png)
 
 ## 快速开始
 
-1. 下载便携 ZIP 并完整解压，运行 `轻续.exe`。在 GitHub 文件页面可用 **Download raw file**。
-2. 正常启动会列出本机 Codex 项目和聊天。使用自定义数据位置时，可在「设置 → 目录与提醒」调整。无知识库时可以直接接续。
-3. 在顶部选择项目和聊天。「用量概览」显示最近请求参考、来源和四条最近活动。按需打开悬浮窗。
-4. 在「用量统计」同步本机记录，选择时间和范围；「全部」显示逐日热力图，其他时间使用柱状图。
+1. 当前 UI 候选先下载本分支源码并完整解压，运行 `Preview-Billing.cmd` 或 `Start-Qingxu.cmd`。下方 `install/` 链接是旧版便携 EXE，尚不包含本轮 UI。
+2. 正常启动会列出本机 Codex 项目和聊天。使用自定义数据位置时，可在「偏好设置 → 目录与提醒」调整。无知识库时可以直接接续。
+3. 在顶部选择项目和聊天。「当前会话」显示最近请求参考、来源和四条最近活动。按需打开悬浮窗。
+4. 在「用量与费用」同步本机记录，选择时间和范围；「全部」显示逐日热力图，其他时间使用柱状图。
 5. 在「会话接续」把旧聊指令发给所选会话，粘贴或导入摘要。默认可直接复制带摘要的指令，发送给同项目的新聊。需要留档或用文件引用时，保存为 Markdown。
 6. 在「Codex 配置」确认目标文件并选择数值方案，再调整压缩、输出及主/子 Agent。勾选后先预览，再备份并应用。轻续提醒与 Codex 自动压缩参数分别保存。
 

@@ -1,0 +1,25 @@
+{
+  "baseline": "f26dddbf027a64732e8ce98bf1f6ecc8daf3752f",
+  "files": {
+    "work/qingxu/ui_quiet.py": "1c67047ddac4064db4070c46858553ea66eb70aa73a3178da7904f20a577c739",
+    "work/qingxu/test_ui_quiet.py": "e92f098c56fc9d29357a50199b4e76e3208818e6dcd447b655372ee81c79226a",
+    "tools/capture-quiet.py": "bae090e8e15b98a0ac6c69ef81c81ee38cb46ab48b71c203d70b54ac978c4fb7",
+    "README.md": "0cf9412f548692af9ec5a35c830ff1dc8e2f46dcb3335594ad7987d7707152c0",
+    "START-HERE.md": "0cff89dcd9a6f7dd7a00762ca5957baf550e0f08783f72d409759836dd9e55ba",
+    "docs/ENGINEERING-HANDOFF.md": "af2066e29889e543449a171af5366da1324c32d073ceab00cfb0851c8063050d",
+    "tools/run-windows-tests.py": "d354141ae5e2c8ea727af5175454b1838ef3f23fe7f0d89c752f042f1f44e298",
+    "work/qingxu/DESIGN-BRIEF.md": "a9d64a9f4a808c225e2c1b6f9758f670c8e843904429171f9604fa587e390b03",
+    "work/qingxu/app.py": "9769165976977ec395b4f26cf3bb68fc371489bad9d19874d8900ac525e057f7",
+    "work/qingxu/test_workbench_gui.py": "361be563607da58a138aecd7558882a637acdc37cecc711df1c3b34b9b1aafd9",
+    "work/qingxu/ui_billing.py": "5720b47d158314c80c7f2eba4720da673ea6857e5c31a431ed649f30f6c47b9b",
+    "work/qingxu/ui_handoff.py": "3c389b04880c35dd577ec6f3552dfe7896704bb566b9a734ecc38807727682cf",
+    "work/qingxu/ui_monitor.py": "7e6989a621c1c9ba4465da99a4c7ad2c7c0aab3cd020658ed6dcff754d83b474",
+    "work/qingxu/ui_motion.py": "c952a6a2ef641eb1f4e8929a03290566334f96ca882e4f68209bb79fa69f25c8",
+    "work/qingxu/ui_preferences.py": "8a87e25d7ff5cd5ff05476594734249ac0ef4bbe977cc01a1e8b8c54cdbd4674",
+    "work/qingxu/workbench.py": "c4dbf2c715b7cb4b2a2593c43b7153715a57cf0eb5eb55d9cdc0c6ca1a82ce20",
+    "docs/design/quiet/README.md": "976753b3aa53d26afb1f5d4ec6a8cbfe554d2a2ea14eaf2e51c70959e9f9ce64",
+    "docs/verification/0.12.0-ui-rc1/README.md": "c2e35c7dfca57c2248bef3e5e62976cfefc45031984a5bfb6b3350ccd03f55fb",
+    "docs/verification/0.12.0-ui-rc1/linux-baseline.json": "6a9753abdd1195e2d430231cada7b7559c8444f29b4f06a393c0f05bf1ac52ef",
+    "docs/verification/0.12.0-ui-rc1/linux-local-tests.json": "3028530f9c98bca770ca7e760b7ea4250d0b175dd5e8ff383e13978abbac7955"
+  }
+}

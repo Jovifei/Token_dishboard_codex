@@ -124,7 +124,7 @@ class PreferencesPanel(ttk.Frame):
         style.configure("Preferences.TCheckbutton", background=WHITE, foreground=TEXT)
         style.map("Preferences.TCheckbutton", background=[("active", WHITE)])
 
-        footer = ttk.Frame(self, style="Card.TFrame", padding=(8, 6))
+        footer = ttk.Frame(self, style="Panel.TFrame", padding=(16, 12))
         footer.pack(side="bottom", fill="x")
         self.save_button = ttk.Button(
             footer, text="保存设置", style="Primary.TButton", command=self.save)
@@ -228,8 +228,8 @@ class PreferencesPanel(ttk.Frame):
 
     def _card(self, title, description, *, parent=None):
         card = ttk.Frame(parent if parent is not None else self.content,
-                         style="Card.TFrame", padding=(9, 8))
-        card.pack(fill="x", pady=(0, 7))
+                         style="Panel.TFrame", padding=(18, 16))
+        card.pack(fill="x", pady=(0, 14))
         ttk.Label(card, text=title, style="Heading.TLabel",
                   background=WHITE).pack(anchor="w")
         intro = self._description(card, description)

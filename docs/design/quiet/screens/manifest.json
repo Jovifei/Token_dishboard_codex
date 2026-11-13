@@ -1,0 +1,72 @@
+{
+  "synthetic": true,
+  "platform": "Linux Tk / Xvfb; not Windows DPI acceptance",
+  "screens": [
+    {
+      "file": "01-statistics.png",
+      "width": 1320,
+      "height": 880,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "02-context.png",
+      "width": 1320,
+      "height": 880,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "03-handoff.png",
+      "width": 1320,
+      "height": 880,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "04-summary.png",
+      "width": 1320,
+      "height": 880,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "05-settings.png",
+      "width": 1320,
+      "height": 880,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "06-floating.png",
+      "width": 370,
+      "height": 497,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "07-compact.png",
+      "width": 120,
+      "height": 97,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "08-narrow-statistics.png",
+      "width": 980,
+      "height": 680,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "09-narrow-handoff.png",
+      "width": 980,
+      "height": 680,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "10-template-dialog.png",
+      "width": 800,
+      "height": 580,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    },
+    {
+      "file": "11-interaction-states.png",
+      "width": 1020,
+      "height": 420,
+      "source": "actual Tk screenshot; isolated synthetic data"
+    }
+  ]
+}

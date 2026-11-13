@@ -8,4 +8,4 @@ Direction: calm Apple-inspired desktop utility; a coherent navigation hierarchy,
 
 Implementation scope: rebuild actual Tk layout and control appearance, not an HTML-only visual mock. Preserve data semantics and native file dialogs. Verification must include ordinary/hover/pressed/focus/disabled states, rapid navigation, narrow layout, and the current full regression suite. Screenshots use isolated synthetic data; Windows runtime acceptance is separate.
 
-This initial commit records the brief only. Final implementation and evidence follow on this branch; do not merge based solely on this file.
+Implementation: 0.12.0-ui-rc1. See docs/design/quiet/README.md and docs/verification/0.12.0-ui-rc1/ for actual Tk screenshots, control-state contracts, code mapping and verification boundaries. Windows release acceptance remains separate.

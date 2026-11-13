@@ -20,8 +20,8 @@ from ui_brand import set_window_icon
 from ui_controls import ChoiceButton, DropButton, install_controls
 from ui_date_range import DateRangeButton, custom_bounds
 
-BG, CARD, INK, MUTED, BLUE = '#F5F5F7', '#FFFFFF', '#1D1D1F', '#6E6E73', '#007AFF'
-TEAL, LINE, ORANGE = '#0895B3', '#E4E7ED', '#A26010'
+from ui_quiet import CANVAS as BG, SURFACE as CARD, INK, MUTED, BLUE, LINE, AMBER as ORANGE
+TEAL = BLUE
 PERIODS = ('今天', '近 24 小时', '近 7 天', '近 30 天', '全部', '自定义')
 
 
@@ -42,9 +42,10 @@ class RoundedCard(tk.Canvas):
     def _draw(self,event):
         w,h=max(20,event.width),max(20,event.height)
         self.delete('border')
-        self.create_polygon(1,12,1,1,12,1,w-12,1,w-1,1,w-1,12,
-                            w-1,h-12,w-1,h-1,w-12,h-1,12,h-1,1,h-1,1,h-12,
-                            smooth=True,splinesteps=16,fill=CARD,outline=LINE,tags='border')
+        r=16
+        self.create_polygon(1,r,1,1,r,1,w-r,1,w-1,1,w-1,r,
+                            w-1,h-r,w-1,h-1,w-r,h-1,r,h-1,1,h-1,1,h-r,
+                            smooth=True,splinesteps=24,fill=CARD,outline=LINE,tags='border')
         self.tag_lower('border')
         self.itemconfigure(self._content_id,width=max(1,w-16))
 
@@ -75,9 +76,10 @@ class DailyChart(tk.Canvas):
         if self.period=='heatmap':
             self._heatmap()
             return
-        if int(float(self.cget('height'))) != 132:
-            self.configure(height=132)
-        w,h=max(360,self.winfo_width()),max(132,self.winfo_height())
+        target_height=104 if getattr(self,'compact',False) else 132
+        if int(float(self.cget('height'))) != target_height:
+            self.configure(height=target_height)
+        w,h=max(360,self.winfo_width()),max(target_height,self.winfo_height())
         left,right,top,bottom=56,w-16,12,h-26
         values=[float(r[self.metric]) if r[self.metric] is not None else None for _,r in self.rows]
         peak=max([v for v in values if v is not None]+[0.]) or 1.
@@ -267,18 +269,23 @@ class BillingPanel(ttk.Frame):
 
     def _build(self):
         install_controls(self)
-        header=ttk.Frame(self,style='Card.TFrame',padding=(8,3))
+        header=ttk.Frame(self,style='App.TFrame',padding=(0,0,0,18))
         self.header=header
         header.pack(fill='x')
-        ttk.Label(header,text='▥  用量统计',style='Card.TLabel',
-                  font=(getattr(self.app,'font_family','TkDefaultFont'),14,'bold')).pack(side='left')
-        self.refresh_button=ttk.Button(header,text='同步用量',command=self.refresh,style='Outline.TButton')
+        heading=ttk.Frame(header,style='App.TFrame')
+        heading.pack(side='left',fill='x',expand=True)
+        self.heading_title=ttk.Label(heading,text='用量与费用',style='Title.TLabel')
+        self.heading_title.pack(anchor='w')
+        self.heading_subtitle=ttk.Label(heading,text='每一次请求，都有清楚的来处。',style='Muted.TLabel')
+        self.heading_subtitle.pack(anchor='w',pady=(4,0))
+        self.refresh_button=ttk.Button(header,text='同步用量',command=self.refresh,style='Primary.TButton')
         self.refresh_button.pack(side='right',padx=(6,0))
         self.diagnostics_button=ttk.Button(header,text='数据来源',command=self.show_diagnostics,style='Ghost.TButton')
         self.diagnostics_button.pack(side='right')
         self.notice.trace_add('write',self._update_diagnostics_indicator)
-        ttk.Label(header,textvariable=self.sync_text,style='CardMuted.TLabel').pack(side='right',padx=8)
-        filters=ttk.Frame(self,padding=(2,3,2,3))
+        self.sync_label=ttk.Label(header,textvariable=self.sync_text,style='Muted.TLabel')
+        self.sync_label.pack(side='right',padx=8)
+        filters=ttk.Frame(self,padding=(0,0,0,12))
         filters.pack(fill='x')
         self.filters=filters
         self._filters_in_canvas=False
@@ -337,9 +344,9 @@ class BillingPanel(ttk.Frame):
         self.kpi_cards=[]
         self._kpi_layout=None
         self.kpis={}
-        labels=(('cost','总成本'),('requests','总请求数'),('tokens','消耗 Tokens'),('cache_hit','缓存命中率'))
+        labels=(('cost','估算成本'),('requests','总请求数'),('tokens','消耗 Tokens'),('cache_hit','缓存命中率'))
         for i,(key,caption) in enumerate(labels):
-            card=RoundedCard(cards,padding=(9,4))
+            card=RoundedCard(cards,padding=(14,14))
             card.grid(row=0,column=i,sticky='nsew',padx=(0,8),pady=(0,8))
             self.kpi_cards.append(card)
             cell=card.content
@@ -350,8 +357,8 @@ class BillingPanel(ttk.Frame):
             cards.columnconfigure(i,weight=1,uniform='kpi')
             title=ttk.Label(cell,text=caption,style='CardMuted.TLabel')
             title.pack(anchor='w')
-            value=ttk.Label(cell,text='—',style='Card.TLabel',font=(getattr(self.app,'font_family','TkDefaultFont'),16,'bold'))
-            value.pack(anchor='w',pady=(2,0))
+            value=ttk.Label(cell,text='—',style='Card.TLabel',font=(getattr(self.app,'font_family','TkDefaultFont'),25,'bold'))
+            value.pack(anchor='w',pady=(8,2))
             note=ttk.Label(cell,text='尚无数据',style='CardMuted.TLabel',wraplength=185)
             # Keep the semantic detail available without growing the default cards.
             bar=tk.Frame(cell,height=2,background=BLUE if key==self.metric else CARD)
@@ -383,8 +390,8 @@ class BillingPanel(ttk.Frame):
             self.more_metric_cards.append(card)
             self.more_metric_values[key]=(value,note)
         self.more_metrics.bind('<Configure>',self._layout_more_metrics)
-        chart_card=RoundedCard(hero,padding=(10,4))
-        chart_card.pack(fill='x',pady=(4,0))
+        chart_card=RoundedCard(hero,padding=(18,12))
+        chart_card.pack(fill='x',pady=(6,12))
         self.chart_card=chart_card
         chart_header=ttk.Frame(chart_card.content,style='Card.TFrame')
         chart_header.pack(fill='x')
@@ -421,7 +428,7 @@ class BillingPanel(ttk.Frame):
             self.tables.add(pane,text=self.labels[key])
             self.tab_frames[key]=pane
             cols=headings if key=='request' else tuple(columns.items())
-            tree=ttk.Treeview(pane,columns=[c for c,_ in cols],show='headings',height=12,selectmode='browse',style='Usage.Treeview')
+            tree=ttk.Treeview(pane,columns=[c for c,_ in cols],show='headings',height=9,selectmode='browse',style='Usage.Treeview')
             for col,(caption,width) in cols:
                 anchor='w' if col in ('name','time','model') else 'e'
                 tree.heading(col,text=caption,anchor=anchor,command=lambda k=key,c=col:self.sort_table(k,c))
@@ -436,11 +443,12 @@ class BillingPanel(ttk.Frame):
             tree.bind('<Double-1>',lambda _,k=key:self.drill(k))
             tree.bind('<Return>',lambda _,k=key:self.drill(k))
             self.trees[key]=tree
-        ttk.Style(self).configure('Usage.Treeview',rowheight=face.metrics('linespace')+8)
+        ttk.Style(self).configure('Usage.Treeview',rowheight=face.metrics('linespace')+16)
         self.tables.select(self.tab_frames['request'])
         self.tables.bind('<<NotebookTabChanged>>',self._table_changed,add='+')
-        footer=ttk.Frame(self.body)
-        footer.pack(fill='x',pady=(7,0))
+        footer=ttk.Frame(self,style='App.TFrame',padding=(0,8,0,0))
+        self.table_footer=footer
+        footer.pack(side='bottom',fill='x',before=self.viewport)
         ttk.Button(footer,text='导入请求…',command=self.import_requests).pack(side='left')
         ttk.Button(footer,text='导出当前范围 CSV…',command=self.export).pack(side='left',padx=6)
         ttk.Button(footer,text='重置筛选',command=self.reset).pack(side='left')
@@ -543,6 +551,7 @@ class BillingPanel(ttk.Frame):
     def _fit_filters(self,event):
         if event.widget not in (self,self.filters):
             return
+        self._fit_density()
         reserve=60 if self._filters_in_canvas else 32
         needs_scroll=self.winfo_height()<self.header.winfo_reqheight()+self.filters.winfo_reqheight()+reserve
         if needs_scroll==self._filters_in_canvas:
@@ -553,6 +562,35 @@ class BillingPanel(ttk.Frame):
         else:
             self.filters.pack(in_=self,fill='x',before=self.viewport)
         self._filters_in_canvas=needs_scroll
+
+    def _fit_density(self):
+        # Airy on a normal desktop, compact when height or DPI is constrained.
+        compact=self.winfo_width()<950 or self.winfo_height()<740
+        if getattr(self,'_quiet_compact',None)!=compact:
+            self._quiet_compact=compact
+            family=getattr(self.app,'font_family','TkDefaultFont')
+            self.heading_title.configure(font=(family,16 if compact else 23,'bold'))
+            self.header.configure(padding=(0,0,0,8 if compact else 18))
+            self.filters.configure(padding=(0,0,0,5 if compact else 12))
+            if compact:self.heading_subtitle.pack_forget()
+            else:self.heading_subtitle.pack(anchor='w',pady=(4,0))
+            self.sync_label.pack_forget()
+            if compact:self.sync_label.pack(side='bottom',anchor='w',pady=(4,0))
+            else:self.sync_label.pack(side='right',padx=8)
+            for card,(_,value,_,_) in zip(self.kpi_cards,self.kpis.values()):
+                card.content.configure(padding=(8,4) if compact else (14,14))
+                value.configure(font=(family,16 if compact else 25,'bold'))
+                value.pack_configure(pady=(2,0) if compact else (8,2))
+            self.chart_card.content.configure(padding=(10,4) if compact else (18,12))
+            self.chart.compact=compact
+            self.chart.draw()
+            self._kpi_layout=None
+        scroll_footer=self.winfo_height()<480
+        if getattr(self,'_footer_in_canvas',None)!=scroll_footer:
+            self._footer_in_canvas=scroll_footer
+            self.table_footer.pack_forget()
+            if scroll_footer:self.table_footer.pack(in_=self.body,fill='x',pady=(7,0))
+            else:self.table_footer.pack(in_=self,side='bottom',fill='x',before=self.viewport)
 
     def _show_filter_focus(self,event):
         if not self._filters_in_canvas:
@@ -794,7 +832,7 @@ class BillingPanel(ttk.Frame):
         return 'estimate' if self.cost_mode.get()=='当前价表估算' else 'reported'
 
     def _render_kpis(self,s):
-        self.kpis['cost'][0].configure(text=('部分估算' if s['unpriced'] else '总成本') if self.mode=='estimate' else '来源金额')
+        self.kpis['cost'][0].configure(text=('部分估算' if s['unpriced'] else '估算成本') if self.mode=='estimate' else '来源金额')
         amounts={'cost':money(s['cost']), 'requests':f"{s['requests']:,}", 'tokens':short_number(s['tokens']),
                  'cache_hit':'—' if s['cache_hit'] is None else f"{s['cache_hit']:.1f}%"}
         notes={'cost':f"{s['priced']:,}/{s['requests']:,} 条已计价" + (' · 部分' if s['unpriced'] else ''),

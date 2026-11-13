@@ -215,6 +215,9 @@ class _Motion:
 
 
 def attach_soft_motion(button):
+    if getattr(button._root(), '_qingxu_quiet', False):
+        from ui_quiet import attach_quiet_clicks
+        return attach_quiet_clicks(button)
     if isinstance(button, ttk.Button) and not hasattr(button, '_qingxu_motion'):
         style = button.cget('style')
         # These controls paint hover, press and focus with fixed-size images.
