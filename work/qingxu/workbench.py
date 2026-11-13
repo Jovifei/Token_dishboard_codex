@@ -28,8 +28,9 @@ from ui_monitor import UsagePanel, FloatingMonitor
 from ui_preferences import PreferencesPanel
 from ui_brand import BrandMark, set_window_icon
 from ui_controls import ChoiceButton, install_controls
+from ui_quiet import install_quiet, decorate_panels, CANVAS as BG, SURFACE, INK, MUTED as SECONDARY, BLUE, LINE as BORDER, SIDEBAR
 
-BG, SURFACE, INK, SECONDARY, BLUE, BORDER = "#FFFFFF", "#FFFFFF", "#191B20", "#565A65", "#176BC0", "#DFE1E7"
+
 
 
 def final_models(parsed, selection):
@@ -72,7 +73,7 @@ class Workbench(App):
         self.context_attention = False
         self.configure_theme()
         root.title(f"{TITLE} {VERSION}")
-        root.geometry("1240x840")
+        root.geometry("1320x880")
         root.minsize(980, 680)
         root.configure(bg=BG)
         icon = Path(__file__).with_name("qingxu.ico")
@@ -84,6 +85,7 @@ class Workbench(App):
         except tk.TclError:
             pass
         self.build_shell()
+        decorate_panels(self.root)
         self.floating = FloatingMonitor(self)
         self.root.report_callback_exception = self.callback_error
         self.root.protocol("WM_DELETE_WINDOW", self.close)
@@ -106,6 +108,8 @@ class Workbench(App):
         self.schedule_metrics()
 
     def configure_theme(self):
+        if getattr(self.root, "_qingxu_quiet", False):
+            return
         families = set(font.families(self.root))
         self.font_family = next((name for name in ("Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", "Noto Sans CJK JP", "DejaVu Sans") if name in families), "TkDefaultFont")
         for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont"):
@@ -144,50 +148,58 @@ class Workbench(App):
         style.configure("Alert.TLabel", background="#FFF4E4", foreground="#794705", padding=(9, 4))
         install_controls(self.root)
         self.configure_checks(style)
+        install_quiet(self.root, self.font_family)
 
     def build_shell(self):
         shell = ttk.Frame(self.root, style="App.TFrame")
         shell.pack(fill="both", expand=True)
-        side = ttk.Frame(shell, style="Side.TFrame", width=146, padding=(9, 12))
+        side = ttk.Frame(shell, style="Side.TFrame", width=202, padding=(14, 24))
         side.pack(side="left", fill="y")
         side.pack_propagate(False)
         self.sidebar = side
         tk.Frame(shell, background=BORDER, width=1).pack(side="left", fill="y")
         brand_row = ttk.Frame(side, style="Side.TFrame")
-        brand_row.pack(fill="x", padx=6, pady=(2, 15))
-        BrandMark(brand_row, size=23, background=SURFACE).pack(side="left", padx=(0, 7))
-        tk.Label(brand_row, text="轻续", bg=SURFACE, fg=INK,
-                 font=(self.font_family, 12, "bold"), anchor="w").pack(side="left")
+        brand_row.pack(fill="x", padx=4, pady=(0, 7))
+        BrandMark(brand_row, size=34, background=SIDEBAR).pack(side="left", padx=(0, 7))
+        tk.Label(brand_row, text="轻续", bg=SIDEBAR, fg=INK,
+                 font=(self.font_family, 17, "bold"), anchor="w").pack(side="left")
+        ttk.Label(side, text="QINGXU  /  本地工作台", style="SideSection.TLabel").pack(anchor="w", padx=5, pady=(0, 26))
+        ttk.Label(side, text="工作空间", style="SideSection.TLabel").pack(anchor="w", padx=9, pady=(0, 9))
         self.nav = {}
         self.today_cost = tk.StringVar(self.root, value="今日 —")
 
         def add_navigation(key, label, side_mode="top"):
             button = ttk.Button(side, text=label, style="Sidebar.Ghost.TButton",
                                 command=lambda k=key: self.show_page(k))
-            button.pack(side=side_mode, fill="x", pady=2)
+            button.pack(side=side_mode, fill="x", pady=4)
             self.nav[key] = button
 
-        for key, label in (("handoff", "会话接续"), ("usage", "用量概览"), ("statistics", "用量统计")):
+        for key, label in (("usage", "当前会话"), ("statistics", "用量与费用"), ("handoff", "会话接续")):
             add_navigation(key, label)
-        self.floating_button = ttk.Button(side, text="打开悬浮窗", style="Sidebar.Ghost.TButton",
+        self.floating_button = ttk.Button(side, text="打开悬浮监测", style="Outline.TButton",
                                           command=lambda: self.floating.show())
         self.floating_button.pack(side="bottom", fill="x", pady=2)
-        add_navigation("settings", "⚙ 设置", "bottom")
+        add_navigation("settings", "偏好设置", "bottom")
         ttk.Separator(side).pack(side="bottom", fill="x", pady=5)
-        self.today_label = tk.Label(side, textvariable=self.today_cost, bg=SURFACE, fg=SECONDARY,
-                                    font=(self.font_family, 9), anchor="w", justify="left", wraplength=122)
-        self.today_label.pack(side="bottom", fill="x", padx=6, pady=(0, 2))
+        self.today_label = tk.Label(side, textvariable=self.today_cost, bg=SIDEBAR, fg=SECONDARY,
+                                    font=(self.font_family, 9), anchor="w", justify="left", wraplength=160)
+        self.today_label.pack(side="bottom", fill="x", padx=9, pady=(8, 12))
+        ttk.Label(side, text=f"{VERSION} · 本地数据", style="SideSection.TLabel").pack(side="bottom", anchor="w", padx=9, pady=(0, 2))
         self.today_label.bind("<Button-1>", lambda _: self.show_page("statistics"))
-        main = ttk.Frame(shell, style="App.TFrame", padding=(14, 9, 14, 8))
+        main = ttk.Frame(shell, style="App.TFrame", padding=(24, 22, 22, 14))
         main.pack(side="left", fill="both", expand=True)
         self.titlebar = ttk.Frame(main)
-        self.titlebar.pack(fill="x", pady=(0, 6))
-        ttk.Label(self.titlebar, textvariable=self.page_title, style="Title.TLabel").pack(side="left")
+        self.titlebar.pack(fill="x", pady=(0, 18))
+        headings = ttk.Frame(self.titlebar, style="App.TFrame")
+        headings.pack(side="left", fill="x", expand=True)
+        ttk.Label(headings, textvariable=self.page_title, style="Title.TLabel").pack(anchor="w")
+        self.page_caption = tk.StringVar(self.root)
+        ttk.Label(headings, textvariable=self.page_caption, style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
         self.manual_project_button = self.button(self.titlebar, "选择项目目录…", self.choose_manual_project,
                                                  style="Outline.TButton", feedback=self.status)
         self.manual_project_button.pack(side="right")
-        self.picker = ttk.Frame(main, style="Card.TFrame", padding=(0, 3, 0, 5))
-        self.picker.pack(fill="x", pady=(0, 5))
+        self.picker = ttk.Frame(main, style="Panel.TFrame", padding=(16, 12))
+        self.picker.pack(fill="x", pady=(0, 16))
         self.source_kind = tk.StringVar(value="按项目选聊天")
         modes = ttk.Frame(self.picker, style="Card.TFrame")
         modes.grid(row=0, column=0, padx=(0, 12))
@@ -213,7 +225,7 @@ class Workbench(App):
         self._compact_picker = False
 
         def fit_picker(event):
-            wrap = max(250, event.width - 4)
+            wrap = max(160, event.width - 72)
             if int(float(detail.cget("wraplength"))) != wrap:
                 detail.configure(wraplength=wrap)
             controls = (modes, self.project_label, chat_label, refresh)
@@ -271,6 +283,8 @@ class Workbench(App):
         self.tabs.select(self.frames[index])
         self.page = key
         self.page_title.set(self.nav[key].cget("text").removeprefix("⚙ "))
+        captions = {"usage": "掌握上下文余量，适时整理，再轻松继续。", "handoff": "保留目标与断点，让下一次对话从这里出发。", "settings": "把目录、提醒和模型调整成你的工作方式。", "statistics": "看清消耗，把每一次请求放在同一口径下比较。"}
+        self.page_caption.set(captions[key])
         if key == "settings":
             self.picker_detail.grid_remove()
         else:
@@ -283,10 +297,10 @@ class Workbench(App):
             self.usage_panel.billing_panel.activate()
         else:
             if not self.titlebar.winfo_manager():
-                self.titlebar.pack(fill="x", pady=(0, 6), before=self.tabs)
+                self.titlebar.pack(fill="x", pady=(0, 18), before=self.tabs)
             if not self.picker.winfo_manager():
                 before = self.context_banner if self.context_banner.winfo_manager() else self.tabs
-                self.picker.pack(fill="x", pady=(0, 5), before=before)
+                self.picker.pack(fill="x", pady=(0, 16), before=before)
             if not self.manual_project_button.winfo_manager():
                 self.manual_project_button.pack(side="right")
             if not self.footer.winfo_manager():
@@ -309,7 +323,7 @@ class Workbench(App):
     def _fit_sidebar(self):
         required = 30 + max(self.floating_button.winfo_reqwidth(), self.today_label.winfo_reqwidth(),
                             *(button.winfo_reqwidth() for button in self.nav.values()))
-        self.sidebar.configure(width=max(146, required))
+        self.sidebar.configure(width=max(202, required))
 
     def _activate_cached_statistics(self):
         panel = self.usage_panel.billing_panel

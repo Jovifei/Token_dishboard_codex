@@ -1,3 +1,5 @@
+> 新 UI 候选 0.12.0-ui-rc1：基于 main@f26dddb，见 [Quiet UI 设计与接手](design/quiet/README.md) 与 [独立验证记录](verification/0.12.0-ui-rc1/README.md)。下方既有功能记录保留。
+
 # 轻续 Qingxu 工程交接
 
 本轮计费增量与验收入口：[BILLING-HANDOFF.md](BILLING-HANDOFF.md)。新增三个模块 billing.py / billing_index.py / ui_billing.py；不修改原接续及实际 Codex 配置。

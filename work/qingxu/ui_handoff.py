@@ -7,7 +7,7 @@ from handoff import (HandoffError, POLICY_LABELS, build_restore_prompt,
                      build_save_prompt, default_templates, project_key)
 from knowledge import project_folder
 
-BG = "#F5F5F7"
+BG = "#F4F6F9"
 BLUE = "#007AFF"
 INK = "#1D1D1F"
 MUTED = "#6E6E73"
@@ -76,7 +76,7 @@ class HandoffPanel(ttk.Frame):
         self.body.bind("<Configure>", lambda _: self.canvas.configure(
             scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", self._resize)
-        steps = ttk.Frame(self.body, style="Card.TFrame")
+        steps = ttk.Frame(self.body, style="App.TFrame")
         steps.pack(fill="x", pady=(0, 8))
         style = ttk.Style(self)
         style.configure("HandoffStep.TButton", background="white", foreground=MUTED,
@@ -88,6 +88,9 @@ class HandoffPanel(ttk.Frame):
                         font=(getattr(self.app, "font_family", "TkDefaultFont"), 10, "bold"))
         style.map("Selected.HandoffStep.TButton", background=[("active", "#F5F5F7")],
                   relief=[("pressed", "flat")])
+        if getattr(self.app.root, "_qingxu_quiet", False):
+            style.configure("HandoffStep.TButton", background=BG, padding=(12, 10))
+            style.configure("Selected.HandoffStep.TButton", background=BG, padding=(12, 10))
         self.step_buttons = []
         self.step_lines = []
         for i in range(3):
@@ -99,15 +102,17 @@ class HandoffPanel(ttk.Frame):
             self.step_buttons.append(button)
             line = tk.Frame(steps, background=BORDER, height=2)
             line.grid(row=1, column=i, sticky="ew")
+            if getattr(self.app.root, "_qingxu_quiet", False):
+                line.grid_remove()
             self.step_lines.append(line)
 
         self.pages = []
         for _ in range(3):
-            card = ttk.Frame(self.body, style="Card.TFrame", padding=(14, 10))
+            card = ttk.Frame(self.body, style="Panel.TFrame", padding=(22, 18))
             self.pages.append(card)
         # The shell already shows project identity and the page title. Keep
         # primary actions outside the scrollable body, visible at any height.
-        self.footer = ttk.Frame(self, style="Card.TFrame", padding=(14, 8, 14, 6))
+        self.footer = ttk.Frame(self, style="Panel.TFrame", padding=(18, 12, 18, 10))
         self.footer.grid(row=1, column=0, columnspan=2, sticky="ew")
         self.footer_pages = [ttk.Frame(self.footer, style="Card.TFrame") for _ in range(3)]
         self._build_old(self.pages[0])

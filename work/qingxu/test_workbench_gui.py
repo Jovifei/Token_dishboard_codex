@@ -48,7 +48,7 @@ class WorkbenchTests(unittest.TestCase):
             self.assertEqual(self.app.picker.winfo_manager(), "pack")
             self.assertEqual(self.app.manual_project_button.winfo_manager(), "pack")
         self.assertEqual(len(self.app.tabs.tabs()), 4)
-        self.assertEqual(tuple(self.app.nav), ("handoff", "usage", "statistics", "settings"))
+        self.assertEqual(tuple(self.app.nav), ("usage", "statistics", "handoff", "settings"))
         panel = self.app.usage_panel.billing_panel
         with patch.object(panel, "activate") as activate:
             self.app.show_page("statistics")
