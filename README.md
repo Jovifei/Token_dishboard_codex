@@ -2,11 +2,11 @@
 
 轻续是一个 Windows 本地工作台。它按项目和聊天呈现本机 Codex 的用量参考，提醒何时整理上下文，并把短交接保存为可在新会话读回的 Markdown。
 
-**当前源码候选** 0.12.0-ui-rc1 · Quiet UI 全页面重排、统一原生控件、无凹陷点击反馈。
+**当前版本** 0.12.0-ui-rc2 · Quiet UI 全页面重排；用量统计在小窗口和高缩放下压紧布局，优先显示请求日志。
 
 [新版界面、交互规则与验收截图](docs/design/quiet/README.md)
 
-**Windows 安装包仍为此前版本。** 此 UI 候选尚未生成新的 Windows EXE；请先用源码或演示入口验证，不要把旧安装包当作新版。
+Windows x64 便携包位于 `install/`，解压后运行 `轻续.exe`。
 
 左侧「用量与费用」汇总本机请求。可运行 `Preview-Billing.cmd` 体验合成数据。[计费使用指南](docs/BILLING-USER-GUIDE.md) · [计费工程交接](docs/BILLING-HANDOFF.md) · [界面验收](docs/verification/0.11.3-rc1/README.md)
 
@@ -14,13 +14,13 @@
 
 这版统一主窗、模板弹窗和悬浮窗的双环标识。按钮通过颜色反馈点击，精简悬浮窗按字体和内容调整大小。设计素材与状态映射见 [Apple UI v2](docs/design/apple-ui-v2/README.md)。
 
-[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.11.3-rc1-Windows-x64.zip) · [本机验收结果](docs/verification/0.11.3-rc1/README.md)
+[Windows 安装包目录](install/) · [下载便携 ZIP](install/Qingxu-0.12.0-ui-rc2-Windows-x64.zip) · [本机验收结果](docs/verification/0.12.0-ui-rc2/README.md)
 
 ![Quiet UI 实际 Tk 截图，合成数据](docs/design/quiet/screens/01-statistics.png)
 
 ## 快速开始
 
-1. 当前 UI 候选先下载本分支源码并完整解压，运行 `Preview-Billing.cmd` 或 `Start-Qingxu.cmd`。下方 `install/` 链接是旧版便携 EXE，尚不包含本轮 UI。
+1. 下载并完整解压 `install/` 中的 Windows x64 便携包，双击 `轻续.exe`；也可从源码运行 `Preview-Billing.cmd` 或 `Start-Qingxu.cmd`。
 2. 正常启动会列出本机 Codex 项目和聊天。使用自定义数据位置时，可在「偏好设置 → 目录与提醒」调整。无知识库时可以直接接续。
 3. 在顶部选择项目和聊天。「当前会话」显示最近请求参考、来源和四条最近活动。按需打开悬浮窗。
 4. 在「用量与费用」同步本机记录，选择时间和范围；「全部」显示逐日热力图，其他时间使用柱状图。

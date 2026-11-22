@@ -80,18 +80,24 @@ class DailyChart(tk.Canvas):
         if int(float(self.cget('height'))) != target_height:
             self.configure(height=target_height)
         w,h=max(360,self.winfo_width()),max(target_height,self.winfo_height())
-        left,right,top,bottom=56,w-16,12,h-26
         values=[float(r[self.metric]) if r[self.metric] is not None else None for _,r in self.rows]
         peak=max([v for v in values if v is not None]+[0.]) or 1.
         if self.metric=='cache_hit':
             peak=100
         peak=peak*1.12 if self.metric!='cache_hit' else peak
-        for frac in (0,.5,1):
+        fractions=(0,.5,1)
+        labels=[]
+        for frac in fractions:
+            v=peak*frac
+            label=(('$'+short_number(v) if v>=1000 else '$'+f'{v:.2g}' if 0<v<.01 else money(Decimal(str(v)),2))
+                   if self.metric=='cost' else f'{v:.0f}%' if self.metric=='cache_hit' else short_number(round(v)))
+            labels.append(label)
+        axis_font=font.Font(root=self,font=('TkDefaultFont',9))
+        left=max(56,max(axis_font.measure(label) for label in labels)+12)
+        right,top,bottom=w-16,12,h-26
+        for frac,label in zip(fractions,labels):
             y=bottom-(bottom-top)*frac
             self.create_line(left,y,right,y,fill=LINE)
-            v=peak*frac
-            label=(('$'+f'{v:.2g}' if 0<v<.01 else money(Decimal(str(v)),2))
-                   if self.metric=='cost' else f'{v:.0f}%' if self.metric=='cache_hit' else short_number(round(v)))
             self.create_text(left-8,y,text=label,anchor='e',fill=MUTED,font=('TkDefaultFont',9))
         n=len(self.rows)
         if not n:
@@ -123,8 +129,8 @@ class DailyChart(tk.Canvas):
 
     def _heatmap(self):
         if not self.rows:
-            if int(float(self.cget('height'))) != 188:self.configure(height=188)
-            self.create_text(max(360,self.winfo_width())/2,90,text='尚无可用的逐请求记录',fill=MUTED)
+            if int(float(self.cget('height'))) != 80:self.configure(height=80)
+            self.create_text(max(360,self.winfo_width())/2,40,text='尚无可用的逐请求记录',fill=MUTED)
             return
         records={date.fromisoformat(key):stats for key,stats in self.rows}
         first=min(records)
@@ -133,14 +139,21 @@ class DailyChart(tk.Canvas):
         first_monday=min(first-timedelta(days=first.weekday()),last_monday-timedelta(weeks=52))
         weeks=(last_monday-first_monday).days//7+1
         sections=(weeks+52)//53
-        section_height=188
-        visible_sections=sections if self.history_expanded else 1
-        height=visible_sections*section_height+16
-        if int(float(self.cget('height'))) != height:self.configure(height=height)
         width=max(360,self.winfo_width())
         left,right=62,width-18
         pitch=(right-left)/53
-        size=max(3,min(14,pitch-2))
+        size=max(3,min(9,pitch-2))
+        step=size+2
+        caption_font=font.Font(root=self,font=('TkDefaultFont',8,'bold'))
+        small_font=font.Font(root=self,font=('TkDefaultFont',8))
+        caption_height=caption_font.metrics('linespace')
+        small_height=small_font.metrics('linespace')
+        grid_offset=4+caption_height+small_height
+        legend_offset=grid_offset+7*step+small_height//2+3
+        section_height=legend_offset+small_height//2+5
+        visible_sections=sections if self.history_expanded else 1
+        height=visible_sections*section_height+4
+        if int(float(self.cget('height'))) != height:self.configure(height=height)
         values=[float(s[self.metric]) for s in records.values() if s[self.metric] is not None]
         maximum=max(values+[0])
         colors=('#ECEEF2','#B8E1EA','#6BC2D4','#1797B4','#116D86')
@@ -149,25 +162,31 @@ class DailyChart(tk.Canvas):
             start_index=max(0,end_index-53)
             start_day=first_monday+timedelta(weeks=start_index)
             end_day=min(last,first_monday+timedelta(weeks=end_index)-timedelta(days=1))
-            top=section*section_height+10
-            self.create_text(left,top,text=f'{start_day.isoformat()}  —  {end_day.isoformat()}',anchor='nw',fill=INK,font=('TkDefaultFont',9,'bold'))
+            top=section*section_height+4
+            self.create_text(left,top,text=f'{start_day.isoformat()}  —  {end_day.isoformat()}',anchor='nw',fill=INK,font=('TkDefaultFont',8,'bold'))
             for day,label in ((0,'周一'),(2,'周三'),(4,'周五'),(6,'周日')):
-                self.create_text(left-7,top+35+day*(size+3),text=label,anchor='e',fill=MUTED,font=('TkDefaultFont',8))
+                self.create_text(left-7,top+grid_offset+day*step+size/2,text=label,anchor='e',fill=MUTED,font=('TkDefaultFont',8))
             month_seen=set()
+            previous_month_right=left-1
             for week in range(start_index,end_index):
                 monday=first_monday+timedelta(weeks=week)
                 x=left+(week-start_index)*pitch
                 month=(monday.year,monday.month)
                 if month not in month_seen:
                     month_seen.add(month)
-                    self.create_text(x,top+21,text=f'{monday.month}月',anchor='w',fill=MUTED,font=('TkDefaultFont',8))
+                    label=self.create_text(x,top+caption_height,text=f'{monday.month}月',anchor='nw',fill=MUTED,font=('TkDefaultFont',8))
+                    bounds=self.bbox(label)
+                    if bounds and bounds[0]<previous_month_right:
+                        self.delete(label)
+                    elif bounds:
+                        previous_month_right=bounds[2]+2
                 for day in range(7):
                     current=monday+timedelta(days=day)
                     if current>last:continue
                     stats=records.get(current)
                     value=stats.get(self.metric) if stats else None
                     level=0 if value is None or value<=0 or not maximum else min(4,max(1,1+int(float(value)/maximum*3)))
-                    y=top+29+day*(size+3)
+                    y=top+grid_offset+day*step
                     unknown=bool(stats and stats['requests'] and value is None)
                     radius=min(3,size/3)
                     self.create_polygon(x+radius,y,x+size-radius,y,x+size,y,x+size,y+radius,
@@ -177,9 +196,9 @@ class DailyChart(tk.Canvas):
                                         fill='#FFF2DB' if unknown else colors[level])
                     if stats:self.hitboxes.append((x,x+size,current.isoformat(),stats,y,y+size))
             for i,color in enumerate(colors):
-                self.create_rectangle(right-75+i*14,top+165,right-65+i*14,top+175,outline='',fill=color)
-            self.create_text(right-80,top+170,text='少',anchor='e',fill=MUTED,font=('TkDefaultFont',8))
-            self.create_text(right-1,top+170,text='多',anchor='w',fill=MUTED,font=('TkDefaultFont',8))
+                self.create_rectangle(right-75+i*14,top+legend_offset-5,right-65+i*14,top+legend_offset+5,outline='',fill=color)
+            self.create_text(right-80,top+legend_offset,text='少',anchor='e',fill=MUTED,font=('TkDefaultFont',8))
+            self.create_text(right-1,top+legend_offset,text='多',anchor='w',fill=MUTED,font=('TkDefaultFont',8))
 
     def _hide_tip(self):
         self.delete('tip')
@@ -320,6 +339,8 @@ class BillingPanel(ttk.Frame):
             for column,control in enumerate(controls):
                 control.grid(row=0,column=column,sticky='w',padx=(0,6),pady=1)
             frame.bind('<Configure>',lambda event,items=controls:self._layout_filters(event,items))
+        self.selectors=selectors
+        self.selector_controls=selector_controls
         # A vertical canvas gives 980x680/DPI users all four KPIs and the full table.
         viewport=ttk.Frame(self)
         viewport.pack(fill='both',expand=True)
@@ -338,6 +359,7 @@ class BillingPanel(ttk.Frame):
         self.hero=hero
         summary_row=ttk.Frame(hero,style='App.TFrame')
         summary_row.pack(fill='x')
+        self.summary_row=summary_row
         cards=ttk.Frame(summary_row,style='App.TFrame')
         cards.pack(side='left',fill='x',expand=True)
         self.cards=cards
@@ -369,8 +391,8 @@ class BillingPanel(ttk.Frame):
                     w.configure(cursor='hand2')
             self.kpis[key]=(title,value,note,bar)
         cards.bind('<Configure>',self._layout_kpis)
-        self.more_button=DropButton(summary_row,text='更多指标',command=self.toggle_more_metrics)
-        self.more_button.pack(side='right',anchor='n',before=cards)
+        self.more_button=DropButton(self,text='更多指标',command=self.toggle_more_metrics)
+        self.more_button.pack(in_=summary_row,side='right',anchor='n',before=cards)
         self.more_button.bind('<FocusIn>',self._show_body_focus,add='+')
         summary_row.bind('<Configure>',self._layout_more_button)
         self.more_metrics=ttk.Frame(hero,style='App.TFrame')
@@ -423,6 +445,7 @@ class BillingPanel(ttk.Frame):
         date_width=face.measure("88-88 88:88:88")+14
         headings=(('time',('时间',date_width)),('model',('模型',162)),('input',('输入',76)),
                   ('output',('输出',76)),('cached',('缓存命中',102)),('cost',('估算价格',106)))
+        self.request_headings=headings
         for key in self.labels:
             pane=ttk.Frame(self.tables,style='Card.TFrame',padding=(0,0,0,0))
             self.tables.add(pane,text=self.labels[key])
@@ -456,6 +479,9 @@ class BillingPanel(ttk.Frame):
         self.page_label=ttk.Label(footer,text='请求 0 / 0',style='Muted.TLabel')
         self.page_label.pack(side='right',padx=8)
         ttk.Button(footer,text='上一页',command=lambda:self.turn_page(-1)).pack(side='right')
+        for control in footer.winfo_children():
+            if isinstance(control,ttk.Button):
+                control.bind('<FocusIn>',self._show_footer_focus,add='+')
         ttk.Label(self.body,textvariable=self.detail_text,style='Muted.TLabel',wraplength=850).pack(fill='x',pady=(6,0))
         self._wheel_bindings=[]
         for seq in ('<MouseWheel>','<Button-4>','<Button-5>'):
@@ -478,7 +504,7 @@ class BillingPanel(ttk.Frame):
     def show_diagnostics(self):
         notes='\n'.join(f'{title.cget("text")}：{note.cget("text")}'
                         for title,_,note,_ in self.kpis.values())
-        messagebox.showinfo('数据来源与统计说明',self.notice.get()+'\n\n'+notes+'\n\n'+self.detail_text.get(),parent=self.app.root)
+        messagebox.showinfo('数据来源与统计说明',self.sync_text.get()+'\n\n'+self.notice.get()+'\n\n'+notes+'\n\n'+self.detail_text.get(),parent=self.app.root)
 
     def _layout_kpis(self,event):
         widths=tuple(card.content.winfo_reqwidth()+24 for card in self.kpi_cards)
@@ -502,7 +528,7 @@ class BillingPanel(ttk.Frame):
 
     def _layout_more_button(self,event=None):
         face=font.nametofont("TkDefaultFont",root=self)
-        width=event.width if event is not None else self.more_button.master.winfo_width()
+        width=event.width if event is not None else self.summary_row.winfo_width()
         compact=width < face.measure("中"*35)
         caption=('收起' if compact else '收起指标') if self.more_metrics_visible else ('更多' if compact else '更多指标')
         if self.more_button.cget('text') != caption:
@@ -564,28 +590,79 @@ class BillingPanel(ttk.Frame):
         self._filters_in_canvas=needs_scroll
 
     def _fit_density(self):
-        # Airy on a normal desktop, compact when height or DPI is constrained.
         compact=self.winfo_width()<950 or self.winfo_height()<740
-        if getattr(self,'_quiet_compact',None)!=compact:
-            self._quiet_compact=compact
+        face=font.nametofont('TkDefaultFont',root=self)
+        dense=(self.winfo_width()<face.measure('中'*31) or
+               self.winfo_height()<face.metrics('linespace')*24)
+        density=(compact,dense,float(self.tk.call('tk','scaling')))
+        if getattr(self,'_quiet_density',None)!=density:
+            self._quiet_density=density
             family=getattr(self.app,'font_family','TkDefaultFont')
-            self.heading_title.configure(font=(family,16 if compact else 23,'bold'))
-            self.header.configure(padding=(0,0,0,8 if compact else 18))
-            self.filters.configure(padding=(0,0,0,5 if compact else 12))
-            if compact:self.heading_subtitle.pack_forget()
+            style=ttk.Style(self)
+            for name,base in (('Dense.Drop.TButton','Drop.TButton'),
+                              ('Dense.Primary.TButton','Primary.TButton'),
+                              ('Dense.Ghost.TButton','Ghost.TButton'),
+                              ('Dense.TButton','TButton'),
+                              ('Dense.Metric.Toolbutton','Metric.Toolbutton'),
+                              ('Dense.Line.TNotebook','Line.TNotebook'),
+                              ('Dense.Line.TNotebook.Tab','Line.TNotebook.Tab'),
+                              ('Dense.Usage.Treeview','Usage.Treeview'),
+                              ('Dense.Usage.Treeview.Heading','Usage.Treeview.Heading'),
+                              ('Dense.Usage.Treeview.Row','Usage.Treeview.Row')):
+                style.layout(name,style.layout(base))
+            for name in ('Dense.Drop.TButton','Dense.Primary.TButton','Dense.Ghost.TButton',
+                         'Dense.TButton','Dense.Metric.Toolbutton'):
+                style.configure(name,font=(family,8),padding=(5,2),width=0)
+            style.configure('Dense.Primary.TButton',font=(family,8,'bold'))
+            style.configure('Dense.Line.TNotebook',tabmargins=(0,0,0,3))
+            style.configure('Dense.Line.TNotebook.Tab',font=(family,9),padding=(7,3))
+            style.map('Dense.Line.TNotebook.Tab',foreground=style.map('Line.TNotebook.Tab','foreground'))
+            table_font=font.Font(root=self,family=family,size=8)
+            style.configure('Dense.Usage.Treeview',font=(family,8),rowheight=table_font.metrics('linespace')+8)
+            style.configure('Dense.Usage.Treeview.Heading',font=(family,8),padding=(5,3))
+            self.heading_title.configure(font=(family,12 if dense else 16 if compact else 23,'bold'))
+            self.header.configure(padding=(0,0,0,3 if dense else 8 if compact else 18))
+            self.filters.configure(padding=(0,0,0,2 if dense else 5 if compact else 12))
+            if compact or dense:self.heading_subtitle.pack_forget()
             else:self.heading_subtitle.pack(anchor='w',pady=(4,0))
             self.sync_label.pack_forget()
-            if compact:self.sync_label.pack(side='bottom',anchor='w',pady=(4,0))
-            else:self.sync_label.pack(side='right',padx=8)
-            for card,(_,value,_,_) in zip(self.kpi_cards,self.kpis.values()):
-                card.content.configure(padding=(8,4) if compact else (14,14))
-                value.configure(font=(family,16 if compact else 25,'bold'))
-                value.pack_configure(pady=(2,0) if compact else (8,2))
-            self.chart_card.content.configure(padding=(10,4) if compact else (18,12))
+            if not dense:
+                if compact:self.sync_label.pack(side='bottom',anchor='w',pady=(4,0))
+                else:self.sync_label.pack(side='right',padx=8)
+            for card,(title,value,_,bar) in zip(self.kpi_cards,self.kpis.values()):
+                card.content.configure(padding=(4,2) if dense else (8,4) if compact else (14,14))
+                card.grid_configure(padx=(0,4) if dense else (0,8),pady=(0,3) if dense else (0,8))
+                title.configure(font=(family,8 if dense else 9))
+                value.configure(font=(family,11 if dense else 16 if compact else 25,'bold'))
+                value.pack_configure(pady=(0,0) if dense else (2,0) if compact else (8,2))
+                bar.pack_configure(pady=(1,0) if dense else (3,0))
+            self.chart_card.content.configure(padding=(7,2) if dense else (10,4) if compact else (18,12))
+            self.chart_card.pack_configure(pady=(2,4) if dense else (6,12))
+            self.chart_title.configure(font=(family,9 if dense else 10))
+            self.more_button.pack_forget()
+            if dense:self.more_button.pack(in_=self.header,side='right',padx=(0,4),before=self.diagnostics_button)
+            else:self.more_button.pack(in_=self.summary_row,side='right',anchor='n',before=self.cards)
+            for control in self.selector_controls:
+                control.configure(style=('Dense.Ghost.TButton' if control is self.advanced_button else 'Dense.Drop.TButton')
+                                  if dense else ('Ghost.TButton' if control is self.advanced_button else 'Drop.TButton'))
+            self.refresh_button.configure(style='Dense.Primary.TButton' if dense else 'Primary.TButton')
+            self.diagnostics_button.configure(style='Dense.Ghost.TButton' if dense else 'Ghost.TButton')
+            self.more_button.configure(style='Dense.Drop.TButton' if dense else 'Drop.TButton')
+            self.history_button.configure(style='Dense.Ghost.TButton' if dense else 'Ghost.TButton')
+            for button in self.metric_buttons.values():
+                button.configure(style='Dense.Metric.Toolbutton' if dense else 'Metric.Toolbutton')
+            self.tables.configure(style='Dense.Line.TNotebook' if dense else 'Line.TNotebook')
+            for tree in self.trees.values():
+                tree.configure(style='Dense.Usage.Treeview' if dense else 'Usage.Treeview')
+            self._fit_request_columns()
+            for control in self.table_footer.winfo_children():
+                if isinstance(control,ttk.Button):
+                    control.configure(style='Dense.TButton' if dense else 'TButton')
+            self.selectors._filter_columns=None
             self.chart.compact=compact
             self.chart.draw()
             self._kpi_layout=None
-        scroll_footer=self.winfo_height()<480
+        scroll_footer=self.winfo_height()<max(480,face.metrics('linespace')*28)
         if getattr(self,'_footer_in_canvas',None)!=scroll_footer:
             self._footer_in_canvas=scroll_footer
             self.table_footer.pack_forget()
@@ -597,7 +674,13 @@ class BillingPanel(ttk.Frame):
             return
         self._show_body_focus(event)
 
+    def _show_footer_focus(self,event):
+        if getattr(self,'_footer_in_canvas',False):
+            self._show_body_focus(event)
+
     def _show_body_focus(self,event):
+        if event.widget is self.more_button and getattr(self,'_quiet_density',(False,False))[1]:
+            return
         offset=event.widget.winfo_rooty()-self.canvas.winfo_rooty()
         bottom=offset+event.widget.winfo_height()
         if offset<0 or bottom>self.canvas.winfo_height():
@@ -608,7 +691,8 @@ class BillingPanel(ttk.Frame):
     def _wheel(self,event):
         inside_body=str(event.widget).startswith(str(self.body))
         inside_filters=self._filters_in_canvas and str(event.widget).startswith(str(self.filters))
-        if not (inside_body or inside_filters) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
+        inside_footer=getattr(self,'_footer_in_canvas',False) and str(event.widget).startswith(str(self.table_footer))
+        if not (inside_body or inside_filters or inside_footer) or isinstance(event.widget,(ttk.Treeview,ttk.Combobox,tk.Text)):
             return
         if self.canvas.yview()==(0.0,1.0):return
         delta=getattr(event,'delta',0)
@@ -943,8 +1027,27 @@ class BillingPanel(ttk.Frame):
                         '—' if s['ttft'] is None else f"≈{s['ttft']/1000:.2f}s",f"{s['priced']}/{s['requests']}")
             tree.insert('', 'end',iid=iid,values=values)
         self.row_objects[key]=mapping
+        if key=='request':
+            self._fit_request_columns()
         total=len(self.filtered)
         self.page_label.configure(text=f'请求 {self.page+1 if total else 0} / {max(1,(total+99)//100) if total else 0} 页')
+
+    def _fit_request_columns(self):
+        tree=self.trees['request']
+        dense=getattr(self,'_quiet_density',(False,False))[1]
+        if dense:
+            family=getattr(self.app,'font_family','TkDefaultFont')
+            table_font=font.Font(root=self,family=family,size=8)
+            rows=[tree.item(item,'values') for item in tree.get_children()]
+        for index,(column,(caption,base_width)) in enumerate(self.request_headings):
+            if dense:
+                heading=tree.heading(column,'text') or caption
+                minimum=max([table_font.measure(heading)]+[table_font.measure(str(row[index])) for row in rows])+16
+                width=minimum
+            else:
+                minimum=64
+                width=base_width
+            tree.column(column,minwidth=minimum,width=width,stretch=column=='model')
 
     def sort_table(self,key,column):
         previous=self.sort_keys.get(key)

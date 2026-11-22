@@ -1,0 +1,12 @@
+{
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "actual_windows_file_symlink": true,
+  "elevated": true,
+  "synthetic_data_only": true,
+  "network_and_clipboard_blocked": true,
+  "source_hashes_unchanged": true,
+  "success": true
+}

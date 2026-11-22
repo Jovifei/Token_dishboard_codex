@@ -138,22 +138,34 @@ class UsageStatisticsUiTests(unittest.TestCase):
         chart=DailyChart(self.root,lambda _:None)
         chart.pack(fill='x');self.root.update()
         chart.render([('2026-11-11',{'requests':1,'cost':0.002,'unpriced':0})],metric='cost')
-        width,height=chart.winfo_width(),chart.winfo_height()
-        center=(56+width-16)/2
+        height=chart.winfo_height()
+        self.assertEqual(len(chart.hitboxes),1)
+        left,right,_,_=chart.hitboxes[0]
+        center=(left+right)/2
         for x in (center-18,center+18):
             items=chart.find_overlapping(x,height-36,x,height-36)
             self.assertTrue(any(chart.itemcget(item,'fill')==TEAL for item in items))
-        labels=[chart.itemcget(item,'text') for item in chart.find_all() if chart.type(item)=='text']
+        axis=[item for item in chart.find_all() if chart.type(item)=='text' and chart.itemcget(item,'text').startswith('$')]
+        labels=[chart.itemcget(item,'text') for item in axis]
         self.assertTrue(any(label.startswith('$0.00') and label!='$0.00' for label in labels))
+        self.assertTrue(all(chart.bbox(item)[0]>=0 for item in axis))
 
     def test_metric_keyboard_focus_scrolls_into_a_short_window(self):
         self.root.deiconify();self.root.geometry('730x220');self.root.update()
         canvas=self.panel.canvas
         for button in (self.panel.more_button,self.panel.metric_buttons['tokens']):
-            button.event_generate('<FocusIn>');self.root.update()
-            top=button.winfo_rooty()-canvas.winfo_rooty()
+            button.focus_force();self.root.update()
+            self.assertEqual(self.root.focus_get(),button)
+            # In the dense layout, More is pinned in the header rather than the canvas.
+            area=self.panel.header if button is self.panel.more_button and self.panel._quiet_density[1] else canvas
+            top=button.winfo_rooty()-area.winfo_rooty()
             self.assertGreaterEqual(top,0)
-            self.assertLessEqual(top+button.winfo_height(),canvas.winfo_height())
+            self.assertLessEqual(top+button.winfo_height(),area.winfo_height())
+        button=self.panel.more_button
+        button.focus_force();self.root.update()
+        before=self.panel.more_metrics_visible
+        button.event_generate('<KeyPress-space>');button.event_generate('<KeyRelease-space>');self.root.update()
+        self.assertNotEqual(self.panel.more_metrics_visible,before)
 
     def test_request_columns_and_unknown_values(self):
         unknown=replace(request(response_id='unknown',time=(self.now-timedelta(seconds=6)).isoformat(),

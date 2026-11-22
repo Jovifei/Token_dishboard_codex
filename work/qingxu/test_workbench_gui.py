@@ -1,9 +1,12 @@
 """Integration tests on synthetic data. Requires a real Tk display."""
 import json
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sys
 import tempfile
 import tkinter as tk
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -411,6 +414,137 @@ class WorkbenchTests(unittest.TestCase):
         for widget in (floating.prepare_button, floating.snooze_button, floating.row_widgets[3]):
             self.assertTrue(widget.winfo_ismapped())
             self.assertLessEqual(widget.winfo_rooty() + widget.winfo_height(), bottom)
+
+class WorkbenchStatisticsScalingTests(unittest.TestCase):
+    def assert_log_visible(self, root, panel):
+        tree = panel.trees["request"]
+        self.assertTrue(tree.winfo_ismapped())
+        self.assertEqual(panel.tables.select(), str(panel.tab_frames["request"]))
+        children = tree.get_children()
+        self.assertGreaterEqual(len(children), 2)
+        first = tree.bbox(children[0])
+        self.assertTrue(first, "the request tree has no visible first row")
+        top = max(root.winfo_rooty(), panel.canvas.winfo_rooty(), tree.winfo_rooty())
+        bottom = min(root.winfo_rooty() + root.winfo_height(),
+                     panel.canvas.winfo_rooty() + panel.canvas.winfo_height(),
+                     tree.winfo_rooty() + tree.winfo_height())
+        heading_top = tree.winfo_rooty()
+        heading_bottom = heading_top + first[1]
+        self.assertGreater(heading_bottom, heading_top)
+        self.assertGreaterEqual(heading_top, top)
+        self.assertLessEqual(heading_bottom, bottom, "the request header is clipped")
+        visible = 0
+        for item in children:
+            bounds = tree.bbox(item)
+            if bounds:
+                row_top = tree.winfo_rooty() + bounds[1]
+                row_bottom = row_top + bounds[3]
+                if row_top >= top and row_bottom <= bottom:
+                    visible += 1
+        self.assertGreaterEqual(visible, 2, f"only {visible} complete request rows are visible")
+        for title, value, _note, _bar in panel.kpis.values():
+            self.assertGreaterEqual(title.winfo_width(), title.winfo_reqwidth())
+            self.assertGreaterEqual(value.winfo_width(), value.winfo_reqwidth())
+
+    def test_statistics_log_at_minimum_size_and_desktop_scales(self):
+        for dpi in (96, 144, 192):
+            with self.subTest(dpi=dpi), tempfile.TemporaryDirectory(prefix="qingxu-statistics-scaling-") as folder:
+                fixture = demo.create(Path(folder) / "fixture")
+                root = tk.Tk()
+                root.withdraw()
+                original_scaling = float(root.tk.call("tk", "scaling"))
+                app = None
+                try:
+                    root.tk.call("tk", "scaling", dpi / 72)
+                    self.assertAlmostEqual(float(root.tk.call("tk", "scaling")), dpi / 72, delta=0.02)
+                    app = Workbench(root, Relay(fixture["settings"]), fixture["prefs"])
+                    # Workbench sets its own initial geometry, so resize after construction.
+                    root.geometry("980x680+0+0")
+                    app.closed = True
+                    if app.metric_timer is not None:
+                        root.after_cancel(app.metric_timer)
+                        app.metric_timer = None
+                    app.metric_worker.shutdown(wait=True, cancel_futures=True)
+                    panel = app.usage_panel.billing_panel
+                    panel.active = True
+                    samples = billing_demo.requests()
+                    samples[-1]["model"] = "synthetic-model-with-unknown-price"
+                    usage = samples[-2]["usage"]
+                    usage["input_tokens"] = 9_876_543_210
+                    usage["cached_input_tokens"] = 4_000_000_000
+                    usage["cache_write_input_tokens"] = 0
+                    usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
+                    records = [Request.from_dict(sample) for sample in samples]
+                    panel.set_result({"requests": records, "issues": {}, "synthetic": True})
+                    app.show_page("statistics")
+                    root.deiconify()
+                    root.update()
+                    self.assertEqual((root.winfo_width(), root.winfo_height()), (980, 680))
+                    self.assertEqual(panel.period.get(), "近 7 天")
+                    self.assertEqual(panel.canvas.yview()[0], 0.0)
+                    self.assertGreater(panel.stats["unpriced"], 0)
+                    self.assertIn("部分", panel.kpis["cost"][0].cget("text"))
+                    self.assertEqual(panel.chart.period, "day")
+                    self.assert_log_visible(root, panel)
+
+                    panel.period.set("全部")
+                    panel.changed(panel.period)
+                    root.update()
+                    self.assertEqual(panel.chart.period, "heatmap")
+                    self.assertEqual(panel.canvas.yview()[0], 0.0)
+                    self.assert_log_visible(root, panel)
+
+                    hit = next(hit for hit in panel.chart.hitboxes if hit[3]["requests"])
+                    panel.chart.click(SimpleNamespace(x=(hit[0] + hit[1]) / 2,
+                                                      y=(hit[4] + hit[5]) / 2))
+                    root.update()
+                    self.assertEqual(panel.period.get(), "自定义")
+                    self.assertEqual((panel.start.get(), panel.end.get()), (hit[2], hit[2]))
+                    self.assertTrue(panel.filtered)
+
+                    earlier = replace(records[0], response_id="synthetic-older-history",
+                                      time=(datetime.now(timezone.utc) - timedelta(days=800)).isoformat())
+                    panel.set_result({"requests": [*records, earlier], "issues": {}, "synthetic": True})
+                    panel.period.set("全部")
+                    panel.changed(panel.period)
+                    root.update()
+                    self.assertTrue(panel.history_button.winfo_ismapped())
+                    self.assertFalse(panel.chart.history_expanded)
+                    self.assert_log_visible(root, panel)
+                    panel.history_button.invoke()
+                    root.update()
+                    self.assertTrue(panel.chart.history_expanded)
+                    self.assertGreater(panel.canvas.bbox("all")[3], panel.canvas.winfo_height())
+                    panel.history_button.invoke()
+                    root.update()
+                    self.assertFalse(panel.chart.history_expanded)
+
+                    panel.canvas.yview_moveto(1)
+                    root.update()
+                    reset = next(widget for widget in panel.table_footer.winfo_children()
+                                 if widget.winfo_class() == "TButton" and widget.cget("text") == "重置筛选")
+                    reset.focus_force()
+                    root.update()
+                    self.assertEqual(root.focus_get(), reset)
+                    self.assertGreaterEqual(reset.winfo_rootx(), root.winfo_rootx())
+                    self.assertLessEqual(reset.winfo_rootx() + reset.winfo_width(),
+                                         root.winfo_rootx() + root.winfo_width())
+                    self.assertGreaterEqual(reset.winfo_rooty(), root.winfo_rooty())
+                    self.assertLessEqual(reset.winfo_rooty() + reset.winfo_height(),
+                                         root.winfo_rooty() + root.winfo_height())
+                    reset.event_generate("<KeyPress-space>")
+                    reset.event_generate("<KeyRelease-space>")
+                    root.update()
+                    self.assertEqual(panel.period.get(), "近 7 天")
+                    panel.canvas.yview_moveto(0)
+                    root.update()
+                    self.assert_log_visible(root, panel)
+                finally:
+                    if app is not None:
+                        app.closed = True
+                        app.metric_worker.shutdown(wait=True, cancel_futures=True)
+                    root.tk.call("tk", "scaling", original_scaling)
+                    root.destroy()
 
 
 if __name__ == "__main__":

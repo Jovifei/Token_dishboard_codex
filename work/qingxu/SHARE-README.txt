@@ -1,4 +1,4 @@
-轻续 · Token 工作台 0.11.3-rc1
+轻续 · Token 工作台 0.12.0-ui-rc2
 Windows x64 候选版
 
 1. 若此说明位于已构建的 EXE 包中，解压后双击「轻续.exe」。若位于源码包，请从根目录 Start-Qingxu.cmd 启动，需要带 Tk 的 Python 3.11+。
