@@ -3,8 +3,8 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from handoff import (HandoffError, POLICY_LABELS, build_restore_prompt,
-                     build_save_prompt, default_templates, project_key)
+from handoff import (HEADER, SOURCE_HEADER, HandoffError, POLICY_LABELS, _check_identity, _decode,
+                     build_restore_prompt, build_save_prompt, default_templates, project_key)
 from knowledge import project_folder
 
 BG = "#F4F6F9"
@@ -50,7 +50,13 @@ class HandoffPanel(ttk.Frame):
         self.record_caption = tk.StringVar(self, value="先在顶部选择项目和聊天")
         self.destination_caption = tk.StringVar(self)
         self.knowledge_caption = tk.StringVar(self)
-        self.feedback = tk.StringVar(self, value="选择聊天后，复制旧聊指令开始。")
+        self._step_feedback = {
+            1: "选择聊天后，复制旧聊指令开始。",
+            2: "粘贴摘要或选择文件，然后核对内容。",
+            3: "复制指令后，在同项目新建聊天并粘贴。",
+        }
+        self.feedback = tk.StringVar(self, value=self._step_feedback[1])
+        self.summary_identity = tk.StringVar(self)
         self.summary_state = tk.StringVar(self, value="尚未收到摘要")
         self.saved_caption = tk.StringVar(self, value="保存后会显示准确位置与读回结果。")
         self.restore_state = tk.StringVar(self)
@@ -58,7 +64,7 @@ class HandoffPanel(ttk.Frame):
                               ("1  给旧聊发指令", "2  接收旧聊摘要", "3  给新聊发指令")]
         self._build()
         self.mode.trace_add("write", lambda *_: self._update())
-        self.goal.trace_add("write", lambda *_: self._update())
+        self.goal.trace_add("write", self._goal_changed)
         self.refresh_preferences()
         self.set_record(None)
 
@@ -182,15 +188,13 @@ class HandoffPanel(ttk.Frame):
         return box
 
     def _build_old(self, card):
-        ttk.Label(card, text="给旧聊发指令",
-                  style="Heading.TLabel").pack(anchor="w")
-        ttk.Label(card, text="复制指令并发给旧聊，让它回复摘要或保存 Markdown 文件。",
+        ttk.Label(card, text="把提示词发给旧聊，让它回复一段摘要。",
                   style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 2))
         self.old_text = self._text(card, 8)
         self.old_options_visible = tk.BooleanVar(self, value=False)
-        self.old_options_toggle = ttk.Checkbutton(card, text="知识处理与模板（可选）",
-                                                 variable=self.old_options_visible,
-                                                 command=self._toggle_old_options)
+        self.old_options_toggle = ttk.Button(
+            card, text="知识处理与模板  ▾",
+            command=lambda: self._switch_options(self.old_options_visible, self._toggle_old_options))
         self.old_options_toggle.pack(anchor="w")
         self.old_options = ttk.Frame(card, style="Card.TFrame")
         controls = ttk.Frame(self.old_options, style="Card.TFrame")
@@ -225,8 +229,6 @@ class HandoffPanel(ttk.Frame):
         self._responsive_rows.append((actions, list(actions.winfo_children())))
 
     def _build_summary(self, card):
-        ttk.Label(card, text="接收旧聊摘要",
-                  style="Heading.TLabel").pack(anchor="w")
         ttk.Label(card, text="粘贴摘要，或读取旧聊保存的 Markdown 文件。",
                   style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 5))
         bar = ttk.Frame(card, style="Card.TFrame")
@@ -234,19 +236,27 @@ class HandoffPanel(ttk.Frame):
         self.paste_button = ttk.Button(bar, text="粘贴摘要",
                                       command=lambda: self._guard(self.paste_summary))
         self.paste_button.pack(side="left")
-        self.import_button = ttk.Button(bar, text="导入文件…",
+        self.file_options_visible = tk.BooleanVar(self, value=False)
+        self.file_options_toggle = ttk.Button(
+            bar, text="从文件读取  ▾",
+            command=lambda: self._switch_options(self.file_options_visible, self._toggle_file_options))
+        self.file_options_toggle.pack(side="left", padx=8)
+        self.file_options = ttk.Frame(card, style="Card.TFrame")
+        self.import_button = ttk.Button(self.file_options, text="选择文件并另存…",
                                        command=lambda: self._guard(self.import_summary))
-        self.import_button.pack(side="left", padx=8)
-        self.read_old_button = ttk.Button(bar, text="读取旧聊保存的文件",
+        self.import_button.pack(side="left")
+        self.read_old_button = ttk.Button(self.file_options, text="读取旧聊指定文件并另存",
                                          command=lambda: self._guard(self.read_old_file))
-        self.read_old_button.pack(side="left", padx=(0, 8))
-        self._responsive_rows.append((bar, list(bar.winfo_children())))
+        self.read_old_button.pack(side="left", padx=8)
+        self.summary_identity_label = ttk.Label(
+            card, textvariable=self.summary_identity, style="CardMuted.TLabel", wraplength=830)
         self.summary_text = self._text(card, 8)
+        self.summary_text.tag_configure("source_metadata", elide=True)
         self.summary_text.bind("<<Modified>>", self._summary_edited)
         self.summary_options_visible = tk.BooleanVar(self, value=False)
-        self.summary_options_toggle = ttk.Checkbutton(card, text="更多摘要选项",
-                                                     variable=self.summary_options_visible,
-                                                     command=self._toggle_summary_options)
+        self.summary_options_toggle = ttk.Button(
+            card, text="更多摘要选项  ▾",
+            command=lambda: self._switch_options(self.summary_options_visible, self._toggle_summary_options))
         self.summary_options_toggle.pack(anchor="w", pady=(3, 0))
         self.summary_options = ttk.Frame(card, style="Card.TFrame")
         self.recent_button = ttk.Button(self.summary_options, text="读取最近交接",
@@ -266,8 +276,6 @@ class HandoffPanel(ttk.Frame):
         self._responsive_rows.append((actions, list(actions.winfo_children())))
 
     def _build_new(self, card):
-        ttk.Label(card, text="给新聊发指令",
-                  style="Heading.TLabel").pack(anchor="w")
         ttk.Label(card, text="在同项目新建聊天，粘贴指令后继续任务。",
                   style="CardMuted.TLabel", wraplength=830).pack(anchor="w", pady=(3, 5))
         modes = ttk.Frame(card, style="Card.TFrame")
@@ -278,8 +286,10 @@ class HandoffPanel(ttk.Frame):
                         value="file").pack(side="left", padx=(18, 0))
         self.new_text = self._text(card, 8)
         self.goal_visible = tk.BooleanVar(self, value=False)
-        ttk.Checkbutton(card, text="指定下一阶段目标（可选，收起后保留）",
-                        variable=self.goal_visible, command=self._toggle_goal).pack(anchor="w", pady=(3, 0))
+        self.goal_toggle = ttk.Button(
+            card, text="指定下一阶段目标（可选）  ▾",
+            command=lambda: self._switch_options(self.goal_visible, self._toggle_goal))
+        self.goal_toggle.pack(anchor="w", pady=(3, 0))
         self.goal_options = ttk.Frame(card, style="Card.TFrame")
         ttk.Label(self.goal_options, text="下一阶段目标", style="Card.TLabel").pack(side="left", padx=(0, 10))
         ttk.Entry(self.goal_options, textvariable=self.goal).pack(side="left", fill="x", expand=True)
@@ -300,19 +310,39 @@ class HandoffPanel(ttk.Frame):
         ttk.Button(actions, text="返回接收摘要", command=lambda: self.show_step(2)).pack(side="right")
         self._responsive_rows.append((actions, list(actions.winfo_children())))
 
+    @staticmethod
+    def _switch_options(variable, refresh):
+        variable.set(not variable.get())
+        refresh()
+
+    def _toggle_file_options(self):
+        if self.file_options_visible.get():
+            self.file_options.pack(fill="x", pady=(5, 0), after=self.file_options_toggle.master)
+        else:
+            self.file_options.pack_forget()
+        self.file_options_toggle.configure(
+            text="从文件读取  ▴" if self.file_options_visible.get() else "从文件读取  ▾")
+
     def _toggle_old_options(self):
+        self.old_options_toggle.configure(
+            text="知识处理与模板  ▴" if self.old_options_visible.get() else "知识处理与模板  ▾")
         if self.old_options_visible.get():
             self.old_options.pack(fill="x", pady=(6, 0), after=self.old_options_toggle)
         else:
             self.old_options.pack_forget()
 
     def _toggle_summary_options(self):
+        self.summary_options_toggle.configure(
+            text="更多摘要选项  ▴" if self.summary_options_visible.get() else "更多摘要选项  ▾")
         if self.summary_options_visible.get():
             self.summary_options.pack(fill="x", pady=(5, 0), after=self.summary_options_toggle)
         else:
             self.summary_options.pack_forget()
 
     def _toggle_goal(self):
+        self.goal_toggle.configure(
+            text="指定下一阶段目标（可选）  ▴" if self.goal_visible.get()
+            else "指定下一阶段目标（可选）  ▾")
         if self.goal_visible.get():
             self.goal_options.pack(fill="x", pady=(6, 0), before=self.goal_hint)
         else:
@@ -326,6 +356,7 @@ class HandoffPanel(ttk.Frame):
             return None
 
     def _status(self, text):
+        self._step_feedback[self.step.get()] = text
         self.feedback.set(text)
         self.app.set_status(text)
 
@@ -349,9 +380,13 @@ class HandoffPanel(ttk.Frame):
             box.edit_reset()
         finally:
             self._loading = False
+        if box is getattr(self, "summary_text", None):
+            self._show_summary_identity()
 
     def show_step(self, value):
         self.step.set(value)
+        self.feedback.set(self._step_feedback[value])
+        self.app.set_status(self.feedback.get())
         for i, page in enumerate(self.pages, 1):
             page.pack_forget()
             self.footer_pages[i - 1].pack_forget()
@@ -402,6 +437,12 @@ class HandoffPanel(ttk.Frame):
         self._update()
 
     def set_record(self, record):
+        self._step_feedback.update({
+            1: "选择聊天后，复制旧聊指令开始。",
+            2: "粘贴摘要或选择文件，然后核对内容。",
+            3: "复制指令后，在同项目新建聊天并粘贴。",
+        })
+        self.step.set(1)
         self.binding_warning = None
         self.record = dict(record) if record else None
         self._refresh_knowledge()
@@ -450,11 +491,41 @@ class HandoffPanel(ttk.Frame):
         if self._get(self.old_text).strip():
             self._status("本次知识处理方式已变；下次生成或复制将使用新设置。")
 
+    def _show_summary_identity(self):
+        self.summary_text.tag_remove("source_metadata", "1.0", "end")
+        self.summary_identity.set("")
+        self.summary_identity_label.pack_forget()
+        value = self._get(self.summary_text)
+        if not value.startswith((HEADER, SOURCE_HEADER)):
+            return
+        try:
+            metadata, _body, _canonical = _decode(value.encode("utf-8"))
+            warnings = _check_identity(metadata, self._require_record())
+        except (ValueError, OSError) as exc:
+            self.summary_identity.set("来源标记待检查：" + str(exc))
+            self.summary_identity_label.pack(anchor="w", before=self.summary_text.master)
+            return
+        self.summary_text.tag_add("source_metadata", "1.0", "2.0")
+        self.summary_identity.set("来源标记与当前项目一致" + (" · " + "；".join(warnings) if warnings else ""))
+        self.summary_identity_label.pack(anchor="w", before=self.summary_text.master)
+
+    def _invalidate_new_feedback(self):
+        self._copied_new = ""
+        self._new_signature = None
+        self._step_feedback[3] = "摘要或目标已更改，请重新生成并复制新聊指令。"
+
+    def _goal_changed(self, *_args):
+        if self._copied_new and self.goal.get().strip() != self._copied_goal:
+            self._invalidate_new_feedback()
+        self._update()
+
     def _summary_edited(self, _event=None):
         if not self.summary_text.edit_modified():
             return
         self.summary_text.edit_modified(False)
         if not self._loading:
+            self._show_summary_identity()
+            self._invalidate_new_feedback()
             self._update()
 
     def _summary_value(self):
@@ -561,6 +632,7 @@ class HandoffPanel(ttk.Frame):
         if not self._replace_ok():
             return
         self._put(self.summary_text, value)
+        self._invalidate_new_feedback()
         self._status("已粘贴，尚未保存。核对内容后可保存为 Markdown，或直接进入第 3 步。")
         self._update()
         self.summary_text.focus_set()
@@ -604,9 +676,13 @@ class HandoffPanel(ttk.Frame):
         self.saved_caption.set(
             f"保存时间：{saved['metadata']['generated_at']}\n文件：{saved['path']}"
             + ("\n" + warnings if warnings else ""))
+        current_new = self._get(self.new_text)
+        edited_new = current_new and current_new not in (self._generated_new, self._copied_new)
         self._new_signature = None
         self._generated_new = self._copied_new = ""
-        self._put(self.new_text, "")
+        self._step_feedback[3] = "摘要已更新，请生成并复制新聊指令。"
+        if not edited_new:
+            self._put(self.new_text, "")
         self._update()
 
     def save_summary(self):

@@ -104,12 +104,12 @@ def install_quiet(widget, family=None):
     for name, color in [('TFrame', CANVAS), ('App.TFrame', CANVAS), ('Card.TFrame', SURFACE), ('Side.TFrame', SIDEBAR)]:
         style.configure(name, background=color, relief='flat', borderwidth=0)
     for name, bg, color, size, weight in (
-        ('TLabel', CANVAS, INK, 10, 'normal'), ('Title.TLabel', CANVAS, INK, 23, 'bold'),
+        ('TLabel', CANVAS, INK, 10, 'normal'), ('Title.TLabel', CANVAS, INK, 18, 'bold'),
         ('Section.TLabel', CANVAS, INK, 13, 'bold'), ('Heading.TLabel', SURFACE, INK, 13, 'bold'),
         ('CardTitle.TLabel', SURFACE, INK, 12, 'bold'), ('Card.TLabel', SURFACE, INK, 10, 'normal'),
         ('Muted.TLabel', CANVAS, MUTED, 9, 'normal'), ('CardMuted.TLabel', SURFACE, MUTED, 9, 'normal'),
-        ('Side.TLabel', SIDEBAR, MUTED, 9, 'normal'), ('Eyebrow.TLabel', CANVAS, MUTED, 8, 'bold'),
-        ('SideSection.TLabel', SIDEBAR, '#8792A2', 8, 'normal'), ('Number.TLabel', SURFACE, INK, 32, 'bold')):
+        ('Side.TLabel', SIDEBAR, MUTED, 9, 'normal'), ('Eyebrow.TLabel', CANVAS, MUTED, 9, 'bold'),
+        ('SideSection.TLabel', SIDEBAR, '#8792A2', 9, 'normal'), ('Number.TLabel', SURFACE, INK, 32, 'bold')):
         style.configure(name, background=bg, foreground=color, font=(family, size, weight))
 
     button('TButton', SURFACE, LINE, '#F5F8FF', '#C8D6EC')
@@ -178,6 +178,53 @@ def install_quiet(widget, family=None):
     style.configure('Usage.Treeview.Heading',font=(family,9),foreground=MUTED,padding=(8,10))
     for name in ('Treeview','Usage.Treeview'):
         style.map(name,background=[('selected',TINT)],foreground=[('selected',INK)])
+
+    # A native ttk checkbutton keeps its complete label clickable and Space operable.
+    # All indicator images share one geometry so focus never moves the control.
+    checks = {name: tk.PhotoImage(master=root) for name in
+              ('off', 'on', 'focus_off', 'focus_on', 'disabled_off', 'disabled_on')}
+    images.extend(checks.values())
+    side = max(14, round(root.winfo_fpixels('11p')))
+    gap = max(5, round(side * .3))
+    border = max(1, round(side / 10))
+    for name, picture in checks.items():
+        picture.configure(width=side + gap, height=side)
+        picture.blank()
+        focused = name.startswith('focus_')
+        disabled = name.startswith('disabled_')
+        selected = name.endswith('on')
+        outline = ('#183D7A' if focused and selected else BLUE if focused else
+                   '#CFD7E2' if disabled else BLUE if selected else '#8491A4')
+        fill = ('#E9EDF3' if disabled else BLUE if selected else SURFACE)
+        picture.put(outline, to=(0, 0, side, side))
+        picture.put(fill, to=(border, border, side - border, side - border))
+        if selected:
+            color = '#9CA9B9' if disabled else SURFACE
+            points = ((.24, .52), (.33, .61), (.42, .70), (.52, .58),
+                      (.63, .46), (.74, .34), (.80, .27))
+            thickness = max(2, round(side / 9))
+            for x, y in points:
+                px, py = round(x * (side - 1)), round(y * (side - 1))
+                picture.put(color, to=(px, py, min(side, px + thickness),
+                                        min(side, py + thickness)))
+
+    style.element_create('Quiet.check.indicator', 'image', checks['off'],
+                         ('disabled', 'selected', checks['disabled_on']),
+                         ('disabled', checks['disabled_off']),
+                         ('selected', 'focus', checks['focus_on']),
+                         ('focus', checks['focus_off']),
+                         ('selected', checks['on']), sticky='')
+    check_layout = [('Checkbutton.padding', {'sticky': 'nsew', 'children': [
+        ('Quiet.check.indicator', {'side': 'left', 'sticky': ''}),
+        ('Checkbutton.focus', {'side': 'left', 'sticky': 'w', 'children': [
+            ('Checkbutton.label', {'sticky': 'w'})]})]})]
+    for name in ('TCheckbutton', 'Clean.TCheckbutton',
+                 'Preferences.TCheckbutton', 'Popup.TCheckbutton'):
+        style.layout(name, check_layout)
+        style.configure(name, background=SURFACE, foreground=INK, padding=(7, 5),
+                        font=(family, 10), focuscolor=BLUE, focusthickness=1)
+        style.map(name, foreground=[('disabled', '#94A0B1'), ('!disabled', INK)])
+
     style.configure('Horizontal.TProgressbar',background=BLUE,troughcolor='#E8EDF5',borderwidth=0)
     style.configure('Notice.TLabel',background=TINT,foreground='#31548B',padding=(14,10))
     style.configure('Alert.TLabel',background='#FFF4E4',foreground='#865716',padding=(14,10))

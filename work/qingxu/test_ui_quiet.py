@@ -119,4 +119,58 @@ class QuietControlsTests(unittest.TestCase):
         self.assertTrue(self.root.winfo_exists())
 
 
+    def test_checkbox_labels_are_clickable_and_keyboard_focus_visible(self):
+        for name in ('TCheckbutton', 'Clean.TCheckbutton',
+                     'Preferences.TCheckbutton', 'Popup.TCheckbutton'):
+            with self.subTest(style=name):
+                value = tk.BooleanVar(self.root, value=False)
+                check = ttk.Checkbutton(self.root, text='整行标签测试', variable=value, style=name)
+                check.pack(fill='x', padx=20)
+                self.root.update()
+                y = check.winfo_height() // 2
+                labels = [x for x in range(check.winfo_width()) if 'label' in check.identify(x, y)]
+                self.assertTrue(labels, name)
+                x = labels[len(labels) // 2]
+                for event in ('<Enter>', '<ButtonPress-1>', '<ButtonRelease-1>'):
+                    check.event_generate(event, x=x, y=y)
+                self.root.update()
+                self.assertTrue(value.get())
+                check.focus_force()
+                self.root.update()
+                self.assertTrue(check.instate(['focus']))
+                self.assertIn('Quiet.check.indicator', str(self.style.layout(name)))
+                self.assertEqual(self.style.lookup(name, 'focuscolor', ('focus',)), BLUE)
+                check.event_generate('<KeyPress-space>')
+                check.event_generate('<KeyRelease-space>')
+                self.root.update()
+                self.assertFalse(value.get())
+                check.state(['disabled'])
+                check.invoke()
+                self.assertFalse(value.get())
+                check.destroy()
+
+    def test_checkbox_indicator_tracks_font_scaling(self):
+        spans=[]
+        for dpi in (96,144,192):
+            root=tk.Tk()
+            initial=float(root.tk.call('tk','scaling'))
+            try:
+                root.tk.call('tk','scaling',dpi/72)
+                ttk.Style(root).theme_use('clam')
+                install_quiet(root,'Microsoft YaHei UI')
+                check=ttk.Checkbutton(root,text='显示测试',style='Clean.TCheckbutton')
+                check.pack(anchor='w',padx=20)
+                root.update()
+                y=check.winfo_height()//2
+                positions=[x for x in range(check.winfo_width())
+                           if check.identify(x,y)=='Quiet.check.indicator']
+                self.assertTrue(positions)
+                spans.append(max(positions)-min(positions)+1)
+            finally:
+                root.tk.call('tk','scaling',initial)
+                root.destroy()
+        self.assertLess(spans[0],spans[1])
+        self.assertLess(spans[1],spans[2])
+
+
 if __name__=='__main__':unittest.main()

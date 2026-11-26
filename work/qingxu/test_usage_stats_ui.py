@@ -149,6 +149,8 @@ class UsageStatisticsUiTests(unittest.TestCase):
         labels=[chart.itemcget(item,'text') for item in axis]
         self.assertTrue(any(label.startswith('$0.00') and label!='$0.00' for label in labels))
         self.assertTrue(all(chart.bbox(item)[0]>=0 for item in axis))
+        bounds=sorted((chart.bbox(item) for item in axis),key=lambda box:box[1])
+        self.assertTrue(all(a[3]<=b[1] for a,b in zip(bounds,bounds[1:])))
 
     def test_metric_keyboard_focus_scrolls_into_a_short_window(self):
         self.root.deiconify();self.root.geometry('730x220');self.root.update()

@@ -9,6 +9,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
+from functools import cached_property
 import csv
 import hashlib
 import io
@@ -132,6 +133,10 @@ class Request:
     cache_write_12h: int | None = None
     app_project_id: str = ''
 
+    @cached_property
+    def time_utc(self) -> datetime:
+        return timestamp(self.time)
+
     @property
     def identity(self) -> str:
         # Response IDs are shared by active/archive/fork copies. Provider is a
@@ -140,6 +145,7 @@ class Request:
 
     def as_dict(self) -> dict:
         result = dict(self.__dict__)
+        result.pop('time_utc', None)
         # Preserve the serialized form of existing imports and cache entries.
         if not self.app_project_id:
             result.pop('app_project_id')
@@ -298,7 +304,7 @@ class Quote:
     rate_id: str = ''
 
 
-def quote(req: Request, prices: dict) -> Quote:
+def quote(req: Request, prices: dict, *, _rate_ids=None) -> Quote:
     rate = next((r for r in prices['rates'] if r['provider'] == req.provider and r['model'] == req.model), None)
     if not rate:
         return Quote(None, {}, ('未配置此供应商/模型价格',))
@@ -358,7 +364,14 @@ def quote(req: Request, prices: dict) -> Quote:
             return Quote(None, {}, ('价格缺失：' + price_key,))
         multiplier = decimal(rate['long_output'] if key == 'outputTokens' else rate['long_input']) if long else Decimal(1)
         parts[label] = Decimal(tokens) * decimal(rate.get(price_key) or '0') * factor * multiplier / MILLION
-    return Quote(sum(parts.values(), Decimal(0)), parts, tuple(notes), PriceStore.fingerprint(rate)[:12])
+    if _rate_ids is None:
+        rate_id = PriceStore.fingerprint(rate)[:12]
+    else:
+        key = id(rate)
+        rate_id = _rate_ids.get(key)
+        if rate_id is None:
+            rate_id = _rate_ids[key] = PriceStore.fingerprint(rate)[:12]
+    return Quote(sum(parts.values(), Decimal(0)), parts, tuple(notes), rate_id)
 
 
 def fixed_timezone(label: str):
@@ -378,7 +391,7 @@ def fixed_timezone(label: str):
 
 
 def local_date(req: Request, tz_label: str) -> date:
-    return timestamp(req.time).astimezone(fixed_timezone(tz_label)).date()
+    return req.time_utc.astimezone(fixed_timezone(tz_label)).date()
 
 
 def period_bounds(kind, now=None, tz_label='本机时区'):
@@ -412,14 +425,15 @@ def filter_requests(rows, *, start: date | None = None, end: date | None = None,
     if start_at is not None and end_at is not None and start_at > end_at:
         raise ValueError('时间范围需按先后排列')
     tz = fixed_timezone(tz_label)
+    target_cwd = path_key(cwd) if cwd else None
     selected = []
     for r in rows:
-        t = timestamp(r.time)
+        t = r.time_utc
         day = t.astimezone(tz).date() if start is not None or end is not None else None
         if ((start is None or day >= start) and (end is None or day <= end)
                 and (start_at is None or t >= start_at) and (end_at is None or t < end_at)
                 and (not provider or r.provider == provider) and (not model or r.model == model)
-                and (not cwd or path_key(r.cwd) == path_key(cwd)) and (not thread_id or r.thread_id == thread_id)
+                and (not cwd or path_key(r.cwd) == target_cwd) and (not thread_id or r.thread_id == thread_id)
                 and (not app_project_id or r.app_project_id == app_project_id)
                 and (not unassigned_only or not r.app_project_id)):
             selected.append(r)
@@ -427,14 +441,15 @@ def filter_requests(rows, *, start: date | None = None, end: date | None = None,
 
 
 def summary(rows: list[Request], prices: dict, *, mode='estimate', quote_cache=None) -> dict:
+    rate_ids = {}  # Per-call only: rate dictionaries may be edited between summaries.
     if quote_cache is None:
-        quotes = [quote(r, prices) for r in rows]
+        quotes = [quote(r, prices, _rate_ids=rate_ids) for r in rows]
     else:
         quotes = []
         for r in rows:
             key = id(r)
             if key not in quote_cache:
-                quote_cache[key] = quote(r, prices)
+                quote_cache[key] = quote(r, prices, _rate_ids=rate_ids)
             quotes.append(quote_cache[key])
     costs = [q.amount for q in quotes] if mode == 'estimate' else [decimal(r.reported_cost_usd) if r.reported_cost_usd is not None else None for r in rows]
     usages = [r.usage for r in rows if r.usage is not None]
@@ -496,7 +511,7 @@ def daily(rows, start, end, tz_label, prices, mode='estimate', quote_cache=None)
     groups = defaultdict(list)
     tz = fixed_timezone(tz_label)
     for r in rows:
-        groups[timestamp(r.time).astimezone(tz).date()].append(r)
+        groups[r.time_utc.astimezone(tz).date()].append(r)
     # Keep the final axis readable; aggregate to week/month for longer windows.
     period = 'day' if (end-start).days < 62 else 'week' if (end-start).days < 370 else 'month'
     bins = defaultdict(list)
@@ -515,7 +530,7 @@ def period_buckets(rows, kind, now, tz_label, prices, mode='estimate', quote_cac
     if kind in ('今天', '近 24 小时'):
         bins = defaultdict(list)
         for r in rows:
-            seconds = (timestamp(r.time) - start).total_seconds()
+            seconds = (r.time_utc - start).total_seconds()
             if seconds >= 0:
                 bins[int(seconds // 3600)].append(r)
         count = max(0, math.ceil((end - start).total_seconds() / 3600))
@@ -526,7 +541,7 @@ def period_buckets(rows, kind, now, tz_label, prices, mode='estimate', quote_cac
         return result, 'hour'
     bins = defaultdict(list)
     for r in rows:
-        bins[local_date(r, tz_label)].append(r)
+        bins[r.time_utc.astimezone(tz).date()].append(r)
     if kind != '全部':
         first = start.astimezone(tz).date()
         last = end.astimezone(tz).date()
