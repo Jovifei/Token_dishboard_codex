@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import json
+import math
 from pathlib import Path
 from queue import Empty, SimpleQueue
 import threading
@@ -12,7 +13,7 @@ from tkinter import ttk, filedialog, font, messagebox
 import webbrowser
 
 from billing import (Request, PriceStore, default_prices, validate_prices, summary, quote, project_identity,
-                     filter_requests, group_requests, daily, money, short_number, export_csv, fixed_timezone, timestamp,
+                     filter_requests, group_requests, daily, money, short_number, export_csv, fixed_timezone,
                      period_bounds, period_buckets)
 from billing_index import BillingIndex
 from ui_motion import attach_motion_tree, reduced_motion
@@ -25,29 +26,12 @@ TEAL = BLUE
 PERIODS = ('今天', '近 24 小时', '近 7 天', '近 30 天', '全部', '自定义')
 
 
-class RoundedCard(tk.Canvas):
-    """A bordered card with a normal Tk frame for accessible native controls."""
-    def __init__(self, parent, padding=(12, 10)):
-        super().__init__(parent, background=BG, highlightthickness=0, width=1, height=80)
-        self.content=ttk.Frame(self,style='Card.TFrame',padding=padding)
-        self._content_id=self.create_window(8,8,anchor='nw',window=self.content)
-        self.bind('<Configure>',self._draw)
-        self.content.bind('<Configure>',self._fit)
-
-    def _fit(self,_event=None):
-        height=self.content.winfo_reqheight()+16
-        if int(float(self.cget('height'))) != height:
-            self.configure(height=height)
-
-    def _draw(self,event):
-        w,h=max(20,event.width),max(20,event.height)
-        self.delete('border')
-        r=16
-        self.create_polygon(1,r,1,1,r,1,w-r,1,w-1,1,w-1,r,
-                            w-1,h-r,w-1,h-1,w-r,h-1,r,h-1,1,h-1,1,h-r,
-                            smooth=True,splinesteps=24,fill=CARD,outline=LINE,tags='border')
-        self.tag_lower('border')
-        self.itemconfigure(self._content_id,width=max(1,w-16))
+class UsageCard(ttk.Frame):
+    """Keep sizing in Tk's layout manager so text and charts share the same bounds."""
+    def __init__(self, parent, padding):
+        super().__init__(parent, style='Card.TFrame', padding=1)
+        self.content = ttk.Frame(self, style='Card.TFrame', padding=padding)
+        self.content.pack(fill='both', expand=True)
 
 
 class DailyChart(tk.Canvas):
@@ -73,41 +57,54 @@ class DailyChart(tk.Canvas):
     def draw(self, event=None):
         self.delete('all')
         self.hitboxes=[]
+        self.hover=None
         if self.period=='heatmap':
             self._heatmap()
             return
         target_height=104 if getattr(self,'compact',False) else 132
         if int(float(self.cget('height'))) != target_height:
             self.configure(height=target_height)
-        w,h=max(360,self.winfo_width()),max(target_height,self.winfo_height())
+        w,h=max(1,self.winfo_width()),target_height
+        if w<140:return
+        axis_font=font.Font(root=self,font=('TkDefaultFont',9))
+        line_height=axis_font.metrics('linespace')
+        top=line_height//2+3
+        bottom=h-line_height-12
+        ticks=min(4,max(1,(bottom-top)//(line_height+3)))
         values=[float(r[self.metric]) if r[self.metric] is not None else None for _,r in self.rows]
         peak=max([v for v in values if v is not None]+[0.]) or 1.
         if self.metric=='cache_hit':
             peak=100
-        peak=peak*1.12 if self.metric!='cache_hit' else peak
-        fractions=(0,.5,1)
+        else:
+            step=peak/ticks
+            unit=10**math.floor(math.log10(step))
+            tick=next(n*unit for n in (1,2,2.5,5,10,20) if n*unit>=step)
+            peak=tick*ticks
+        fractions=[i/ticks for i in range(ticks+1)]
         labels=[]
         for frac in fractions:
             v=peak*frac
             label=(('$'+short_number(v) if v>=1000 else '$'+f'{v:.2g}' if 0<v<.01 else money(Decimal(str(v)),2))
                    if self.metric=='cost' else f'{v:.0f}%' if self.metric=='cache_hit' else short_number(round(v)))
             labels.append(label)
-        axis_font=font.Font(root=self,font=('TkDefaultFont',9))
         left=max(56,max(axis_font.measure(label) for label in labels)+12)
-        right,top,bottom=w-16,12,h-26
+        right=w-10
+        if right<=left or bottom<=top:return
         for frac,label in zip(fractions,labels):
             y=bottom-(bottom-top)*frac
-            self.create_line(left,y,right,y,fill=LINE)
+            self.create_line(left,y,right,y,fill=LINE,dash=(2,4) if frac else ())
             self.create_text(left-8,y,text=label,anchor='e',fill=MUTED,font=('TkDefaultFont',9))
         n=len(self.rows)
         if not n:
             self.create_text(w/2,h/2,text='选择时间范围并同步本机用量',fill=MUTED)
             return
         step=(right-left)/n
-        stride=max(1,(n+10)//11)
+        label_width=axis_font.measure('00:00')+12
+        stride=max(1,math.ceil(label_width/max(1,step)))
+        last_label=-label_width
         for i,((day,stats),v) in enumerate(zip(self.rows,values)):
             x=left+(i+.5)*step
-            half=min(24,max(2,step*.3))
+            half=min(20,step*.31)
             if v is None:
                 if stats['requests']:
                     self.create_rectangle(x-half,bottom-7,x+half,bottom,outline=ORANGE,fill='#FFF2DB',stipple='gray50')
@@ -120,9 +117,11 @@ class DailyChart(tk.Canvas):
                                     outline='',fill=TEAL)
                 if self.metric=='cost' and stats['unpriced']:
                     self.create_text(x,max(top,y-9),text='*',fill=ORANGE)
-            if i%stride==0 or i==n-1:
+            if i%stride==0 and x-last_label>=label_width:
                 label=datetime.fromisoformat(day).strftime('%H:%M') if self.period=='hour' else day[5:].replace('-','/')
-                self.create_text(x,bottom+17,text=label,fill=MUTED,font=('TkDefaultFont',9))
+                label_x=min(w-label_width/2,max(label_width/2,x))
+                self.create_text(label_x,bottom+7,anchor='n',text=label,fill=MUTED,font=('TkDefaultFont',9))
+                last_label=label_x
             self.hitboxes.append((x-step/2,x+step/2,day,stats))
         if not any(r['requests'] for _,r in self.rows):
             self.create_text((left+right)/2,(top+bottom)/2,text='此范围尚无已记录请求（不代表未使用）',fill=MUTED)
@@ -219,12 +218,18 @@ class DailyChart(tk.Canvas):
                    ('—' if s['cache_hit'] is None else f"{s['cache_hit']:.2f}%") if self.metric=='cache_hit' else
                    short_number(s[self.metric]))
         unit = {'cost':'成本','tokens':'Tokens','requests':'请求数','cache_hit':'缓存命中率'}[self.metric]
-        msg=f"{day}  ·  {unit} {current}  ·  {s['requests']} 条请求" + (f" / {s['unpriced']} 条未计价" if s['unpriced'] else '')
-        width=min(420,max(100,self.winfo_width()-16))
-        x=max(8,min(event.x-width/2,self.winfo_width()-width-8))
-        text_id=self.create_text(x+8,6,text=msg,width=width-16,anchor='nw',fill=INK,font=('TkDefaultFont',9),tags='tip')
+        stamp=datetime.fromisoformat(day).strftime('%Y/%m/%d %H:%M' if self.period=='hour' else '%Y/%m/%d')
+        msg=f"{stamp}\n{unit}  {current}  ·  {s['requests']:,} 条请求"
+        if self.metric=='cost' and s['unpriced']:
+            msg+=f"\n{s['unpriced']:,} 条未计价"
+        width=min(290,max(100,self.winfo_width()-16))
+        x=max(8,min(event.x+12,self.winfo_width()-width-8))
+        position=9
+        text_id=self.create_text(x+10,position,text=msg,width=width-20,anchor='nw',
+                                 fill=INK,font=('TkDefaultFont',9),tags='tip')
         bounds=self.bbox(text_id)
-        box=self.create_rectangle(x,2,x+width,(bounds[3] if bounds else 20)+5,fill='#EAF3FF',outline='',tags='tip')
+        box=self.create_rectangle(x,3,x+width,min(self.winfo_height()-1,bounds[3]+6),
+                                  fill=CARD,outline=LINE,tags='tip')
         self.tag_lower(box,text_id)
 
     def click(self,event):
@@ -258,6 +263,10 @@ class BillingPanel(ttk.Frame):
         self.metric='cost'
         self.metric_choice=tk.StringVar(self,value='cost')
         self.quote_cache={}
+        self.table_cache={}
+        self.calculations={}
+        self.calculation_job=None
+        self.calculator=ThreadPoolExecutor(max_workers=1,thread_name_prefix='qingxu-usage')
         self.today_day=datetime.now(timezone.utc).astimezone().date()
         self.today_job=None
         self.period=tk.StringVar(self,value='近 7 天')
@@ -295,7 +304,7 @@ class BillingPanel(ttk.Frame):
         heading.pack(side='left',fill='x',expand=True)
         self.heading_title=ttk.Label(heading,text='用量与费用',style='Title.TLabel')
         self.heading_title.pack(anchor='w')
-        self.heading_subtitle=ttk.Label(heading,text='每一次请求，都有清楚的来处。',style='Muted.TLabel')
+        self.heading_subtitle=ttk.Label(heading,text='本机请求与估算费用',style='Muted.TLabel')
         self.heading_subtitle.pack(anchor='w',pady=(4,0))
         self.refresh_button=ttk.Button(header,text='同步用量',command=self.refresh,style='Primary.TButton')
         self.refresh_button.pack(side='right',padx=(6,0))
@@ -368,7 +377,7 @@ class BillingPanel(ttk.Frame):
         self.kpis={}
         labels=(('cost','估算成本'),('requests','总请求数'),('tokens','消耗 Tokens'),('cache_hit','缓存命中率'))
         for i,(key,caption) in enumerate(labels):
-            card=RoundedCard(cards,padding=(14,14))
+            card=UsageCard(cards,padding=(14,14))
             card.grid(row=0,column=i,sticky='nsew',padx=(0,8),pady=(0,8))
             self.kpi_cards.append(card)
             cell=card.content
@@ -412,7 +421,7 @@ class BillingPanel(ttk.Frame):
             self.more_metric_cards.append(card)
             self.more_metric_values[key]=(value,note)
         self.more_metrics.bind('<Configure>',self._layout_more_metrics)
-        chart_card=RoundedCard(hero,padding=(18,12))
+        chart_card=UsageCard(hero,padding=(18,12))
         chart_card.pack(fill='x',pady=(6,12))
         self.chart_card=chart_card
         chart_header=ttk.Frame(chart_card.content,style='Card.TFrame')
@@ -590,11 +599,14 @@ class BillingPanel(ttk.Frame):
         self._filters_in_canvas=needs_scroll
 
     def _fit_density(self):
-        compact=self.winfo_width()<950 or self.winfo_height()<740
+        width,height=self.winfo_width(),self.winfo_height()
+        scaling=float(self.tk.call('tk','scaling'))
+        compact=width<950 or height<740
         face=font.nametofont('TkDefaultFont',root=self)
-        dense=(self.winfo_width()<face.measure('中'*31) or
-               self.winfo_height()<face.metrics('linespace')*24)
-        density=(compact,dense,float(self.tk.call('tk','scaling')))
+        # A font fallback can be narrower without leaving more vertical space for logs.
+        short_scaled_window=height<650 and scaling>=1.9
+        dense=(width<face.measure('中'*31) or height<face.metrics('linespace')*24 or short_scaled_window)
+        density=(compact,dense,scaling)
         if getattr(self,'_quiet_density',None)!=density:
             self._quiet_density=density
             family=getattr(self.app,'font_family','TkDefaultFont')
@@ -618,6 +630,7 @@ class BillingPanel(ttk.Frame):
             style.configure('Dense.Line.TNotebook.Tab',font=(family,9),padding=(7,3))
             style.map('Dense.Line.TNotebook.Tab',foreground=style.map('Line.TNotebook.Tab','foreground'))
             table_font=font.Font(root=self,family=family,size=8)
+            self._request_font=table_font
             style.configure('Dense.Usage.Treeview',font=(family,8),rowheight=table_font.metrics('linespace')+8)
             style.configure('Dense.Usage.Treeview.Heading',font=(family,8),padding=(5,3))
             self.heading_title.configure(font=(family,12 if dense else 16 if compact else 23,'bold'))
@@ -662,7 +675,7 @@ class BillingPanel(ttk.Frame):
             self.chart.compact=compact
             self.chart.draw()
             self._kpi_layout=None
-        scroll_footer=self.winfo_height()<max(480,face.metrics('linespace')*28)
+        scroll_footer=short_scaled_window or height<max(480,face.metrics('linespace')*28)
         if getattr(self,'_footer_in_canvas',None)!=scroll_footer:
             self._footer_in_canvas=scroll_footer
             self.table_footer.pack_forget()
@@ -699,6 +712,47 @@ class BillingPanel(ttk.Frame):
         direction=-1 if delta>0 or getattr(event,'num',0)==4 else 1
         self.canvas.yview_scroll(direction*2,'units')
 
+    def _cancel_calculation(self, key):
+        job=self.calculations.pop(key,None)
+        if job:
+            job[2].set()
+            job[0].cancel()
+
+    def _calculate(self, key, count, work, done):
+        self._cancel_calculation(key)
+        stop=threading.Event()
+        if count < 1000:
+            done(work(stop))
+            return
+        self.calculations[key]=(self.calculator.submit(work,stop),done,stop)
+        if self.calculation_job is None:
+            self.calculation_job=self.after(30,self._receive_calculations)
+
+    def _receive_calculations(self):
+        self.calculation_job=None
+        for key,(future,done,_) in list(self.calculations.items()):
+            if self.calculations.get(key, (None,))[0] is not future or not future.done():
+                continue
+            del self.calculations[key]
+            try:
+                done(future.result())
+            except (ValueError,TypeError,OverflowError,OSError) as exc:
+                self.notice.set('统计未更新：'+str(exc))
+                self.chart_title.configure(text='统计未更新，请重试')
+        if self.calculations and self.calculation_job is None and not self.closed:
+            self.calculation_job=self.after(30,self._receive_calculations)
+
+    @staticmethod
+    def _summarize(rows,prices,mode,cache,stop):
+        rate_ids={}
+        for offset,row in enumerate(rows):
+            if offset%256==0 and stop.is_set():
+                raise InterruptedError('筛选已更新')
+            key=id(row)
+            if key not in cache:
+                cache[key]=quote(row,prices,_rate_ids=rate_ids)
+        return summary(rows,prices,mode=mode,quote_cache=cache)
+
     def activate(self):
         if self.closed:return
         if not self.active:
@@ -711,7 +765,9 @@ class BillingPanel(ttk.Frame):
         self.result=None
         self.source=None
         self.active=False
-        self.quote_cache.clear()
+        self.quote_cache={}
+        for key in tuple(self.calculations):
+            self._cancel_calculation(key)
         if hasattr(self.app,'set_today_cost'):self.app.set_today_cost('今日 —')
         self.stop.set()
         self.notice.set('数据来源已变化，请重新同步；未沿用旧来源金额。')
@@ -805,7 +861,7 @@ class BillingPanel(ttk.Frame):
     def set_result(self,result):
         self.result=result
         self.requests=list(result['requests'])
-        self.quote_cache.clear()
+        self.quote_cache={}
         providers=sorted({r.provider for r in self.requests})
         models=sorted({r.model for r in self.requests})
         self.provider_box.configure(values=('全部供应商',*providers))
@@ -820,10 +876,12 @@ class BillingPanel(ttk.Frame):
         if not hasattr(self.app,'set_today_cost'):return
         self.today_day=datetime.now(timezone.utc).astimezone().date()
         start,end=period_bounds('今天',datetime.now(timezone.utc),'本机时区')
-        rows=filter_requests(self.requests,start_at=start,end_at=end,tz_label='本机时区')
-        data=summary(rows,self.prices,mode='estimate',quote_cache=self.quote_cache)
-        amount=money(data['cost'])
-        self.app.set_today_cost('今日 '+amount+('*' if data['cost'] is not None and data['unpriced'] else ''))
+        requests, prices, cache=self.requests,self.prices,self.quote_cache
+        def work(stop):
+            rows=filter_requests(requests,start_at=start,end_at=end,tz_label='本机时区')
+            data=self._summarize(rows,prices,'estimate',cache,stop)
+            return '今日 '+money(data['cost'])+('*' if data['cost'] is not None and data['unpriced'] else '')
+        self._calculate('today',len(requests),work,self.app.set_today_cost)
 
     def _check_today(self):
         self.today_job=None
@@ -866,21 +924,42 @@ class BillingPanel(ttk.Frame):
                     if not project_id:cwd=record.get('path','')
                 else:thread=record.get('chat_id','')
                 if not (cwd or thread or project_id):raise ValueError('当前选择缺少可核对的项目/会话身份')
-            self.filtered=filter_requests(self.requests,start=start,end=end,start_at=start_at,end_at=end_at,tz_label=self.tz.get(),
-                    provider='' if self.provider.get()=='全部供应商' else self.provider.get(),
-                    model='' if self.model.get()=='全部模型' else self.model.get(),cwd=cwd,thread_id=thread,
-                    app_project_id=project_id,unassigned_only=bool(cwd))
-            mode=self.mode
-            data=summary(self.filtered,self.prices,mode=mode,quote_cache=self.quote_cache)
-            self.stats=data
-            if custom:
-                self.date_rows,self.chart_period=daily(self.filtered,start,end,self.tz.get(),self.prices,mode=mode,quote_cache=self.quote_cache)
-            else:
-                self.date_rows,self.chart_period=period_buckets(self.filtered,kind,now,self.tz.get(),self.prices,mode=mode,quote_cache=self.quote_cache)
-                if kind=='全部':self.chart_period='heatmap'
-            self.chart.today=now.astimezone(fixed_timezone(self.tz.get())).date()
+            requests, prices, cache=self.requests,self.prices,self.quote_cache
+            mode,zone=self.mode,self.tz.get()
+            provider,model=self.provider.get(),self.model.get()
+            query=dict(start=start,end=end,start_at=start_at,end_at=end_at,tz_label=zone,
+                       provider='' if provider=='全部供应商' else provider,
+                       model='' if model=='全部模型' else model,cwd=cwd,thread_id=thread,
+                       app_project_id=project_id,unassigned_only=bool(cwd))
+            order=self.sort_keys.get('request',('time',True))
+            request_open=self.tables.select()==str(self.tab_frames['request'])
+            def work(stop):
+                rows=filter_requests(requests,**query)
+                data=self._summarize(rows,prices,mode,cache,stop)
+                if custom:
+                    buckets,chart_period=daily(rows,start,end,zone,prices,mode=mode,quote_cache=cache)
+                else:
+                    buckets,chart_period=period_buckets(rows,kind,now,zone,prices,mode=mode,quote_cache=cache)
+                if kind=='全部':chart_period='heatmap'
+                unmapped=bool(project_id and any(not r.app_project_id for r in requests))
+                requests_sorted=self._sorted_objects(rows,'request',order,prices,mode,cache,stop) if request_open else None
+                return rows,data,buckets,chart_period,unmapped,requests_sorted
+            self._cancel_calculation('table')
+            self.table_cache.clear()
+            if len(requests)>=1000:
+                self.chart_title.configure(text='正在更新统计…')
+                self.notice.set('正在计算所选范围，暂时显示上一次结果。')
+            self._calculate('view',len(requests),work,lambda result:self._show_view(
+                result,now.astimezone(fixed_timezone(zone)).date(),cwd,order))
         except (ValueError,TypeError,OverflowError) as exc:
-            self.notice.set('筛选未应用：'+str(exc));return
+            self.notice.set('筛选未应用：'+str(exc))
+
+    def _show_view(self,result,today,cwd,order):
+        self.filtered,data,self.date_rows,self.chart_period,unmapped,requests_sorted=result
+        if requests_sorted is not None:
+            self.table_cache['request']=(order,requests_sorted)
+        self.stats=data
+        self.chart.today=today
         self.page=min(self.page,max(0,(len(self.filtered)-1)//self.page_size))
         self._render_kpis(data)
         self.select_metric(self.metric)
@@ -906,7 +985,7 @@ class BillingPanel(ttk.Frame):
             detail+=f" {issues['compressed_read_errors']} 个压缩归档损坏或截断，未纳入统计。"
         if issues.get('files_seen') is not None:detail+=f" 本轮检查 {issues['files_seen']} 个日志 / 读取 {issues.get('bytes_read',0)/1048576:.1f} MiB。"
         if (self.result or {}).get('mapping_note'):detail+=' 项目映射受限。'
-        if project_id and any(not r.app_project_id for r in self.requests):detail+=' 项目归属未确认的记录未纳入当前项目。'
+        if unmapped:detail+=' 项目归属未确认的记录未纳入当前项目。'
         if cwd:detail+=' 当前项目按所选工作目录筛选未归属记录。'
         if (self.result or {}).get('synthetic'):detail='合成演示数据 · '+detail
         self.notice.set(detail)
@@ -970,51 +1049,85 @@ class BillingPanel(ttk.Frame):
         self.apply_filters();self.tables.select(self.tab_frames['request'])
 
     def _table_changed(self,_event=None):
-        if self.result is not None:self.render_tables()
+        if self.result is not None:
+            self.page=0
+            self.render_tables()
 
     def _quote(self,request):
         key=id(request)
         if key not in self.quote_cache:self.quote_cache[key]=quote(request,self.prices)
         return self.quote_cache[key]
 
-    def render_tables(self):
-        selected=self.tables.select()
-        key=next((name for name,frame in self.tab_frames.items() if str(frame)==selected),None)
-        if key is None:return
-        tree=self.trees[key]
-        if key=='request':
-            tree.heading('cost',text='估算价格' if self.mode=='estimate' else '来源金额')
-        tree.delete(*tree.get_children())
-        objs=list(self.filtered) if key=='request' else group_requests(self.filtered,key,self.prices,self.mode,quote_cache=self.quote_cache)
-        self.tables.tab(self.tab_frames[key],text=f'{self.labels[key]}  {len(objs):,}')
-        column,desc=self.sort_keys.get(key,('time',True) if key=='request' else ('cost',True))
-        def val(obj):
+    @staticmethod
+    def _sorted_objects(rows,key,order,prices,mode,cache,stop):
+        column,desc=order
+        if stop.is_set():return []
+        objs=rows if key=='request' else group_requests(rows,key,prices,mode,quote_cache=cache)
+        def value(obj):
             if key=='request':
-                if column=='cost':return self._quote(obj).amount if self.mode=='estimate' else Decimal(obj.reported_cost_usd) if obj.reported_cost_usd is not None else None
-                if column=='time':return timestamp(obj.time)
+                if column=='cost':
+                    return cache[id(obj)].amount if mode=='estimate' else Decimal(obj.reported_cost_usd) if obj.reported_cost_usd is not None else None
+                if column=='time':return obj.time_utc
                 usage=obj.usage or {}
-                return {'model':obj.model,'provider':obj.provider,'project':obj.project,
-                        'input':usage.get('inputTokens'),'output':usage.get('outputTokens'),
-                        'cached':usage.get('cacheReadTokens') if obj.cache_known else None,
-                        'tokens':usage.get('totalTokens'),'status':obj.status}.get(column)
+                return {'model':obj.model,'input':usage.get('inputTokens'),'output':usage.get('outputTokens'),
+                        'cached':usage.get('cacheReadTokens') if obj.cache_known else None}.get(column)
             ident,s=obj
             if column=='name':return str(ident)
             if column=='coverage':return s['priced']/max(1,s['requests'])
             return s.get(column)
-        # Unknowns always last, regardless of sort direction.
-        decorated=[(val(obj),obj) for obj in objs]
-        known=[pair for pair in decorated if pair[0] is not None]
-        unknown=[pair for pair in decorated if pair[0] is None]
-        objs=[obj for _,obj in sorted(known,key=lambda pair:pair[0],reverse=desc)+unknown]
-        if key=='request':objs=objs[self.page*self.page_size:(self.page+1)*self.page_size]
+        known,unknown=[],[]
+        for offset,obj in enumerate(objs):
+            if offset%256==0 and stop.is_set():return []
+            sort_value=value(obj)
+            if sort_value is None:unknown.append(obj)
+            else:known.append((sort_value,obj))
+        known.sort(key=lambda pair:pair[0],reverse=desc)
+        return [obj for _,obj in known]+unknown
+
+    def render_tables(self):
+        if 'view' in self.calculations:return
+        selected=self.tables.select()
+        key=next((name for name,frame in self.tab_frames.items() if str(frame)==selected),None)
+        if key is None:return
+        order=self.sort_keys.get(key,('time',True) if key=='request' else ('cost',True))
+        cached=self.table_cache.get(key)
+        if cached and cached[0]==order:
+            self._draw_table(key,cached[1])
+            return
+        rows,prices,mode,cache=self.filtered,self.prices,self.mode,self.quote_cache
+
+        def work(stop):
+            return self._sorted_objects(rows,key,order,prices,mode,cache,stop)
+
+        def done(objs):
+            self.table_cache[key]=(order,objs)
+            if self.tables.select()==str(self.tab_frames[key]):
+                self._draw_table(key,objs)
+
+        if len(rows)>=1000:
+            self.trees[key].delete(*self.trees[key].get_children())
+            self.page_label.configure(text='正在准备表格…')
+        self._calculate('table',len(rows),work,done)
+
+    def _draw_table(self,key,objs):
+        tree=self.trees[key]
+        if key=='request':
+            tree.heading('cost',text='估算价格' if self.mode=='estimate' else '来源金额')
+        tree.delete(*tree.get_children())
+        total=len(objs)
+        self.tables.tab(self.tab_frames[key],text=f'{self.labels[key]}  {total:,}')
+        self.page=min(self.page,max(0,(total-1)//self.page_size))
+        current=objs[self.page*self.page_size:(self.page+1)*self.page_size]
         mapping={}
-        for i,obj in enumerate(objs):
+        values_by_row=[]
+        zone=fixed_timezone(self.tz.get())
+        for i,obj in enumerate(current):
             iid=f'{key}-{i}'
             mapping[iid]=obj
             if key=='request':
                 r=obj; q=self._quote(r); u=r.usage or {}
                 amount=q.amount if self.mode=='estimate' else Decimal(r.reported_cost_usd) if r.reported_cost_usd is not None else None
-                values=(timestamp(r.time).astimezone(fixed_timezone(self.tz.get())).strftime('%m-%d %H:%M:%S'),r.model,
+                values=(r.time_utc.astimezone(zone).strftime('%m-%d %H:%M:%S'),r.model,
                         short_number(u.get('inputTokens')),short_number(u.get('outputTokens')),
                         short_number(u.get('cacheReadTokens') if r.cache_known else None),money(amount,4))
             else:
@@ -1026,23 +1139,33 @@ class BillingPanel(ttk.Frame):
                         '—' if s['speed'] is None else f"≈{s['speed']:.1f} tok/s",
                         '—' if s['ttft'] is None else f"≈{s['ttft']/1000:.2f}s",f"{s['priced']}/{s['requests']}")
             tree.insert('', 'end',iid=iid,values=values)
+            values_by_row.append(values)
         self.row_objects[key]=mapping
         if key=='request':
+            self._request_values=values_by_row
             self._fit_request_columns()
-        total=len(self.filtered)
-        self.page_label.configure(text=f'请求 {self.page+1 if total else 0} / {max(1,(total+99)//100) if total else 0} 页')
+        pages=(total+self.page_size-1)//self.page_size
+        self.page_label.configure(text=f'{self.labels[key]} {self.page+1 if total else 0} / {pages} 页')
 
     def _fit_request_columns(self):
         tree=self.trees['request']
         dense=getattr(self,'_quiet_density',(False,False))[1]
+        rows=getattr(self,'_request_values',())
         if dense:
-            family=getattr(self.app,'font_family','TkDefaultFont')
-            table_font=font.Font(root=self,family=family,size=8)
-            rows=[tree.item(item,'values') for item in tree.get_children()]
+            table_font=self._request_font
+            # Reuse the widths of repeated model names and avoid per-row Tcl calls for numbers.
+            digit=table_font.measure('8888888888') / 10
         for index,(column,(caption,base_width)) in enumerate(self.request_headings):
             if dense:
                 heading=tree.heading(column,'text') or caption
-                minimum=max([table_font.measure(heading)]+[table_font.measure(str(row[index])) for row in rows])+16
+                if column=='time':
+                    content_width=table_font.measure('88-88 88:88:88')
+                elif column=='model':
+                    names={str(row[index]) for row in rows}
+                    content_width=max((table_font.measure(name) for name in names),default=0)
+                else:
+                    content_width=math.ceil(max((len(str(row[index])) for row in rows),default=0)*digit)
+                minimum=max(table_font.measure(heading),content_width)+16
                 width=minimum
             else:
                 minimum=64
@@ -1055,8 +1178,8 @@ class BillingPanel(ttk.Frame):
         self.render_tables()
 
     def turn_page(self,delta):
-        self.page=max(0,min(self.page+delta,max(0,(len(self.filtered)-1)//self.page_size)))
-        self.tables.select(self.tab_frames['request']);self.render_tables()
+        self.page=max(0,self.page+delta)
+        self.render_tables()
 
     def drill(self,key):
         selected=self.trees[key].selection()
@@ -1111,6 +1234,8 @@ class BillingPanel(ttk.Frame):
         if path:self.refresh(import_path=path)
 
     def export(self):
+        if 'view' in self.calculations:
+            self.detail_text.set('请等当前筛选计算完成后再导出。');return
         if not self.filtered:
             self.detail_text.set('当前范围没有请求可导出。');return
         path=filedialog.asksaveasfilename(parent=self.app.root,title='导出筛选范围的全部请求',defaultextension='.csv',filetypes=[('CSV','*.csv')],initialfile='qingxu-usage.csv')
@@ -1127,6 +1252,11 @@ class BillingPanel(ttk.Frame):
     def _destroyed(self,event):
         if event.widget is not self:return
         self.closed=True;self.stop.set()
+        if self.calculation_job is not None:
+            self.after_cancel(self.calculation_job)
+        for key in tuple(self.calculations):
+            self._cancel_calculation(key)
+        self.calculator.shutdown(wait=False,cancel_futures=True)
         if self.poll_job:
             try:self.after_cancel(self.poll_job)
             except tk.TclError:pass
@@ -1246,7 +1376,7 @@ class PriceEditor(tk.Toplevel):
         try:
             self.data['allow_assumptions']=self.allow.get()
             self.panel.prices=self.panel.price_store.save(self.data,self.expected)
-            self.panel.quote_cache.clear()
+            self.panel.quote_cache={}
             self.panel.apply_filters()
             self.panel._refresh_today_cost()
             self.panel.sync_text.set('单价已备份、保存并读回；历史范围按新价表重算。')

@@ -1,11 +1,12 @@
 """Money/denominator/date tests use explicit synthetic requests, never a live bill."""
-from datetime import date
+from datetime import date, datetime, timezone
 from dataclasses import replace
 from decimal import Decimal
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from billing import *
 
@@ -166,6 +167,24 @@ class BillingMathTests(unittest.TestCase):
     def test_csv_formula_escape_and_full_precision(self):
         csv=export_csv([request(project='=SUM(A1)')],self.prices)
         self.assertIn("'=SUM(A1)",csv);self.assertIn('0.0153',csv)
+    def test_summary_reuses_rate_id_only_within_each_price_snapshot(self):
+        first = request()
+        second = replace(first, response_id='second')
+        other = request(response_id='other', model='gpt-6.1-terra')
+        rows = [first, second, other]
+        expected = [quote(r, self.prices) for r in rows]
+        with patch.object(PriceStore, 'fingerprint', wraps=PriceStore.fingerprint) as fingerprints:
+            result = summary(rows, self.prices, quote_cache={})
+            self.assertEqual(result['quotes'], expected)
+            self.assertEqual(fingerprints.call_count, 2)
+            rate = next(x for x in self.prices['rates'] if x['model'] == first.model)
+            rate['input'] = '999'
+            changed = summary(rows, self.prices, quote_cache={})
+            self.assertEqual(fingerprints.call_count, 4)
+        self.assertNotEqual(changed['quotes'][0].rate_id, result['quotes'][0].rate_id)
+        self.assertNotEqual(changed['quotes'][0].amount, result['quotes'][0].amount)
+        self.assertEqual(changed['quotes'][2], result['quotes'][2])
+
     def test_sum_without_per_request_rounding(self):
         rows=[request(response_id=str(i),usage=dict(input_tokens=1,cached_input_tokens=0,output_tokens=0,total_tokens=1)) for i in range(100)]
         self.assertEqual(summary(rows,self.prices)['cost'],Decimal('.0002'))
@@ -173,6 +192,47 @@ class BillingMathTests(unittest.TestCase):
         r=request(time='2026-11-10T16:30:00Z')
         for zone,count in [('UTC',0),('UTC+08:00',1),('UTC+09:00',1)]:
             self.assertEqual(len(filter_requests([r],start=date(2026,11,11),end=date(2026,11,11),tz_label=zone)),count)
+    def test_request_time_cache_preserves_validation_and_serialization(self):
+        r = request()
+        original = r.as_dict()
+        day = date(2026, 11, 11)
+        now = datetime(2026, 11, 11, 5, tzinfo=timezone.utc)
+        with patch('billing.timestamp', wraps=timestamp) as parse:
+            self.assertEqual(filter_requests([r], start=day, end=day, tz_label='UTC'), [r])
+            self.assertEqual(local_date(r, 'UTC+08:00'), day)
+            daily([r], day, day, 'UTC', self.prices)
+            period_buckets([r], '今天', now, 'UTC', self.prices)
+            self.assertEqual(parse.call_count, 1)
+        self.assertEqual(r.as_dict(), original)
+        self.assertNotIn('time_utc', r.as_dict())
+        self.assertEqual(Request.from_dict(r.as_dict(), normalized=True), r)
+        changed = replace(r, time='2026-11-11T01:00:00+08:00')
+        self.assertEqual(changed.time_utc, datetime(2026, 11, 10, 17, tzinfo=timezone.utc))
+        invalid = replace(r, time='2026-11-11T01:00:00')
+        with self.assertRaises(ValueError):
+            _ = invalid.time_utc
+
+    def test_filter_normalizes_selected_directory_once(self):
+        first = request()
+        rows = [first, replace(first, response_id='second')]
+        with patch('billing.path_key', wraps=path_key) as canonicalize:
+            self.assertEqual(filter_requests(rows, cwd=first.cwd), rows)
+            self.assertEqual(canonicalize.call_count, len(rows) + 1)
+        with patch('billing.path_key', wraps=path_key) as canonicalize:
+            self.assertEqual(filter_requests(rows), rows)
+            canonicalize.assert_not_called()
+
+    def test_day_buckets_reuse_timezone_and_keep_local_day(self):
+        first = request()
+        second = replace(first, response_id='second', time='2026-11-10T16:30:00Z')
+        with patch('billing.fixed_timezone', wraps=fixed_timezone) as resolve:
+            days, kind = period_buckets([first, second], '全部',
+                                        datetime(2026, 11, 12, tzinfo=timezone.utc),
+                                        'UTC+08:00', self.prices)
+        self.assertEqual(resolve.call_count, 1)
+        self.assertEqual(kind, 'day')
+        self.assertEqual([(day, stats['requests']) for day, stats in days], [('2026-11-11', 2)])
+
     def test_filter_all_dimensions(self):
         r=request()
         self.assertEqual(len(filter_requests([r],start=date(2026,11,1),end=date(2026,11,30),provider='openai',model=r.model,cwd=r.cwd,thread_id='t1')),1)

@@ -12,7 +12,8 @@ from tkinter import ttk
 import unittest
 from unittest import mock
 
-from handoff import HandoffStore, TemplateStore, HandoffError, POLICY_LABELS, project_key
+from handoff import (SOURCE_HEADER, HandoffStore, TemplateStore, HandoffError, POLICY_LABELS,
+                     build_save_prompt, project_key)
 from ui_handoff import HandoffPanel
 
 
@@ -139,7 +140,7 @@ class HandoffPanelTests(unittest.TestCase):
         self.root.update()
         self.assertFalse(self.panel.goal_options.winfo_ismapped())
         toggle = next(child for child in self.panel.pages[2].winfo_children()
-                      if isinstance(child, ttk.Checkbutton) and "下一阶段目标" in child.cget("text"))
+                      if isinstance(child, ttk.Button) and "下一阶段目标" in child.cget("text"))
         toggle.invoke()
         self.root.update()
         self.assertTrue(self.panel.goal_options.winfo_ismapped())
@@ -158,10 +159,90 @@ class HandoffPanelTests(unittest.TestCase):
                 self.root.update()
                 self.assertFalse(control.winfo_ismapped())
                 toggle = next(child for child in self.panel.pages[step - 1].winfo_children()
-                              if isinstance(child, ttk.Checkbutton) and label in child.cget("text"))
+                              if isinstance(child, ttk.Button) and label in child.cget("text"))
                 toggle.invoke()
                 self.root.update()
                 self.assertTrue(control.winfo_ismapped())
+
+
+    def test_file_actions_expand_without_replacing_the_paste_entry(self):
+        self.select()
+        self.panel.show_step(2)
+        self.root.update()
+        self.assertTrue(self.panel.paste_button.winfo_ismapped())
+        self.assertFalse(self.panel.import_button.winfo_ismapped())
+        self.panel.file_options_toggle.invoke()
+        self.root.update()
+        self.assertTrue(self.panel.import_button.winfo_ismapped())
+        self.assertTrue(self.panel.read_old_button.winfo_ismapped())
+        self.panel.file_options_toggle.invoke()
+        self.root.update()
+        self.assertFalse(self.panel.import_button.winfo_ismapped())
+
+    def test_source_marker_is_hidden_without_losing_identity_validation(self):
+        self.select()
+        marker = next(line for line in self.panel.generate_old().splitlines()
+                      if line.startswith(SOURCE_HEADER))
+        original = marker + "\n" + self.summary
+        self.panel._put(self.panel.summary_text, original)
+        self.assertEqual(self.panel._summary_value(), original)
+        self.assertTrue(self.panel.summary_text.tag_ranges("source_metadata"))
+        self.assertIn("来源标记与当前项目一致", self.panel.summary_identity.get())
+        saved = self.panel.save_summary()
+        self.assertEqual(saved["summary"], self.summary)
+        self.assertEqual(saved["metadata"]["source_identity"]["thread_id"], "chat-one")
+
+        other = dict(self.record, path=str(self.base / "another"))
+        wrong_marker = next(line for line in build_save_prompt(other).splitlines()
+                            if line.startswith(SOURCE_HEADER))
+        self.panel._put(self.panel.summary_text, wrong_marker + "\n" + self.summary)
+        self.assertFalse(self.panel.summary_text.tag_ranges("source_metadata"))
+        self.assertIn("来源标记待检查", self.panel.summary_identity.get())
+        with self.assertRaises(HandoffError):
+            self.panel.save_summary()
+
+    def test_step_feedback_does_not_follow_other_steps_or_other_chats(self):
+        self.select()
+        self.panel.show_step(3)
+        self.panel._status("已复制新聊指令")
+        self.panel.show_step(2)
+        self.assertNotIn("已复制新聊指令", self.panel.feedback.get())
+        self.assertEqual(self.messages[-1], self.panel.feedback.get())
+        self.panel.show_step(3)
+        self.assertIn("已复制新聊指令", self.panel.feedback.get())
+        self.panel.set_record(dict(self.record, chat_id="another-chat"))
+        self.panel.show_step(3)
+        self.assertNotIn("已复制新聊指令", self.panel.feedback.get())
+
+    def test_editing_summary_invalidates_previous_copy_feedback(self):
+        self.select()
+        self.enter_summary()
+        self.panel.show_step(3)
+        self.panel.copy_new()
+        self.assertIn("待新聊执行", self.panel.step_captions[2].get())
+        self.panel.show_step(2)
+        self.panel.summary_text.insert("end", "\n新的待办")
+        self.root.update()
+        self.assertTrue(self.panel.has_unsaved())
+        self.assertNotIn("待新聊执行", self.panel.step_captions[2].get())
+        self.panel.show_step(3)
+        self.assertIn("重新生成并复制", self.panel.feedback.get())
+
+
+    def test_saving_summary_keeps_edited_new_prompt_until_confirmed(self):
+        self.select()
+        self.enter_summary()
+        self.panel.show_step(3)
+        self.panel.generate_new()
+        self.panel.new_text.insert("end", "\n用户补充内容")
+        self.panel.show_step(2)
+        self.panel.save_summary()
+        self.assertIn("用户补充内容", self.panel._get(self.panel.new_text))
+        self.assertTrue(self.panel.has_unsaved())
+        with mock.patch("ui_handoff.messagebox.askyesno", return_value=False):
+            self.panel.show_step(3)
+            self.assertIsNone(self.panel.generate_new())
+        self.assertIn("用户补充内容", self.panel._get(self.panel.new_text))
 
     def test_selection_and_restart_never_reuse_wrong_thread_summary(self):
         self.select()

@@ -50,6 +50,8 @@ Windows x64 构建使用 [锁定依赖](tools/requirements-build.txt)。在已�
 
 ## 项目资料
 
+[贡献与提交规范](docs/贡献与提交规范.md) · [版本记录](docs/版本记录.md) · [本轮统计和接续复审](docs/变更记录/QX-20261126-01.md)
+
 - [使用指南](docs/USER-GUIDE.md) · [计费使用指南](docs/BILLING-USER-GUIDE.md) · [接手入口](START-HERE.md) · [工程交接](docs/ENGINEERING-HANDOFF.md)
 - [rc4 Windows 验收](docs/verification/0.11.0-billing-rc4/README.md) · [0.11.1 Windows 验收](docs/verification/0.11.1-rc1/README.md) · [0.11.2 Windows 验收](docs/verification/0.11.2-rc1/README.md)
 - [验证记录](docs/VERIFICATION.md) · [本机清单](docs/LOCAL-ACCEPTANCE.md) · [界面与交互规范](docs/UX-SPEC.md)

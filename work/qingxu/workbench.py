@@ -163,7 +163,7 @@ class Workbench(App):
         BrandMark(brand_row, size=34, background=SIDEBAR).pack(side="left", padx=(0, 7))
         tk.Label(brand_row, text="轻续", bg=SIDEBAR, fg=INK,
                  font=(self.font_family, 17, "bold"), anchor="w").pack(side="left")
-        ttk.Label(side, text="QINGXU  /  本地工作台", style="SideSection.TLabel").pack(anchor="w", padx=5, pady=(0, 26))
+        ttk.Label(side, text="本地工作台", style="SideSection.TLabel").pack(anchor="w", padx=5, pady=(0, 26))
         ttk.Label(side, text="工作空间", style="SideSection.TLabel").pack(anchor="w", padx=9, pady=(0, 9))
         self.nav = {}
         self.today_cost = tk.StringVar(self.root, value="今日 —")
@@ -181,11 +181,10 @@ class Workbench(App):
         self.floating_button.pack(side="bottom", fill="x", pady=2)
         add_navigation("settings", "偏好设置", "bottom")
         ttk.Separator(side).pack(side="bottom", fill="x", pady=5)
-        self.today_label = tk.Label(side, textvariable=self.today_cost, bg=SIDEBAR, fg=SECONDARY,
-                                    font=(self.font_family, 9), anchor="w", justify="left", wraplength=160)
-        self.today_label.pack(side="bottom", fill="x", padx=9, pady=(8, 12))
-        ttk.Label(side, text=f"{VERSION} · 本地数据", style="SideSection.TLabel").pack(side="bottom", anchor="w", padx=9, pady=(0, 2))
-        self.today_label.bind("<Button-1>", lambda _: self.show_page("statistics"))
+        self.today_label = ttk.Button(side, textvariable=self.today_cost, style="Sidebar.Ghost.TButton",
+                                      command=self.show_today_usage)
+        self.today_label.pack(side="bottom", fill="x", pady=(3, 6))
+        ttk.Label(side, text=VERSION, style="SideSection.TLabel").pack(side="bottom", anchor="w", padx=9, pady=(0, 2))
         main = ttk.Frame(shell, style="App.TFrame", padding=(24, 22, 22, 14))
         main.pack(side="left", fill="both", expand=True)
         self.titlebar = ttk.Frame(main)
@@ -219,15 +218,14 @@ class Workbench(App):
         refresh.grid(row=0, column=5)
         self.picker.columnconfigure(2, weight=1)
         self.picker.columnconfigure(4, weight=2)
-        detail = self.picker_detail = ttk.Label(self.picker, textvariable=self.selection_info,
-                                               style="CardMuted.TLabel", wraplength=870)
-        detail.grid(row=1, column=0, columnspan=6, sticky="w", pady=(4, 0))
+        detail = self.picker_detail = ttk.Button(
+            self.picker, text="聊天详情", style="Ghost.TButton",
+            command=lambda: messagebox.showinfo("所选聊天和工作目录",
+                                                self.selection_info.get(), parent=self.root))
+        detail.grid(row=1, column=0, columnspan=6, sticky="w", pady=(2, 0))
         self._compact_picker = False
 
         def fit_picker(event):
-            wrap = max(160, event.width - 72)
-            if int(float(detail.cget("wraplength"))) != wrap:
-                detail.configure(wraplength=wrap)
             controls = (modes, self.project_label, chat_label, refresh)
             face = font.nametofont("TkDefaultFont", root=self.root)
             minimum_choices = max(120, face.measure("中" * 6)) + max(150, face.measure("中" * 8))
@@ -245,7 +243,8 @@ class Workbench(App):
                 self.project_choice.grid_configure(row=0, column=4, columnspan=1, pady=0)
                 refresh.grid_configure(row=0, pady=0)
             if detail.winfo_manager():
-                detail.grid_configure(row=2 if narrow else 1)
+                detail.grid_configure(row=0 if narrow else 1, column=5 if narrow else 0,
+                                      columnspan=1 if narrow else 6)
 
         self.picker.bind("<Configure>", fit_picker)
         self.choice_records, self.category_map, self.loaded_category = {}, {}, ""
@@ -283,12 +282,14 @@ class Workbench(App):
         self.tabs.select(self.frames[index])
         self.page = key
         self.page_title.set(self.nav[key].cget("text").removeprefix("⚙ "))
-        captions = {"usage": "掌握上下文余量，适时整理，再轻松继续。", "handoff": "保留目标与断点，让下一次对话从这里出发。", "settings": "把目录、提醒和模型调整成你的工作方式。", "statistics": "看清消耗，把每一次请求放在同一口径下比较。"}
+        captions = {"usage": "掌握上下文余量，适时整理，再轻松继续。", "handoff": "把旧聊的任务进度带到同项目的新聊。", "settings": "把目录、提醒和模型调整成你的工作方式。", "statistics": "看清消耗，把每一次请求放在同一口径下比较。"}
         self.page_caption.set(captions[key])
         if key == "settings":
             self.picker_detail.grid_remove()
         else:
-            self.picker_detail.grid(row=2 if self._compact_picker else 1)
+            self.picker_detail.grid(row=0 if self._compact_picker else 1,
+                                    column=5 if self._compact_picker else 0,
+                                    columnspan=1 if self._compact_picker else 6)
         if key == "statistics":
             self.picker.pack_forget()
             self.manual_project_button.pack_forget()
@@ -315,6 +316,14 @@ class Workbench(App):
             self.context_banner.pack(fill="x", pady=(0, 5), before=self.tabs)
         else:
             self.context_banner.pack_forget()
+
+    def show_today_usage(self):
+        panel = self.usage_panel.billing_panel
+        if panel.period.get() != "今天":
+            panel.period.set("今天")
+            panel.changed(panel.period)
+        if self.page != "statistics":
+            self.show_page("statistics")
 
     def set_today_cost(self, text):
         self.today_cost.set(text or "今日 —")
