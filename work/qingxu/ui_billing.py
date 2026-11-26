@@ -599,11 +599,14 @@ class BillingPanel(ttk.Frame):
         self._filters_in_canvas=needs_scroll
 
     def _fit_density(self):
-        compact=self.winfo_width()<950 or self.winfo_height()<740
+        width,height=self.winfo_width(),self.winfo_height()
+        scaling=float(self.tk.call('tk','scaling'))
+        compact=width<950 or height<740
         face=font.nametofont('TkDefaultFont',root=self)
-        dense=(self.winfo_width()<face.measure('中'*31) or
-               self.winfo_height()<face.metrics('linespace')*24)
-        density=(compact,dense,float(self.tk.call('tk','scaling')))
+        # A font fallback can be narrower without leaving more vertical space for logs.
+        short_scaled_window=height<650 and scaling>=1.9
+        dense=(width<face.measure('中'*31) or height<face.metrics('linespace')*24 or short_scaled_window)
+        density=(compact,dense,scaling)
         if getattr(self,'_quiet_density',None)!=density:
             self._quiet_density=density
             family=getattr(self.app,'font_family','TkDefaultFont')
@@ -672,7 +675,7 @@ class BillingPanel(ttk.Frame):
             self.chart.compact=compact
             self.chart.draw()
             self._kpi_layout=None
-        scroll_footer=self.winfo_height()<max(480,face.metrics('linespace')*28)
+        scroll_footer=short_scaled_window or height<max(480,face.metrics('linespace')*28)
         if getattr(self,'_footer_in_canvas',None)!=scroll_footer:
             self._footer_in_canvas=scroll_footer
             self.table_footer.pack_forget()
